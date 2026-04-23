@@ -458,6 +458,55 @@ tailwind.config={theme:{extend:{colors:{
 </div><!-- /page-profile -->
 
 <!-- ═══════════════════════════════════════════════
+     PAGE: ETALASE (Seller Store)
+═══════════════════════════════════════════════ -->
+<div id="page-etalase" class="page">
+<main class="max-w-2xl mx-auto px-3 md:px-6 py-5">
+  <!-- Store Header -->
+  <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 mb-4">
+    <div class="h-20 relative" style="background:linear-gradient(135deg,#064E3B,#10B981)">
+      <button onclick="history.back();showPage('home')" class="absolute top-3 left-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors">
+        <i class="fa-solid fa-arrow-left text-sm"></i>
+      </button>
+    </div>
+    <div class="px-5 pb-4">
+      <div class="-mt-7 mb-3">
+        <div class="profile-photo-ring inline-block">
+          <div id="etalaseAvatar" class="w-14 h-14 rounded-full bg-primary text-white font-black text-xl flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">P</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 mb-0.5">
+        <h2 id="etalaseName" class="font-black text-gray-900 text-lg"></h2>
+        <span id="etalaseGold" style="display:none" class="gold-badge text-xl"><i class="fa-solid fa-circle-check"></i></span>
+      </div>
+      <p id="etalaseSubtitle" class="text-xs text-gray-500 flex items-center gap-1">
+        <i class="fa-solid fa-store text-primary text-[10px]"></i> Etalase Penjual
+      </p>
+      <div class="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100">
+        <div class="text-center">
+          <p id="etalaseCount" class="font-black text-primary text-xl">0</p>
+          <p class="text-[10px] text-gray-500">Produk</p>
+        </div>
+        <div class="text-center">
+          <p class="font-black text-gray-700 text-xl flex items-center gap-1"><i class="fa-solid fa-star text-amber-400 text-sm"></i>5.0</p>
+          <p class="text-[10px] text-gray-500">Rating</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Seller Products Grid -->
+  <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+    <i class="fa-solid fa-box text-primary"></i> Semua Produk
+  </h3>
+  <div id="etalaseGrid" class="grid grid-cols-2 gap-3"></div>
+  <div id="etalaseEmpty" style="display:none" class="text-center py-12 text-gray-300">
+    <i class="fa-solid fa-box-open text-4xl mb-3"></i>
+    <p class="text-sm font-semibold text-gray-400">Belum ada produk</p>
+  </div>
+</main>
+</div><!-- /page-etalase -->
+
+<!-- ═══════════════════════════════════════════════
      CART PANEL
 ═══════════════════════════════════════════════ -->
 <div id="cartOverlay" style="display:none;opacity:0" class="fixed inset-0 bg-black/50 z-50 ov" onclick="toggleCart()"></div>
@@ -725,6 +774,7 @@ tailwind.config={theme:{extend:{colors:{
       <button onclick="closeChatRoom()" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 flex-shrink-0">
         <i class="fa-solid fa-arrow-left text-sm"></i>
       </button>
+      <button onclick="viewSellerStore(window._S.activeChatOther)" class="flex items-center gap-2 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity">
       <div id="chatRoomAvatarWrap" class="profile-photo-ring flex-shrink-0">
         <div id="chatRoomAvatar" class="w-8 h-8 rounded-full bg-white/30 text-white text-xs font-black flex items-center justify-center overflow-hidden">?</div>
       </div>
@@ -733,8 +783,9 @@ tailwind.config={theme:{extend:{colors:{
           <p id="chatRoomName" class="font-bold text-sm truncate"></p>
           <span id="chatRoomGold" style="display:none" class="text-amber-300 text-sm"><i class="fa-solid fa-circle-check"></i></span>
         </div>
-        <p class="text-green-200 text-[10px]">Online</p>
+        <p class="text-green-200 text-[10px] flex items-center gap-1"><i class="fa-solid fa-store text-[8px]"></i> Ketuk untuk lihat etalase</p>
       </div>
+    </button>
     </div>
     <!-- Product context -->
     <div id="chatProductContext" class="bg-gray-50 px-4 py-2 border-b border-gray-100 flex items-center gap-2 flex-shrink-0">
@@ -914,10 +965,20 @@ onAuthStateChanged(auth, async user => {
     let profile = { uid:user.uid, email:user.email, name:user.displayName||user.email.split('@')[0], phone:'', photoUrl:'' };
     try {
       const snap = await getDocs(query(collection(db,'users'), where('uid','==',user.uid)));
-      if (!snap.empty) { const d=snap.docs[0].data(); profile.name=d.name||profile.name; profile.phone=d.phone||''; profile.photoUrl=d.photoUrl||''; }
+      if (!snap.empty) {
+        const d = snap.docs[0].data();
+        profile.name     = d.name     || profile.name;
+        profile.phone    = d.phone    || '';
+        // FIX 3: Always load photoUrl from Firestore, never from Auth displayPhoto
+        profile.photoUrl = d.photoUrl || '';
+        // Store docId for fast updates later
+        profile.docId    = snap.docs[0].id;
+      }
     } catch(e){}
     window._S.user = profile;
-  } else { window._S.user = null; }
+  } else {
+    window._S.user = null;
+  }
   renderUserState();
 });
 
@@ -944,13 +1005,21 @@ window._FB = {
     if(window.loadAds) loadAds();
   },
 
-  // ── Upload profile photo ──────────────────────────────────────
+  // ── Upload profile photo — FIX 3: permanent storage ──────────
   async uploadProfilePhoto(file) {
     showToast('Mengunggah foto profil...', 'green');
     const imgUrl = await uploadToCloudinary(file);
-    // Update in Firestore
-    const snap = await getDocs(query(collection(db,'users'), where('uid','==',window._S.user.uid)));
-    if (!snap.empty) await updateDoc(doc(db,'users',snap.docs[0].id), { photoUrl: imgUrl });
+    // Use stored docId if available, otherwise query
+    let docId = window._S.user.docId || null;
+    if(!docId) {
+      const snap = await getDocs(query(collection(db,'users'), where('uid','==',window._S.user.uid)));
+      if(!snap.empty) { docId = snap.docs[0].id; window._S.user.docId = docId; }
+    }
+    if(docId) {
+      // FIX 3: Save photoUrl permanently to Firestore
+      await updateDoc(doc(db,'users',docId), { photoUrl: imgUrl });
+    }
+    // Update in-memory state
     window._S.user.photoUrl = imgUrl;
     renderUserState();
     renderProfilePage();
@@ -1050,7 +1119,15 @@ window._FB = {
       text:text.trim(), senderId:window._S.user.uid,
       senderName:window._S.user.name, createdAt:serverTimestamp()
     });
-    await updateDoc(doc(db,'chats',chatId), { lastMessage:text.trim(), lastAt:serverTimestamp(), [`unread_${window._S.activeChatOther}`]:increment(1) });
+    // FIX 1: Increment unread for the OTHER person (receiver), not sender
+    const receiverId = window._S.activeChatOther;
+    if(receiverId) {
+      await updateDoc(doc(db,'chats',chatId), {
+        lastMessage: text.trim(),
+        lastAt: serverTimestamp(),
+        [`unread_${receiverId}`]: increment(1)
+      });
+    }
   },
 
   listenChatMessages(chatId, callback) {
@@ -1098,6 +1175,69 @@ window._FB = {
 
 window.loadAds     = () => _FB.loadAds();
 window.loadComments = id => _FB.loadComments(id);
+
+// ── CHAT BADGE: real-time unread listener ──────────────────────
+let _unreadUnsub = null;
+window.startUnreadListener = function() {
+  if(!window._S.user || !db) return;
+  if(_unreadUnsub) { _unreadUnsub(); _unreadUnsub=null; }
+  // Listen to all chats where user is participant
+  const q = query(
+    collection(db,'chats'),
+    where('participants','array-contains',window._S.user.uid)
+  );
+  let _prevTotal = 0;
+  _unreadUnsub = onSnapshot(q, snap => {
+    let total = 0;
+    snap.docs.forEach(d => {
+      const data = d.data();
+      const unread = data[`unread_${window._S.user.uid}`] || 0;
+      total += unread;
+    });
+    // FIX 1/4: Play sound if new unread arrived and chat list is closed
+    if(total > _prevTotal) {
+      const chatListOpen = document.getElementById('chatListOverlay')?.style.display !== 'none';
+      const chatRoomOpen = document.getElementById('chatRoomOverlay')?.style.display !== 'none';
+      if(!chatRoomOpen && window.playNotifSound) playNotifSound();
+    }
+    _prevTotal = total;
+    updateChatBadge(total);
+  });
+};
+window.stopUnreadListener = function() {
+  if(_unreadUnsub){ _unreadUnsub(); _unreadUnsub=null; }
+  updateChatBadge(0);
+};
+
+// ── NOTIF SOUND: Web Audio API (no file needed) ────────────────
+window.playNotifSound = function() {
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    // Ting sound: quick high-pitched beep
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(1047, ctx.currentTime);        // C6
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime+0.15);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime+0.4);
+  } catch(e) {}
+};
+
+// ── Mark chat as read when opened ─────────────────────────────
+window.markChatRead = async function(chatId) {
+  if(!window._S.user || !db) return;
+  try {
+    const snap = await getDocs(query(collection(db,'chats'), where('chatId','==',chatId)));
+    if(!snap.empty) {
+      await updateDoc(doc(db,'chats',snap.docs[0].id), {
+        [`unread_${window._S.user.uid}`]: 0
+      });
+    }
+  } catch(e) {}
+};
 </script>
 
 <!-- ═══════════════════════════════════════════════
@@ -1147,6 +1287,21 @@ window.showPage = name => {
 window.showProfileOrAuth = () => window._S.user ? showPage('profile') : openAuth('login');
 
 // ── Render user state ──────────────────────────────────────────
+// ── Update chat badge UI ──────────────────────────────────────
+window.updateChatBadge = function(count) {
+  const n = count > 99 ? '99+' : count;
+  ['chatBadge','chatBadgeMob'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(count > 0) {
+      el.textContent = n;
+      el.style.display = 'flex';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+};
+
 window.renderUserState = () => {
   const u = window._S.user;
   const admin = u && isAdmin(u.email);
@@ -1161,9 +1316,18 @@ window.renderUserState = () => {
   if (u) {
     const init = (u.name||'U').charAt(0).toUpperCase();
     const hAv = document.getElementById('hAvatar');
-    if (u.photoUrl) hAv.innerHTML = `<img src="${u.photoUrl}" class="w-full h-full object-cover"/>`;
-    else hAv.innerHTML = init;
+    // FIX 3: Always use photoUrl from state — never fall back if URL exists
+    if (u.photoUrl && u.photoUrl.length > 0) {
+      hAv.innerHTML = `<img src="${u.photoUrl}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='${init}'"/>`;
+    } else {
+      hAv.innerHTML = init;
+    }
     document.getElementById('hName').textContent = u.name || u.email;
+    // Start real-time unread listener when user logs in
+    if(window.startUnreadListener) startUnreadListener();
+  } else {
+    // Stop listener on logout
+    if(window.stopUnreadListener) stopUnreadListener();
   }
 };
 
@@ -1171,10 +1335,14 @@ window.renderUserState = () => {
 function renderProfilePage() {
   const u=window._S.user; if(!u) return;
   const admin = isAdmin(u.email);
-  // Avatar
+  // FIX 3: Avatar — always use photoUrl if set, with error fallback
   const av = document.getElementById('profileAvatar');
-  if (u.photoUrl) av.innerHTML = `<img src="${u.photoUrl}" class="w-full h-full object-cover"/>`;
-  else av.innerHTML = (u.name||'U').charAt(0).toUpperCase();
+  const initChar = (u.name||'U').charAt(0).toUpperCase();
+  if (u.photoUrl && u.photoUrl.length > 0) {
+    av.innerHTML = `<img src="${u.photoUrl}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='${initChar}'"/>`;
+  } else {
+    av.innerHTML = initChar;
+  }
   // Name + gold badge
   document.getElementById('profileName').textContent = u.name || u.email;
   const pgb = document.getElementById('profileGoldBadge');
@@ -1393,9 +1561,16 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
   if(!chatId) return;
   window._S.activeChatId=chatId; window._S.activeChatOther=sellerId;
   if(window._S.chatUnsub) window._S.chatUnsub();
+  let _prevMsgCount = 0;
   window._S.chatUnsub=window._FB.listenChatMessages(chatId, msgs=>{
     const el=document.getElementById('chatMessages'); if(!el) return;
     const isMe=m=>m.senderId===window._S.user?.uid;
+    // FIX 1/4: Play ting sound on new incoming message
+    if(msgs.length > _prevMsgCount && _prevMsgCount > 0) {
+      const newest = msgs[msgs.length-1];
+      if(!isMe(newest) && window.playNotifSound) playNotifSound();
+    }
+    _prevMsgCount = msgs.length;
     el.innerHTML=msgs.length===0?'<p class="text-xs text-gray-400 text-center py-8">Mulai percakapan dengan penjual</p>':
       msgs.map(m=>`
         <div class="flex ${isMe(m)?'justify-end':'justify-start'} chat-msg">
@@ -1405,6 +1580,8 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
           </div>
         </div>`).join('');
     el.scrollTop=el.scrollHeight;
+    // FIX 1: Auto mark as read when chat window is open
+    if(window.markChatRead) markChatRead(chatId);
   });
 }
 window.sendChatMsg=async()=>{
@@ -1435,18 +1612,24 @@ window.openChatList=async()=>{
   if(window._FB){
     const chats=await window._FB.loadChatList();
     if(!chats.length){content.innerHTML='<div class="text-center py-10 text-gray-300"><i class="fa-solid fa-comment-slash text-4xl mb-3"></i><p class="text-sm font-semibold text-gray-400">Belum ada percakapan</p></div>';return;}
-    content.innerHTML=chats.map(c=>{
-      const isMe=c.buyerId===window._S.user.uid;
-      const other=isMe?c.sellerName:c.buyerName;
-      const otherPhoto=isMe?c.sellerPhoto:c.buyerPhoto;
-      const otherId=isMe?c.sellerId:c.buyerId;
-      return `<div class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-2xl cursor-pointer transition-colors" onclick="closeChatList();openChatRoom('${c.adId}','${otherId}','${other}','${otherPhoto}','${c.adTitle||''}','${c.adImg||''}',${c.adPrice||0})">
-        <div class="profile-photo-ring flex-shrink-0">${avatarHtml(otherPhoto,other,'w-10 h-10')}</div>
-        <div class="flex-1 min-w-0">
-          <p class="text-xs font-bold text-gray-800">${other}</p>
-          <p class="text-[11px] text-gray-500 lc1">${c.lastMessage||'Mulai percakapan'}</p>
+    content.innerHTML=chats.map(ch=>{
+      const isMe=ch.buyerId===window._S.user.uid;
+      const other=isMe?ch.sellerName:ch.buyerName;
+      const otherPhoto=isMe?ch.sellerPhoto:ch.buyerPhoto;
+      const otherId=isMe?ch.sellerId:ch.buyerId;
+      const unread=ch[`unread_${window._S.user.uid}`]||0;
+      return `<div class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-2xl transition-colors">
+        <button onclick="closeChatList();viewSellerStore('${otherId}')" class="flex-shrink-0 hover:opacity-80 transition-opacity" title="Lihat Etalase">
+          <div class="profile-photo-ring">${avatarHtml(otherPhoto,other,'w-10 h-10')}</div>
+        </button>
+        <div class="flex-1 min-w-0 cursor-pointer" onclick="closeChatList();openChatRoom('${ch.adId}','${otherId}','${other}','${otherPhoto}','${ch.adTitle||''}','${ch.adImg||''}',${ch.adPrice||0})">
+          <div class="flex items-center gap-1">
+            <p class="text-xs font-bold text-gray-800">${other}</p>
+          </div>
+          <p class="text-[11px] text-gray-500 lc1">${ch.lastMessage||'Mulai percakapan'}</p>
+          <p class="text-[10px] text-primary mt-0.5 flex items-center gap-1"><i class="fa-solid fa-store text-[8px]"></i> Ketuk foto untuk lihat etalase</p>
         </div>
-        <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+        ${unread>0?`<span class="bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0">${unread}</span>`:'<i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>'}
       </div>`;
     }).join('');
   } else {
@@ -1455,6 +1638,60 @@ window.openChatList=async()=>{
 };
 window.closeChatListOv=e=>{if(e.target===document.getElementById('chatListOverlay'))closeChatList();};
 window.closeChatList=()=>{const ov=document.getElementById('chatListOverlay');ov.style.opacity='0';setTimeout(()=>ov.style.display='none',300);document.body.style.overflow='';};
+
+// ── FIX 2: Etalase / Seller Store ────────────────────────────
+window.viewSellerStore = async function(sellerUid) {
+  if(!sellerUid || sellerUid === 'static') {
+    showToast('Etalase tidak tersedia untuk penjual ini','red');
+    return;
+  }
+  // Close chat room first
+  closeChatRoom();
+  // Get seller info from their ads
+  const sellerAds = window._S.fbAds.filter(a => a.sellerUid === sellerUid);
+  const sellerName = sellerAds.length > 0 ? sellerAds[0].sellerName : 'Penjual';
+  const sellerPhoto = sellerAds.length > 0 ? (sellerAds[0].sellerPhoto||'') : '';
+  const sellerEmail = sellerAds.length > 0 ? (sellerAds[0].sellerEmail||'') : '';
+  const adminSeller = isAdmin(sellerEmail);
+  // Set etalase header
+  const eav = document.getElementById('etalaseAvatar');
+  if(sellerPhoto) eav.innerHTML = `<img src="${sellerPhoto}" class="w-full h-full object-cover"/>`;
+  else eav.innerHTML = (sellerName||'P').charAt(0).toUpperCase();
+  document.getElementById('etalaseName').textContent = sellerName;
+  document.getElementById('etalaseGold').style.display = adminSeller ? 'inline' : 'none';
+  document.getElementById('etalaseCount').textContent = sellerAds.length;
+  // Render seller products
+  const grid = document.getElementById('etalaseGrid');
+  const empty = document.getElementById('etalaseEmpty');
+  if(!sellerAds.length) {
+    grid.innerHTML = ''; empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML = sellerAds.map((p,i) => {
+      const name = p.title||p.name||'';
+      const img  = p.imgUrl||p.img||'https://picsum.photos/300/300';
+      const orig = p.disc>0 ? Math.round(p.price/(1-p.disc/100)) : null;
+      return `
+        <div class="pc bg-white rounded-2xl overflow-hidden border border-gray-100 cursor-pointer" style="animation:fadeUp .3s ease ${i*.04}s both" onclick="openDetail('${p.id}')">
+          <div class="relative overflow-hidden bg-gray-50" style="aspect-ratio:1/1">
+            <img src="${img}" alt="${name}" class="w-full h-full object-cover hover:scale-105 transition-transform" loading="lazy"/>
+            ${p.disc>0?`<span class="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">${p.disc}%</span>`:''}
+          </div>
+          <div class="p-3">
+            <p class="text-[11px] font-semibold text-gray-800 lc2 leading-snug mb-1">${name}</p>
+            <p class="text-sm font-black text-primary">${fmtLE(p.price)}</p>
+            ${orig?`<p class="text-[10px] text-gray-400 line-through">${fmtLE(orig)}</p>`:''}
+            <div class="flex items-center gap-1 mt-1">
+              <i class="fa-solid fa-star text-amber-400 text-[10px]"></i>
+              <span class="text-[10px] text-gray-700 font-semibold">${p.rating||'5.0'}</span>
+              ${p.sold?`<span class="text-[10px] text-gray-400 ml-1">· ${fmtSold(p.sold)} sold</span>`:''}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+  showPage('etalase');
+};
 
 // ── Cart ───────────────────────────────────────────────────────
 window.addToCart=id=>{
