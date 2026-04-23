@@ -103,6 +103,11 @@ tailwind.config={theme:{extend:{colors:{
 .chat-bubble-other{background:#F3F4F6;color:#111827;border-radius:18px 18px 18px 4px}
 .chat-panel-body{height:320px;overflow-y:auto;scroll-behavior:smooth}
 
+/* CHAT FULL SCREEN — pesan area */
+#chatMessages{scroll-behavior:smooth}
+#chatMessages::-webkit-scrollbar{width:3px}
+#chatMessages::-webkit-scrollbar-thumb{background:var(--primary);border-radius:4px}
+
 /* SHIMMER SKELETON */
 .skel{background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
 
@@ -397,14 +402,18 @@ tailwind.config={theme:{extend:{colors:{
       <p id="profileEmail" class="text-xs text-gray-500 flex items-center gap-1"><i class="fa-solid fa-envelope text-gray-300 text-[10px]"></i> <span></span></p>
       <p id="profilePhone" class="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-phone text-gray-300 text-[10px]"></i> <span></span></p>
       <!-- Stats -->
-      <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-100">
+      <div class="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-100">
         <div class="text-center">
           <p id="myAdCount" class="font-black text-primary text-2xl">0</p>
           <p class="text-[10px] text-gray-500 font-medium">Iklan Aktif</p>
         </div>
         <div class="text-center">
-          <p class="font-black text-gray-700 text-2xl">0</p>
-          <p class="text-[10px] text-gray-500 font-medium">Terjual</p>
+          <p id="myFollowersCount" class="font-black text-gray-700 text-2xl">0</p>
+          <p class="text-[10px] text-gray-500 font-medium">Followers</p>
+        </div>
+        <div class="text-center">
+          <p id="myFollowingCount" class="font-black text-gray-700 text-2xl">0</p>
+          <p class="text-[10px] text-gray-500 font-medium">Following</p>
         </div>
         <div class="text-center">
           <p class="font-black text-gray-700 text-2xl flex items-center justify-center gap-1">
@@ -444,15 +453,25 @@ tailwind.config={theme:{extend:{colors:{
     </button>
   </div>
 
-  <!-- My Ads -->
-  <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-    <div class="flex items-center justify-between mb-3">
+  <!-- My Ads — dengan tab status -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-4 pt-4 pb-0">
       <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
         <i class="fa-solid fa-box text-primary"></i> Penjualan Saya
       </h3>
       <button onclick="guardedPost()" class="text-[11px] font-semibold text-primary hover:underline">+ Tambah</button>
     </div>
-    <div id="myAdsList"></div>
+    <!-- Tab Menu -->
+    <div class="flex border-b border-gray-100 mt-3 px-2 overflow-x-auto msc">
+      <button onclick="switchSalesTab('semua')" data-stab="semua" class="stab active flex-shrink-0 text-[11px] font-semibold px-3 py-2.5 text-primary border-b-2 border-primary whitespace-nowrap transition-all">Semua</button>
+      <button onclick="switchSalesTab('belum-bayar')" data-stab="belum-bayar" class="stab flex-shrink-0 text-[11px] font-medium px-3 py-2.5 text-gray-400 border-b-2 border-transparent whitespace-nowrap transition-all hover:text-primary">Belum Bayar</button>
+      <button onclick="switchSalesTab('dikirim')" data-stab="dikirim" class="stab flex-shrink-0 text-[11px] font-medium px-3 py-2.5 text-gray-400 border-b-2 border-transparent whitespace-nowrap transition-all hover:text-primary">Dikirim</button>
+      <button onclick="switchSalesTab('selesai')" data-stab="selesai" class="stab flex-shrink-0 text-[11px] font-medium px-3 py-2.5 text-gray-400 border-b-2 border-transparent whitespace-nowrap transition-all hover:text-primary">Selesai</button>
+      <button onclick="switchSalesTab('pembatalan')" data-stab="pembatalan" class="stab flex-shrink-0 text-[11px] font-medium px-3 py-2.5 text-gray-400 border-b-2 border-transparent whitespace-nowrap transition-all hover:text-primary">Pembatalan</button>
+    </div>
+    <!-- List -->
+    <div id="myAdsList" class="p-3 space-y-2"></div>
   </div>
 </main>
 </div><!-- /page-profile -->
@@ -482,15 +501,24 @@ tailwind.config={theme:{extend:{colors:{
       <p id="etalaseSubtitle" class="text-xs text-gray-500 flex items-center gap-1">
         <i class="fa-solid fa-store text-primary text-[10px]"></i> Etalase Penjual
       </p>
-      <div class="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100">
-        <div class="text-center">
-          <p id="etalaseCount" class="font-black text-primary text-xl">0</p>
-          <p class="text-[10px] text-gray-500">Produk</p>
+      <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        <div class="flex items-center gap-4">
+          <div class="text-center">
+            <p id="etalaseCount" class="font-black text-primary text-xl">0</p>
+            <p class="text-[10px] text-gray-500">Produk</p>
+          </div>
+          <div class="text-center">
+            <p id="etalaseFollowers" class="font-black text-gray-700 text-xl">0</p>
+            <p class="text-[10px] text-gray-500">Follower</p>
+          </div>
+          <div class="text-center">
+            <p class="font-black text-gray-700 text-xl flex items-center gap-1"><i class="fa-solid fa-star text-amber-400 text-sm"></i>5.0</p>
+            <p class="text-[10px] text-gray-500">Rating</p>
+          </div>
         </div>
-        <div class="text-center">
-          <p class="font-black text-gray-700 text-xl flex items-center gap-1"><i class="fa-solid fa-star text-amber-400 text-sm"></i>5.0</p>
-          <p class="text-[10px] text-gray-500">Rating</p>
-        </div>
+        <button id="followBtn" onclick="toggleFollow()" class="flex items-center gap-1.5 bg-primary hover:bg-pd text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-[0_2px_10px_rgba(16,185,129,.3)]">
+          <i class="fa-solid fa-plus text-[10px]"></i> Follow
+        </button>
       </div>
     </div>
   </div>
@@ -623,51 +651,104 @@ tailwind.config={theme:{extend:{colors:{
 ═══════════════════════════════════════════════ -->
 <div id="postOverlay" style="display:none;opacity:0" class="fixed inset-0 bg-black/60 z-[60] ov flex items-center justify-center p-4" onclick="closePostOv(event)">
   <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden min max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
-    <div class="bg-gradient-to-br from-amber-400 to-orange-400 px-5 py-4 flex items-center justify-between flex-shrink-0">
+
+    <!-- ── Header Hijau Yalla Mart ── -->
+    <div class="bg-gradient-to-br from-primary to-pdd px-5 py-4 flex items-center justify-between flex-shrink-0">
       <div>
-        <h3 class="font-black text-white text-base flex items-center gap-2"><i class="fa-solid fa-camera"></i> Pasang Iklan</h3>
-        <p class="text-amber-100 text-[11px] mt-0.5">Foto dari galeri HP · Auto-kompres</p>
+        <h3 class="font-black text-white text-base flex items-center gap-2">
+          <i class="fa-solid fa-camera"></i> Pasang Iklan
+        </h3>
+        <p class="text-green-100 text-[11px] mt-0.5">Foto dari galeri HP · Auto-kompres</p>
       </div>
-      <button onclick="closePostModal()" class="w-7 h-7 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-white">
+      <button onclick="closePostModal()" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors">
         <i class="fa-solid fa-xmark text-sm"></i>
       </button>
     </div>
-    <!-- Progress bar -->
-    <div id="uploadProgressWrap" style="display:none" class="bg-amber-50 px-5 py-2.5 border-b border-amber-100 flex-shrink-0">
+
+    <!-- ── Progress bar Hijau ── -->
+    <div id="uploadProgressWrap" style="display:none" class="bg-pl px-5 py-2.5 border-b border-plm flex-shrink-0">
       <div class="flex items-center justify-between mb-1">
-        <span id="uploadStatusText" class="text-[11px] font-semibold text-amber-700"></span>
-        <span id="uploadPct" class="text-[11px] font-black text-amber-700">0%</span>
+        <span id="uploadStatusText" class="text-[11px] font-semibold text-primary"></span>
+        <span id="uploadPct" class="text-[11px] font-black text-primary">0%</span>
       </div>
-      <div class="w-full bg-amber-200 rounded-full h-1.5"><div id="uploadBar" class="upload-bar bg-amber-500 h-1.5 rounded-full" style="width:0%"></div></div>
+      <div class="w-full bg-plm rounded-full h-1.5">
+        <div id="uploadBar" class="upload-bar bg-primary h-1.5 rounded-full" style="width:0%"></div>
+      </div>
     </div>
+
+    <!-- ── Form Body ── -->
     <div class="overflow-y-auto flex-1 px-5 py-4 space-y-3.5">
+
+      <!-- Foto Produk -->
       <div>
-        <label class="text-xs font-semibold text-gray-600 mb-1.5 block">Foto Produk * <span class="text-[10px] font-normal text-gray-400">(galeri HP / kamera)</span></label>
+        <label class="text-xs font-semibold text-gray-600 mb-1.5 block">
+          Foto Produk * <span class="text-[10px] font-normal text-gray-400">(galeri HP / kamera)</span>
+        </label>
         <label for="photoInput" class="block cursor-pointer">
-          <div id="photoPreview" class="w-full h-36 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-primary hover:text-primary transition-colors bg-gray-50 overflow-hidden">
-            <i class="fa-solid fa-image text-4xl"></i>
+          <div id="photoPreview" class="w-full h-36 rounded-2xl border-2 border-dashed border-primary/30 flex flex-col items-center justify-center gap-2 text-primary/60 hover:border-primary hover:text-primary transition-all bg-pl/30 overflow-hidden">
+            <i class="fa-solid fa-camera text-4xl"></i>
             <span class="text-xs font-semibold">Ketuk untuk buka Galeri</span>
-            <span class="text-[10px] text-gray-400">JPG, PNG · Auto-kompres</span>
+            <span class="text-[10px] text-primary/50">JPG, PNG · Auto-kompres</span>
           </div>
           <input id="photoInput" type="file" accept="image/*" class="hidden" onchange="previewPhoto(this)"/>
         </label>
       </div>
-      <div><label class="text-xs font-semibold text-gray-600 mb-1.5 block">Judul Iklan *</label><input id="adTitle" type="text" placeholder="Contoh: iPhone 13 Pro 256GB" class="inp w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50"/></div>
-      <div><label class="text-xs font-semibold text-gray-600 mb-1.5 block">Harga (LE) *</label><input id="adPrice" type="number" placeholder="5000" class="inp w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50"/></div>
-      <div><label class="text-xs font-semibold text-gray-600 mb-1.5 block">Kategori *</label>
+
+      <!-- Judul -->
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1.5 block">Judul Iklan *</label>
+        <input id="adTitle" type="text" placeholder="Contoh: iPhone 13 Pro 256GB" class="inp w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50"/>
+      </div>
+
+      <!-- Harga -->
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1.5 block">Harga (LE) *</label>
+        <input id="adPrice" type="number" placeholder="5000" class="inp w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50"/>
+      </div>
+
+      <!-- Kategori -->
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1.5 block">Kategori *</label>
         <select id="adCat" class="inp w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50">
           <option value="">-- Pilih Kategori --</option>
-          <option value="elektronik">Elektronik</option><option value="fashion">Fashion</option>
-          <option value="kecantikan">Kecantikan</option><option value="makanan">Makanan</option>
-          <option value="olahraga">Olahraga</option><option value="buku">Buku</option>
-          <option value="gaming">Gaming</option><option value="rumah">Rumah</option><option value="promo">Promo</option>
+          <option value="elektronik">Elektronik</option>
+          <option value="fashion">Fashion</option>
+          <option value="kecantikan">Kecantikan</option>
+          <option value="makanan">Makanan</option>
+          <option value="olahraga">Olahraga</option>
+          <option value="buku">Buku</option>
+          <option value="gaming">Gaming</option>
+          <option value="rumah">Rumah</option>
+          <option value="promo">Promo</option>
         </select>
       </div>
-      <div><label class="text-xs font-semibold text-gray-600 mb-1.5 block">Deskripsi</label><textarea id="adDesc" rows="3" placeholder="Kondisi, spesifikasi, dll..." class="inp w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 resize-none"></textarea></div>
-      <div><label class="text-xs font-semibold text-gray-600 mb-1.5 block">No. HP / WA *</label><input id="adPhone" type="tel" placeholder="08xxxxxxxxxx" class="inp w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50"/></div>
-      <button id="submitAdBtn" onclick="submitAd()" class="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-3 rounded-2xl text-sm transition-all">
+
+      <!-- Deskripsi -->
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1.5 block">Deskripsi</label>
+        <textarea id="adDesc" rows="3" placeholder="Kondisi, spesifikasi, dll..." class="inp w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 resize-none"></textarea>
+      </div>
+
+      <!-- ✅ Checkbox Siap Taushil (pengganti No. HP/WA) -->
+      <div class="flex items-center gap-3 bg-pl/40 border border-primary/20 rounded-2xl px-4 py-3 cursor-pointer" onclick="document.getElementById('siapTaushil').click()">
+        <div class="relative flex-shrink-0">
+          <input type="checkbox" id="siapTaushil" class="sr-only" onchange="updateTaushilStyle(this)"/>
+          <div id="taushilBox" class="w-5 h-5 rounded-md border-2 border-gray-300 flex items-center justify-center transition-all bg-white">
+            <i id="taushilCheck" class="fa-solid fa-check text-white text-[10px] hidden"></i>
+          </div>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-bold text-gray-800">Siap Taushil</p>
+          <p class="text-[10px] text-gray-500 mt-0.5">Produk siap untuk diantar / dikirim</p>
+        </div>
+        <i class="fa-solid fa-truck-fast text-primary text-base opacity-70"></i>
+      </div>
+
+      <!-- Tombol Submit Hijau -->
+      <button id="submitAdBtn" onclick="submitAd()" class="w-full bg-gradient-to-r from-primary to-pd hover:from-pd hover:to-pdd text-white font-bold py-3 rounded-2xl text-sm transition-all shadow-[0_4px_14px_rgba(16,185,129,.35)]">
         <i class="fa-solid fa-rocket mr-1"></i> Pasang Iklan Sekarang
       </button>
+
     </div>
   </div>
 </div>
@@ -741,65 +822,93 @@ tailwind.config={theme:{extend:{colors:{
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     CHAT LIST MODAL
+     CHAT LIST — FULL SCREEN PAGE
 ═══════════════════════════════════════════════ -->
-<div id="chatListOverlay" style="display:none;opacity:0" class="fixed inset-0 bg-black/60 z-[60] ov flex items-center justify-center p-4" onclick="closeChatListOv(event)">
-  <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden min max-h-[85vh] flex flex-col" onclick="event.stopPropagation()">
-    <div class="bg-gradient-to-r from-primary to-pd px-5 py-4 flex items-center justify-between text-white flex-shrink-0">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-comment-dots"></i>
-        <h3 class="font-bold text-sm">Pesan Masuk</h3>
-      </div>
-      <button onclick="closeChatList()" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30">
-        <i class="fa-solid fa-xmark text-sm"></i>
+<div id="chatListOverlay" style="display:none" class="fixed inset-0 bg-white z-[60] flex flex-col">
+
+  <!-- ── Header ── -->
+  <div class="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm">
+    <div class="flex items-center px-4 py-3 gap-3 max-w-2xl mx-auto w-full">
+      <button onclick="closeChatList()" class="w-9 h-9 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors flex-shrink-0">
+        <i class="fa-solid fa-arrow-left text-gray-700 text-base"></i>
+      </button>
+      <h2 class="flex-1 text-center font-black text-gray-900 text-base tracking-tight">Chat</h2>
+      <button onclick="toggleChatSearch()" id="chatSearchBtn" class="w-9 h-9 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors flex-shrink-0">
+        <i class="fa-solid fa-magnifying-glass text-gray-500 text-sm"></i>
       </button>
     </div>
-    <div id="chatListContent" class="flex-1 overflow-y-auto px-4 py-3">
-      <div class="text-center py-10 text-gray-400">
-        <i class="fa-solid fa-comment-slash text-4xl mb-3"></i>
-        <p class="text-sm font-semibold">Belum ada percakapan</p>
-        <p class="text-xs mt-1">Mulai chat dengan penjual dari halaman produk</p>
+
+    <!-- ── Search Bar (hidden by default) ── -->
+    <div id="chatSearchWrap" style="display:none" class="px-4 pb-3 max-w-2xl mx-auto w-full">
+      <div class="relative">
+        <input id="chatSearchInput" type="text" placeholder="Cari nama atau pesan..."
+          class="inp w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-2xl bg-gray-50"
+          oninput="filterChatList(this.value)"/>
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
       </div>
+    </div>
+  </div>
+
+  <!-- ── Chat List Body ── -->
+  <div id="chatListContent" class="flex-1 overflow-y-auto max-w-2xl mx-auto w-full">
+    <div class="text-center py-16 text-gray-300 px-6">
+      <i class="fa-solid fa-comment-slash text-5xl mb-4"></i>
+      <p class="text-sm font-semibold text-gray-400">Belum ada percakapan</p>
+      <p class="text-xs text-gray-300 mt-1">Mulai chat dengan penjual dari halaman produk</p>
     </div>
   </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     CHAT ROOM MODAL
+     CHAT ROOM — FULL SCREEN PAGE
 ═══════════════════════════════════════════════ -->
-<div id="chatRoomOverlay" style="display:none;opacity:0" class="fixed inset-0 bg-black/60 z-[70] ov flex items-end md:items-center justify-center" onclick="closeChatRoomOv(event)">
-  <div class="bg-white rounded-t-3xl md:rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden min flex flex-col" style="height:85vh;max-height:600px" onclick="event.stopPropagation()">
-    <!-- Chat header -->
-    <div class="bg-gradient-to-r from-primary to-pd px-4 py-3.5 flex items-center gap-3 text-white flex-shrink-0">
-      <button onclick="closeChatRoom()" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 flex-shrink-0">
-        <i class="fa-solid fa-arrow-left text-sm"></i>
+<div id="chatRoomOverlay" style="display:none" class="fixed inset-0 bg-white z-[70] flex flex-col">
+
+  <!-- ── Chat Header ── -->
+  <div class="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm">
+    <div class="flex items-center gap-3 px-4 py-3 max-w-2xl mx-auto w-full">
+      <button onclick="closeChatRoom()" class="w-9 h-9 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors flex-shrink-0">
+        <i class="fa-solid fa-arrow-left text-gray-700 text-base"></i>
       </button>
-      <button onclick="viewSellerStore(window._S.activeChatOther)" class="flex items-center gap-2 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity">
-      <div id="chatRoomAvatarWrap" class="profile-photo-ring flex-shrink-0">
-        <div id="chatRoomAvatar" class="w-8 h-8 rounded-full bg-white/30 text-white text-xs font-black flex items-center justify-center overflow-hidden">?</div>
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-1">
-          <p id="chatRoomName" class="font-bold text-sm truncate"></p>
-          <span id="chatRoomGold" style="display:none" class="text-amber-300 text-sm"><i class="fa-solid fa-circle-check"></i></span>
+      <button onclick="viewSellerStore(window._S.activeChatOther)" class="flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-75 transition-opacity">
+        <div id="chatRoomAvatarWrap" class="profile-photo-ring flex-shrink-0">
+          <div id="chatRoomAvatar" class="w-9 h-9 rounded-full bg-primary text-white text-sm font-black flex items-center justify-center overflow-hidden">?</div>
         </div>
-        <p class="text-green-200 text-[10px] flex items-center gap-1"><i class="fa-solid fa-store text-[8px]"></i> Ketuk untuk lihat etalase</p>
-      </div>
-    </button>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1">
+            <p id="chatRoomName" class="font-black text-gray-900 text-sm truncate"></p>
+            <span id="chatRoomGold" style="display:none" class="text-amber-400 text-sm flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+          </div>
+          <p class="text-[10px] text-primary font-medium flex items-center gap-1">
+            <i class="fa-solid fa-store text-[8px]"></i> Ketuk untuk lihat etalase
+          </p>
+        </div>
+      </button>
     </div>
-    <!-- Product context -->
-    <div id="chatProductContext" class="bg-gray-50 px-4 py-2 border-b border-gray-100 flex items-center gap-2 flex-shrink-0">
-      <img id="chatProductImg" src="" class="w-8 h-8 rounded-lg object-cover flex-shrink-0"/>
+  </div>
+
+  <!-- ── Product Context Bar ── -->
+  <div id="chatProductContext" class="flex-shrink-0 bg-gray-50 border-b border-gray-100 max-w-2xl mx-auto w-full">
+    <div class="px-4 py-2 flex items-center gap-3">
+      <img id="chatProductImg" src="" class="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-gray-200"
+        onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22 fill=%22%23f3f4f6%22%3E%3Crect width=%2236%22 height=%2236%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23d1d5db%22 font-size=%2218%22%3E🛍%3C/text%3E%3C/svg%3E'"/>
       <div class="flex-1 min-w-0">
-        <p id="chatProductTitle" class="text-[10px] font-semibold text-gray-700 lc1"></p>
-        <p id="chatProductPrice" class="text-[10px] font-black text-primary"></p>
+        <p id="chatProductTitle" class="text-[11px] font-semibold text-gray-700 truncate"></p>
+        <p id="chatProductPrice" class="text-[11px] font-black text-primary"></p>
       </div>
+      <i class="fa-solid fa-tag text-gray-300 text-xs flex-shrink-0"></i>
     </div>
-    <!-- Messages -->
-    <div id="chatMessages" class="chat-panel-body flex-1 px-4 py-3 space-y-3 overflow-y-auto"></div>
-    <!-- Input -->
-    <div class="px-4 py-3 border-t border-gray-100 flex gap-2 items-center flex-shrink-0 bg-white">
-      <input id="chatInput" type="text" placeholder="Ketik pesan..." class="inp flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-full bg-gray-50" onkeydown="if(event.key==='Enter')sendChatMsg()"/>
+  </div>
+
+  <!-- ── Messages Area ── -->
+  <div id="chatMessages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 max-w-2xl mx-auto w-full" style="background:#f9fafb"></div>
+
+  <!-- ── Input Bar ── -->
+  <div class="flex-shrink-0 bg-white border-t border-gray-100 max-w-2xl mx-auto w-full">
+    <div class="px-4 py-3 flex gap-2 items-center">
+      <input id="chatInput" type="text" placeholder="Ketik pesan..."
+        class="inp flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-full bg-gray-50"
+        onkeydown="if(event.key==='Enter')sendChatMsg()"/>
       <button onclick="sendChatMsg()" class="w-10 h-10 bg-primary hover:bg-pd text-white rounded-full flex items-center justify-center flex-shrink-0 transition-colors shadow-sm">
         <i class="fa-solid fa-paper-plane text-sm"></i>
       </button>
@@ -976,10 +1085,15 @@ onAuthStateChanged(auth, async user => {
       }
     } catch(e){}
     window._S.user = profile;
+    renderUserState();
+    // Mulai listener langsung dari sini — db & user sudah pasti siap
+    if(window.startUnreadListener) startUnreadListener();
+    else setTimeout(()=>{ if(window.startUnreadListener) startUnreadListener(); }, 500);
   } else {
     window._S.user = null;
+    renderUserState();
+    if(window.stopUnreadListener) stopUnreadListener();
   }
-  renderUserState();
 });
 
 // ── Firebase actions ────────────────────────────────────────────
@@ -1027,7 +1141,7 @@ window._FB = {
   },
 
   // ── Post Ad ───────────────────────────────────────────────────
-  async postAd(title, price, cat, desc, phone, file) {
+  async postAd(title, price, cat, desc, siapTaushil, file) {
     const wrap=document.getElementById('uploadProgressWrap');
     const bar=document.getElementById('uploadBar');
     const pct=document.getElementById('uploadPct');
@@ -1042,7 +1156,7 @@ window._FB = {
       });
       bar.style.width='95%'; pct.textContent='95%'; txt.textContent='Menyimpan ke database...';
       await addDoc(collection(db,'ads'), {
-        title, price:Number(price), cat, desc, phone, imgUrl,
+        title, price:Number(price), cat, desc, siapTaushil:!!siapTaushil, imgUrl,
         likes:0, dislikes:0, likedBy:[], dislikedBy:[],
         sellerName:window._S.user.name, sellerUid:window._S.user.uid,
         sellerEmail:window._S.user.email, sellerPhoto:window._S.user.photoUrl||'',
@@ -1051,22 +1165,19 @@ window._FB = {
       bar.style.width='100%'; pct.textContent='100%'; txt.textContent='Berhasil!';
       setTimeout(()=>{wrap.style.display='none'; bar.style.width='0%';}, 1500);
       showToast('Iklan berhasil dipasang!', 'green');
-      closePostModal(); loadAds();
+      closePostModal();
+      // onSnapshot real-time akan otomatis menampilkan iklan baru — tidak perlu loadAds() manual
     } catch(e) { wrap.style.display='none'; throw e; }
     finally { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-rocket mr-1"></i> Pasang Iklan Sekarang'; }
   },
 
   async loadAds() {
-    // Public read — works whether user is logged in or not
-    try {
-      const q = query(collection(db,'ads'), orderBy('createdAt','desc'));
-      const snap = await getDocs(q);
-      window._S.fbAds = snap.docs.map(d=>({id:d.id,...d.data()}));
-    } catch(e) {
-      // Silently fail — static ads still shown
-      window._S.fbAds = [];
-    }
-    renderProducts(); renderMyAds();
+    // Panggil startAdsListener untuk real-time — ini adalah alias publik
+    startAdsListener();
+  },
+
+  stopAds() {
+    stopAdsListener();
   },
 
   async toggleLike(adId, type) {
@@ -1083,7 +1194,7 @@ window._FB = {
       const u=disliked?{dislikes:increment(-1),dislikedBy:arrayRemove(uid)}:{dislikes:increment(1),dislikedBy:arrayUnion(uid),...(liked?{likes:increment(-1),likedBy:arrayRemove(uid)}:{})};
       await updateDoc(adRef,u);
     }
-    _FB.loadAds();
+    // onSnapshot akan otomatis refresh — tidak perlu loadAds() manual
   },
 
   async postComment(adId, text) {
@@ -1115,17 +1226,20 @@ window._FB = {
   // ── Real-time Chat ────────────────────────────────────────────
   async sendChatMessage(chatId, text) {
     if(!window._S.user||!text.trim()) return;
-    await addDoc(collection(db,'chats',chatId,'messages'), {
-      text:text.trim(), senderId:window._S.user.uid,
-      senderName:window._S.user.name, createdAt:serverTimestamp()
-    });
-    // FIX 1: Increment unread for the OTHER person (receiver), not sender
+    const senderUid = window._S.user.uid;
     const receiverId = window._S.activeChatOther;
+    await addDoc(collection(db,'chats',chatId,'messages'), {
+      text:text.trim(), senderId:senderUid,
+      senderName:window._S.user.name, createdAt:serverTimestamp(),
+      isRead: false
+    });
     if(receiverId) {
+      // Update chat doc langsung via document ID — lebih cepat dari query
       await updateDoc(doc(db,'chats',chatId), {
         lastMessage: text.trim(),
         lastAt: serverTimestamp(),
-        [`unread_${receiverId}`]: increment(1)
+        [`unread_${receiverId}`]: increment(1),  // naikan counter penerima
+        [`unread_${senderUid}`]: 0               // reset counter pengirim (sudah baca)
       });
     }
   },
@@ -1142,16 +1256,34 @@ window._FB = {
     if(!window._S.user){showToast('Login dulu untuk chat','red');openAuth('login');return null;}
     if(window._S.user.uid===sellerId){showToast('Ini iklan kamu sendiri','red');return null;}
     const chatId=[window._S.user.uid, sellerId].sort().join('_')+'_'+adId;
+    // Gunakan chatId langsung sebagai document ID — lebih cepat & reliable
     const chatRef=doc(db,'chats',chatId);
     const snap=await getDocs(query(collection(db,'chats'),where('chatId','==',chatId)));
     if(snap.empty) {
-      await addDoc(collection(db,'chats'), {
-        chatId, adId, adTitle, adImg, adPrice,
-        participants:[window._S.user.uid, sellerId],
-        buyerId:window._S.user.uid, buyerName:window._S.user.name, buyerPhoto:window._S.user.photoUrl||'',
-        sellerId, sellerName, sellerPhoto,
-        lastMessage:'', lastAt:serverTimestamp()
-      });
+      // Coba get by doc ID dulu (lebih efisien)
+      const directSnap = await getDocs(query(collection(db,'chats'),where('chatId','==',chatId)));
+      if(directSnap.empty) {
+        const {setDoc} = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+        await setDoc(chatRef, {
+          chatId, adId, adTitle, adImg, adPrice,
+          participants:[window._S.user.uid, sellerId],
+          buyerId:window._S.user.uid, buyerName:window._S.user.name, buyerPhoto:window._S.user.photoUrl||'',
+          sellerId, sellerName, sellerPhoto,
+          lastMessage:'', lastAt:serverTimestamp(),
+          [`unread_${window._S.user.uid}`]: 0,
+          [`unread_${sellerId}`]: 0
+        });
+      }
+    } else {
+      // Pastikan field participants ada (untuk chat lama yang mungkin belum punya)
+      const chatData = snap.docs[0].data();
+      if(!chatData.participants) {
+        await updateDoc(doc(db,'chats',snap.docs[0].id), {
+          participants:[window._S.user.uid, sellerId],
+          [`unread_${window._S.user.uid}`]: chatData[`unread_${window._S.user.uid}`] || 0,
+          [`unread_${sellerId}`]: chatData[`unread_${sellerId}`] || 0
+        });
+      }
     }
     return chatId;
   },
@@ -1176,36 +1308,143 @@ window._FB = {
 window.loadAds     = () => _FB.loadAds();
 window.loadComments = id => _FB.loadComments(id);
 
-// ── CHAT BADGE: real-time unread listener ──────────────────────
+// ══════════════════════════════════════════════════════════════
+// 🔴 REAL-TIME ADS LISTENER — onSnapshot (bukan getDocs)
+//    Iklan dari semua user langsung muncul tanpa refresh.
+//    Tidak ada filter userId — semua iklan publik.
+// ══════════════════════════════════════════════════════════════
+let _adsUnsub = null;
+
+function startAdsListener() {
+  // Hentikan listener lama jika ada (hindari duplikasi)
+  if(_adsUnsub) { _adsUnsub(); _adsUnsub = null; }
+
+  // Tampilkan skeleton selama data pertama kali load
+  if(typeof showProductSkeletons === 'function') showProductSkeletons(8);
+
+  try {
+    // Query PUBLIK — tidak ada filter user, semua iklan tampil
+    // Diurutkan berdasarkan waktu terbaru
+    const q = query(
+      collection(db, 'ads'),
+      orderBy('createdAt', 'desc')
+    );
+
+    _adsUnsub = onSnapshot(q,
+      // ✅ Success: data masuk real-time
+      (snap) => {
+        window._S.fbAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if(typeof renderProducts === 'function') renderProducts();
+        if(typeof renderMyAds === 'function') renderMyAds();
+      },
+      // ❌ Error: Firestore rules atau jaringan bermasalah — fallback ke getDocs
+      async (err) => {
+        console.warn('[AdsListener] onSnapshot error, fallback getDocs:', err.message);
+        _adsUnsub = null;
+        try {
+          const snap = await getDocs(query(collection(db,'ads'), orderBy('createdAt','desc')));
+          window._S.fbAds = snap.docs.map(d=>({id:d.id,...d.data()}));
+        } catch(e2) {
+          window._S.fbAds = [];
+        }
+        if(typeof renderProducts === 'function') renderProducts();
+        if(typeof renderMyAds === 'function') renderMyAds();
+        // Retry listener setelah 30 detik
+        setTimeout(startAdsListener, 30000);
+      }
+    );
+  } catch(e) {
+    console.warn('[AdsListener] init error:', e.message);
+    window._S.fbAds = [];
+    if(typeof renderProducts === 'function') renderProducts();
+  }
+}
+
+function stopAdsListener() {
+  if(_adsUnsub) { _adsUnsub(); _adsUnsub = null; }
+}
+
+// Expose untuk dipanggil dari luar module
+window.startAdsListener = startAdsListener;
+window.stopAdsListener  = stopAdsListener;
 let _unreadUnsub = null;
+let _unreadRetry = null;
+
 window.startUnreadListener = function() {
-  if(!window._S.user || !db) return;
+  // Bersihkan retry sebelumnya
+  if(_unreadRetry) { clearTimeout(_unreadRetry); _unreadRetry=null; }
+  // Jika db belum siap, retry dalam 500ms
+  if(!window._S.user || !db) {
+    _unreadRetry = setTimeout(()=>{ if(window._S.user) startUnreadListener(); }, 500);
+    return;
+  }
+  // Bersihkan listener lama
   if(_unreadUnsub) { _unreadUnsub(); _unreadUnsub=null; }
-  // Listen to all chats where user is participant
+
+  const uid = window._S.user.uid;
+  let _prevTotal = 0;
+
+  // ── Listener utama: koleksi chats dengan field participants ───
   const q = query(
     collection(db,'chats'),
-    where('participants','array-contains',window._S.user.uid)
+    where('participants','array-contains', uid)
   );
-  let _prevTotal = 0;
-  _unreadUnsub = onSnapshot(q, snap => {
-    let total = 0;
-    snap.docs.forEach(d => {
-      const data = d.data();
-      const unread = data[`unread_${window._S.user.uid}`] || 0;
-      total += unread;
-    });
-    // FIX 1/4: Play sound if new unread arrived and chat list is closed
-    if(total > _prevTotal) {
-      const chatListOpen = document.getElementById('chatListOverlay')?.style.display !== 'none';
-      const chatRoomOpen = document.getElementById('chatRoomOverlay')?.style.display !== 'none';
-      if(!chatRoomOpen && window.playNotifSound) playNotifSound();
+
+  _unreadUnsub = onSnapshot(q,
+    // success callback
+    (snap) => {
+      let total = 0;
+      snap.docs.forEach(d => {
+        const data = d.data();
+        const unread = data[`unread_${uid}`];
+        // Pastikan hanya hitung angka positif yang valid
+        if(typeof unread === 'number' && unread > 0) total += unread;
+      });
+
+      // Bunyi notif hanya saat ada pesan baru & chat room tidak terbuka
+      if(total > _prevTotal) {
+        const chatRoomOpen = document.getElementById('chatRoomOverlay')?.style.display !== 'none';
+        if(!chatRoomOpen && window.playNotifSound) playNotifSound();
+      }
+      _prevTotal = total;
+      updateChatBadge(total);
+    },
+    // error callback — jika query gagal (misal rules Firestore), coba fallback
+    (err) => {
+      console.warn('unreadListener error:', err.message);
+      _startUnreadListenerFallback(uid);
     }
-    _prevTotal = total;
-    updateChatBadge(total);
-  });
+  );
 };
+
+// ── Fallback: poll setiap 15 detik jika onSnapshot gagal ──────
+function _startUnreadListenerFallback(uid) {
+  if(_unreadUnsub) { _unreadUnsub(); _unreadUnsub=null; }
+  let _stopped = false;
+  const poll = async () => {
+    if(_stopped || !window._S.user) return;
+    try {
+      const snap = await getDocs(query(
+        collection(db,'chats'),
+        where('participants','array-contains', uid)
+      ));
+      let total = 0;
+      snap.docs.forEach(d => {
+        const v = d.data()[`unread_${uid}`];
+        if(typeof v === 'number' && v > 0) total += v;
+      });
+      updateChatBadge(total);
+    } catch(e) {}
+    if(!_stopped) setTimeout(poll, 15000);
+  };
+  poll();
+  // Simpan fungsi stop ke _unreadUnsub agar bisa di-cleanup
+  _unreadUnsub = () => { _stopped = true; };
+}
+
 window.stopUnreadListener = function() {
-  if(_unreadUnsub){ _unreadUnsub(); _unreadUnsub=null; }
+  if(_unreadRetry) { clearTimeout(_unreadRetry); _unreadRetry=null; }
+  if(_unreadUnsub) { _unreadUnsub(); _unreadUnsub=null; }
   updateChatBadge(0);
 };
 
@@ -1226,17 +1465,25 @@ window.playNotifSound = function() {
   } catch(e) {}
 };
 
-// ── Mark chat as read when opened ─────────────────────────────
+// ── Mark chat as read — langsung pakai doc ID, tanpa query lambat ─
 window.markChatRead = async function(chatId) {
   if(!window._S.user || !db) return;
   try {
-    const snap = await getDocs(query(collection(db,'chats'), where('chatId','==',chatId)));
-    if(!snap.empty) {
-      await updateDoc(doc(db,'chats',snap.docs[0].id), {
-        [`unread_${window._S.user.uid}`]: 0
-      });
-    }
-  } catch(e) {}
+    // chatId = document ID langsung di koleksi chats
+    await updateDoc(doc(db,'chats',chatId), {
+      [`unread_${window._S.user.uid}`]: 0
+    });
+  } catch(e) {
+    // Fallback: cari via query jika doc ID tidak match (chat lama)
+    try {
+      const snap = await getDocs(query(collection(db,'chats'), where('chatId','==',chatId)));
+      if(!snap.empty) {
+        await updateDoc(doc(db,'chats',snap.docs[0].id), {
+          [`unread_${window._S.user.uid}`]: 0
+        });
+      }
+    } catch(e2) {}
+  }
 };
 </script>
 
@@ -1294,8 +1541,16 @@ window.updateChatBadge = function(count) {
     const el = document.getElementById(id);
     if(!el) return;
     if(count > 0) {
+      const wasHidden = el.style.display === 'none' || el.textContent !== String(n);
       el.textContent = n;
       el.style.display = 'flex';
+      // Animasi pop hanya saat nilai berubah atau badge baru muncul
+      if(wasHidden) {
+        el.classList.remove('bp');
+        void el.offsetWidth; // force reflow
+        el.classList.add('bp');
+        setTimeout(()=>el.classList.remove('bp'), 300);
+      }
     } else {
       el.style.display = 'none';
     }
@@ -1323,8 +1578,16 @@ window.renderUserState = () => {
       hAv.innerHTML = init;
     }
     document.getElementById('hName').textContent = u.name || u.email;
-    // Start real-time unread listener when user logs in
-    if(window.startUnreadListener) startUnreadListener();
+    // Start real-time unread listener saat user login
+    // Sebagai fallback jika onAuthStateChanged belum memanggilnya
+    if(window.startUnreadListener){
+      startUnreadListener();
+    } else {
+      (function tryStartListener(attempts){
+        if(window.startUnreadListener){ startUnreadListener(); }
+        else if(attempts < 20){ setTimeout(()=>tryStartListener(attempts+1), 200); }
+      })(0);
+    }
   } else {
     // Stop listener on logout
     if(window.stopUnreadListener) stopUnreadListener();
@@ -1351,6 +1614,7 @@ function renderProfilePage() {
   document.querySelector('#profileEmail span').textContent = u.email||'';
   document.querySelector('#profilePhone span').textContent = u.phone||'Belum diisi';
   renderMyAds();
+  renderProfileFollowCounts();
 }
 
 // ── Upload profile photo ───────────────────────────────────────
@@ -1361,26 +1625,69 @@ window.uploadProfilePhoto = async input => {
   catch(e) { showToast('Gagal upload foto: '+(e.message||e),'red'); }
 };
 
+window._S.salesTab = 'semua'; // track tab aktif
+
+window.switchSalesTab = (tab) => {
+  window._S.salesTab = tab;
+  document.querySelectorAll('.stab').forEach(b => {
+    const active = b.dataset.stab === tab;
+    b.className = 'stab flex-shrink-0 text-[11px] font-' + (active?'semibold':'medium') +
+      ' px-3 py-2.5 border-b-2 whitespace-nowrap transition-all ' +
+      (active ? 'text-primary border-primary' : 'text-gray-400 border-transparent hover:text-primary');
+  });
+  renderMyAds();
+};
+
 window.renderMyAds = () => {
-  const u=window._S.user;
-  const mine=u?window._S.fbAds.filter(a=>a.sellerUid===u.uid||a.sellerEmail===u.email):[];
-  const el=document.getElementById('myAdsList');
-  const cnt=document.getElementById('myAdCount');
-  if(cnt) cnt.textContent=mine.length;
+  const u = window._S.user;
+  const mine = u ? window._S.fbAds.filter(a => a.sellerUid === u.uid || a.sellerEmail === u.email) : [];
+  const el = document.getElementById('myAdsList');
+  const cnt = document.getElementById('myAdCount');
+  if(cnt) cnt.textContent = mine.length;
   if(!el) return;
-  if(!mine.length){el.innerHTML='<div class="text-center py-8 text-gray-300"><i class="fa-solid fa-box-open text-4xl mb-2"></i><p class="text-xs font-semibold text-gray-400">Belum ada iklan</p></div>';return;}
-  el.innerHTML=mine.map(ad=>`
-    <div class="flex items-center gap-3 bg-gray-50 rounded-2xl p-3 cursor-pointer hover:bg-gray-100 mb-2 transition-colors" onclick="openDetail('${ad.id}')">
-      <img src="${ad.imgUrl||'https://picsum.photos/80/80'}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0"/>
+
+  // Map status Firestore ke tab
+  const tabFilter = window._S.salesTab || 'semua';
+  const statusMap = {
+    'belum-bayar': ['belum-bayar','pending','unpaid'],
+    'dikirim':     ['dikirim','shipped','on-delivery'],
+    'selesai':     ['selesai','done','completed'],
+    'pembatalan':  ['pembatalan','cancelled','cancel']
+  };
+
+  const filtered = tabFilter === 'semua' ? mine : mine.filter(ad => {
+    const s = (ad.orderStatus || ad.status || 'aktif').toLowerCase();
+    return (statusMap[tabFilter] || [tabFilter]).includes(s);
+  });
+
+  if(!filtered.length){
+    el.innerHTML = `<div class="text-center py-8 text-gray-300">
+      <i class="fa-solid fa-box-open text-4xl mb-2"></i>
+      <p class="text-xs font-semibold text-gray-400">Belum ada pesanan di kategori ini</p>
+    </div>`;
+    return;
+  }
+
+  const statusLabel = { 'aktif':'Aktif','belum-bayar':'Belum Bayar','dikirim':'Dikirim','selesai':'Selesai','pembatalan':'Dibatalkan' };
+  const statusColor = { 'aktif':'emerald','belum-bayar':'amber','dikirim':'blue','selesai':'emerald','pembatalan':'red' };
+
+  el.innerHTML = filtered.map(ad => {
+    const rawStatus = (ad.orderStatus || ad.status || 'aktif').toLowerCase();
+    const label = statusLabel[rawStatus] || 'Aktif';
+    const color = statusColor[rawStatus] || 'emerald';
+    return `
+    <div class="flex items-center gap-3 bg-gray-50 rounded-2xl p-3 cursor-pointer hover:bg-gray-100 transition-colors relative" onclick="openDetail('${ad.id}')">
+      <img src="${ad.imgUrl||'https://picsum.photos/80/80'}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0"/>
       <div class="flex-1 min-w-0">
-        <p class="text-xs font-semibold text-gray-800 lc2">${ad.title}</p>
+        <p class="text-xs font-semibold text-gray-800 lc2 pr-14">${ad.title}</p>
         <p class="text-xs font-black text-primary mt-0.5">${fmtLE(ad.price)}</p>
-        <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-flex items-center gap-1 mt-0.5">
-          <i class="fa-solid fa-circle text-[6px]"></i> Aktif
-        </span>
+        <p class="text-[10px] text-gray-400 mt-0.5">${ad.cat ? ad.cat.charAt(0).toUpperCase()+ad.cat.slice(1) : 'Umum'}</p>
       </div>
-      <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
-    </div>`).join('');
+      <span class="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-${color}-50 text-${color}-600 border border-${color}-100 whitespace-nowrap">
+        <i class="fa-solid fa-circle text-[5px] mr-0.5"></i>${label}
+      </span>
+    </div>`;
+  }).join('');
 };
 
 // ── Products ───────────────────────────────────────────────────
@@ -1431,7 +1738,8 @@ window.renderProducts = () => {
     d.style=`animation:fadeUp .3s ease ${i*.03}s both;border-radius:16px`;
     d.innerHTML=`
       <div class="relative overflow-hidden bg-gray-50" style="aspect-ratio:1/1" onclick="openDetail('${p.id||''}')">
-        <img src="${img}" alt="${name}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-400" loading="lazy"/>
+        <img src="${img}" alt="${name}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-400" loading="lazy"
+          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22 fill=%22%23f3f4f6%22%3E%3Crect width=%22300%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23d1d5db%22 font-size=%2240%22%3E🛍%3C/text%3E%3C/svg%3E'"/>
         ${p.badge?`<span class="absolute top-2 left-2 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm ${badgeCls}">${p.badge}</span>`:''}
         ${p.disc>0?`<span class="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">${p.disc}%</span>`:''}
         <div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div>
@@ -1552,20 +1860,24 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
   document.getElementById('chatProductImg').src=adImg||'https://picsum.photos/80/80';
   document.getElementById('chatProductTitle').textContent=adTitle;
   document.getElementById('chatProductPrice').textContent=fmtLE(adPrice);
-  // Show modal
+  // Show full screen
   const ov=document.getElementById('chatRoomOverlay');
-  ov.style.display='flex'; requestAnimationFrame(()=>ov.style.opacity='1');
+  ov.style.display='flex';
   document.body.style.overflow='hidden';
   if(!window._FB){document.getElementById('chatMessages').innerHTML='<p class="text-xs text-gray-400 text-center py-4">Firebase belum dikonfigurasi</p>';return;}
   const chatId=await window._FB.initChat(adId,sellerId,sellerName,sellerPhoto,adTitle,adImg,adPrice);
   if(!chatId) return;
   window._S.activeChatId=chatId; window._S.activeChatOther=sellerId;
+
+  // ── Langsung reset unread badge saat chat dibuka ───────────────
+  if(window.markChatRead) markChatRead(chatId);
+
   if(window._S.chatUnsub) window._S.chatUnsub();
   let _prevMsgCount = 0;
   window._S.chatUnsub=window._FB.listenChatMessages(chatId, msgs=>{
     const el=document.getElementById('chatMessages'); if(!el) return;
     const isMe=m=>m.senderId===window._S.user?.uid;
-    // FIX 1/4: Play ting sound on new incoming message
+    // Bunyi notif hanya untuk pesan masuk baru
     if(msgs.length > _prevMsgCount && _prevMsgCount > 0) {
       const newest = msgs[msgs.length-1];
       if(!isMe(newest) && window.playNotifSound) playNotifSound();
@@ -1580,7 +1892,7 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
           </div>
         </div>`).join('');
     el.scrollTop=el.scrollHeight;
-    // FIX 1: Auto mark as read when chat window is open
+    // Mark as read setiap kali pesan baru masuk dan chat sedang terbuka
     if(window.markChatRead) markChatRead(chatId);
   });
 }
@@ -1596,50 +1908,149 @@ window.sendChatMsg=async()=>{
     el.appendChild(div); el.scrollTop=el.scrollHeight;
   }
 };
-window.closeChatRoomOv=e=>{if(e.target===document.getElementById('chatRoomOverlay'))closeChatRoom();};
+window.closeChatRoomOv=e=>{/* full screen — tidak dismiss by backdrop */};
 window.closeChatRoom=()=>{
-  const ov=document.getElementById('chatRoomOverlay');ov.style.opacity='0';setTimeout(()=>ov.style.display='none',300);
+  document.getElementById('chatRoomOverlay').style.display='none';
   if(window._S.chatUnsub){window._S.chatUnsub();window._S.chatUnsub=null;}
   document.body.style.overflow='';
 };
 window.openChatList=async()=>{
   if(!window._S.user){showToast('Login dulu untuk melihat pesan','red');openAuth('login');return;}
   const ov=document.getElementById('chatListOverlay');
-  ov.style.display='flex'; requestAnimationFrame(()=>ov.style.opacity='1');
+  ov.style.display='flex';
   document.body.style.overflow='hidden';
+  // Reset search
+  const si=document.getElementById('chatSearchInput'); if(si) si.value='';
+  const sw=document.getElementById('chatSearchWrap'); if(sw) sw.style.display='none';
   const content=document.getElementById('chatListContent');
-  content.innerHTML='<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-primary text-2xl"></i></div>';
+  content.innerHTML='<div class="flex flex-col gap-0 pt-2">'
+    +Array(4).fill('').map(()=>`<div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
+      <div class="skel w-12 h-12 rounded-full flex-shrink-0"></div>
+      <div class="flex-1 space-y-2"><div class="skel h-3 w-3/4 rounded-full"></div><div class="skel h-3 w-1/2 rounded-full"></div></div>
+      <div class="skel h-2 w-8 rounded-full self-start mt-1"></div></div>`).join('')
+    +'</div>';
+
   if(window._FB){
     const chats=await window._FB.loadChatList();
-    if(!chats.length){content.innerHTML='<div class="text-center py-10 text-gray-300"><i class="fa-solid fa-comment-slash text-4xl mb-3"></i><p class="text-sm font-semibold text-gray-400">Belum ada percakapan</p></div>';return;}
-    content.innerHTML=chats.map(ch=>{
+    // Simpan di state untuk filter pencarian
+    window._S._chatList = chats;
+    renderChatListUI(chats);
+  } else {
+    content.innerHTML='<div class="text-center py-16 px-6"><i class="fa-solid fa-comment-slash text-5xl text-gray-200 mb-4"></i><p class="text-sm font-semibold text-gray-400">Belum ada percakapan</p></div>';
+  }
+};
+
+// ── Render baris chat list ────────────────────────────────────
+function renderChatListUI(chats, query='') {
+  const content=document.getElementById('chatListContent');
+  if(!chats||!chats.length){
+    content.innerHTML='<div class="text-center py-16 px-6"><i class="fa-solid fa-comment-slash text-5xl text-gray-200 mb-4"></i><p class="text-sm font-semibold text-gray-400">Belum ada percakapan</p><p class="text-xs text-gray-300 mt-1">Mulai chat dengan penjual dari produk</p></div>';
+    return;
+  }
+
+  // Filter pencarian
+  const q = query.toLowerCase().trim();
+  const filtered = q ? chats.filter(ch=>{
+    const isMe=ch.buyerId===window._S.user.uid;
+    const other=(isMe?ch.sellerName:ch.buyerName)||'';
+    const msg=ch.lastMessage||'';
+    return other.toLowerCase().includes(q)||msg.toLowerCase().includes(q);
+  }) : chats;
+
+  if(!filtered.length){
+    content.innerHTML='<div class="text-center py-12 px-6"><i class="fa-solid fa-search text-4xl text-gray-200 mb-3"></i><p class="text-sm font-semibold text-gray-400">Tidak ditemukan</p></div>';
+    return;
+  }
+
+  // Urutkan berdasarkan pesan terbaru
+  filtered.sort((a,b)=>(b.lastAt?.seconds||0)-(a.lastAt?.seconds||0));
+
+  content.innerHTML = '<div class="divide-y divide-gray-50">'
+    + filtered.map(ch=>{
       const isMe=ch.buyerId===window._S.user.uid;
-      const other=isMe?ch.sellerName:ch.buyerName;
+      const other=(isMe?ch.sellerName:ch.buyerName)||'Pengguna';
       const otherPhoto=isMe?ch.sellerPhoto:ch.buyerPhoto;
       const otherId=isMe?ch.sellerId:ch.buyerId;
       const unread=ch[`unread_${window._S.user.uid}`]||0;
-      return `<div class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-2xl transition-colors">
-        <button onclick="closeChatList();viewSellerStore('${otherId}')" class="flex-shrink-0 hover:opacity-80 transition-opacity" title="Lihat Etalase">
-          <div class="profile-photo-ring">${avatarHtml(otherPhoto,other,'w-10 h-10')}</div>
-        </button>
-        <div class="flex-1 min-w-0 cursor-pointer" onclick="closeChatList();openChatRoom('${ch.adId}','${otherId}','${other}','${otherPhoto}','${ch.adTitle||''}','${ch.adImg||''}',${ch.adPrice||0})">
-          <div class="flex items-center gap-1">
-            <p class="text-xs font-bold text-gray-800">${other}</p>
-          </div>
-          <p class="text-[11px] text-gray-500 lc1">${ch.lastMessage||'Mulai percakapan'}</p>
-          <p class="text-[10px] text-primary mt-0.5 flex items-center gap-1"><i class="fa-solid fa-store text-[8px]"></i> Ketuk foto untuk lihat etalase</p>
-        </div>
-        ${unread>0?`<span class="bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0">${unread}</span>`:'<i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>'}
-      </div>`;
-    }).join('');
-  } else {
-    content.innerHTML='<div class="text-center py-10 text-gray-300"><i class="fa-solid fa-comment-slash text-4xl mb-3"></i><p class="text-sm font-semibold text-gray-400">Belum ada percakapan</p></div>';
-  }
-};
-window.closeChatListOv=e=>{if(e.target===document.getElementById('chatListOverlay'))closeChatList();};
-window.closeChatList=()=>{const ov=document.getElementById('chatListOverlay');ov.style.opacity='0';setTimeout(()=>ov.style.display='none',300);document.body.style.overflow='';};
+      const chatDocId=ch.id||ch.chatId||'';
 
-// ── FIX 2: Etalase / Seller Store ────────────────────────────
+      // Format waktu
+      let timeStr='';
+      if(ch.lastAt?.seconds){
+        const d=new Date(ch.lastAt.seconds*1000);
+        const now=new Date();
+        const isToday=d.toDateString()===now.toDateString();
+        const isYest=new Date(now-86400000).toDateString()===d.toDateString();
+        if(isToday) timeStr=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+        else if(isYest) timeStr='Kemarin';
+        else timeStr=d.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit'});
+      }
+
+      // Preview pesan
+      const preview=ch.lastMessage||'Mulai percakapan';
+      const initials=(other||'?').charAt(0).toUpperCase();
+
+      return `<div class="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer relative"
+        onclick="closeChatList();openChatRoomFromList('${chatDocId}','${(ch.adId||'').replace(/'/g,"\\'")}','${(otherId||'').replace(/'/g,"\\'")}','${other.replace(/'/g,"\\'")}','${(otherPhoto||'').replace(/'/g,"\\'")}','${(ch.adTitle||'').replace(/'/g,"\\'")}','${(ch.adImg||'').replace(/'/g,"\\'")}',${ch.adPrice||0})">
+
+        <!-- Avatar -->
+        <button onclick="event.stopPropagation();closeChatList();viewSellerStore('${otherId}')"
+          class="flex-shrink-0 relative hover:opacity-80 transition-opacity" title="Lihat Etalase">
+          <div class="profile-photo-ring">
+            ${otherPhoto
+              ? `<img src="${otherPhoto}" class="w-12 h-12 rounded-full object-cover" onerror="this.parentElement.innerHTML='<div class=\\"w-12 h-12 rounded-full bg-primary text-white font-black text-base flex items-center justify-center\\">${initials}</div>'">`
+              : `<div class="w-12 h-12 rounded-full bg-primary text-white font-black text-base flex items-center justify-center">${initials}</div>`
+            }
+          </div>
+          ${unread>0?`<span class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-white"></span>`:''}
+        </button>
+
+        <!-- Info -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2 mb-0.5">
+            <p class="text-sm font-${unread>0?'black':'semibold'} text-gray-900 truncate">${other}</p>
+            <span class="text-[10px] text-gray-400 flex-shrink-0 font-medium">${timeStr}</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs text-gray-${unread>0?'700 font-semibold':'400'} truncate">${preview}</p>
+            ${unread>0
+              ? `<span class="bg-primary text-white text-[9px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0 px-1">${unread>99?'99+':unread}</span>`
+              : '<i class="fa-solid fa-chevron-right text-gray-200 text-[10px] flex-shrink-0"></i>'
+            }
+          </div>
+        </div>
+      </div>`;
+    }).join('')
+  + '</div>';
+}
+
+// ── Filter pencarian chat ─────────────────────────────────────
+window.filterChatList = function(q) {
+  const chats = window._S._chatList||[];
+  renderChatListUI(chats, q);
+};
+
+// ── Toggle search bar ─────────────────────────────────────────
+window.toggleChatSearch = function() {
+  const sw=document.getElementById('chatSearchWrap');
+  const si=document.getElementById('chatSearchInput');
+  const visible=sw.style.display!=='none';
+  sw.style.display=visible?'none':'block';
+  if(!visible && si){ si.focus(); }
+  else if(visible && si){ si.value=''; filterChatList(''); }
+};
+window.closeChatListOv=e=>{/* full screen — tidak dismiss by backdrop */};
+window.closeChatList=()=>{
+  document.getElementById('chatListOverlay').style.display='none';
+  document.body.style.overflow='';
+};
+
+// ── Buka chat dari list — mark as read seketika ───────────────
+window.openChatRoomFromList = async function(chatDocId, adId, otherId, otherName, otherPhoto, adTitle, adImg, adPrice) {
+  // Reset badge SEBELUM buka chat agar angka langsung hilang
+  if(chatDocId && window.markChatRead) markChatRead(chatDocId);
+  await openChatRoom(adId, otherId, otherName, otherPhoto, adTitle, adImg, Number(adPrice));
+};
 window.viewSellerStore = async function(sellerUid) {
   if(!sellerUid || sellerUid === 'static') {
     showToast('Etalase tidak tersedia untuk penjual ini','red');
@@ -1691,6 +2102,108 @@ window.viewSellerStore = async function(sellerUid) {
     }).join('');
   }
   showPage('etalase');
+  // Load followers count
+  renderEtalaseFollow(sellerUid);
+};
+
+// ── Follow System ─────────────────────────────────────────────
+window._S.etalaseSellerUid = null;
+
+window.renderEtalaseFollow = async function(sellerUid) {
+  window._S.etalaseSellerUid = sellerUid;
+  const btn = document.getElementById('followBtn');
+  const followerEl = document.getElementById('etalaseFollowers');
+  if(!btn) return;
+  try {
+    const {getFirestore, doc, getDoc, collection, getDocs, query, where} =
+      await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const db2 = getFirestore();
+    // Count followers
+    const snap = await getDocs(query(collection(db2,'follows'), where('sellerUid','==',sellerUid)));
+    const count = snap.size;
+    if(followerEl) followerEl.textContent = count;
+    // Check if current user follows
+    const u = window._S.user;
+    if(!u) { btn.innerHTML='<i class="fa-solid fa-plus text-[10px]"></i> Follow'; return; }
+    const already = snap.docs.some(d => d.data().followerUid === u.uid);
+    btn.innerHTML = already
+      ? '<i class="fa-solid fa-check text-[10px]"></i> Mengikuti'
+      : '<i class="fa-solid fa-plus text-[10px]"></i> Follow';
+    btn.className = already
+      ? 'flex items-center gap-1.5 bg-gray-100 text-gray-600 border border-gray-200 text-xs font-bold px-4 py-2 rounded-xl transition-all'
+      : 'flex items-center gap-1.5 bg-primary hover:bg-pd text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-[0_2px_10px_rgba(16,185,129,.3)]';
+  } catch(e){}
+};
+
+window.toggleFollow = async function() {
+  const u = window._S.user;
+  const sellerUid = window._S.etalaseSellerUid;
+  if(!u){ showToast('Login dulu untuk follow','red'); openAuth('login'); return; }
+  if(!sellerUid || sellerUid === u.uid){ showToast('Tidak bisa follow akun sendiri','red'); return; }
+  try {
+    const {getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, serverTimestamp} =
+      await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const db2 = getFirestore();
+    const snap = await getDocs(query(collection(db2,'follows'), where('sellerUid','==',sellerUid), where('followerUid','==',u.uid)));
+    if(snap.empty){
+      // Follow
+      await addDoc(collection(db2,'follows'), {
+        sellerUid, followerUid: u.uid, followerName: u.name, createdAt: serverTimestamp()
+      });
+      // Kirim notifikasi ke penjual
+      await addDoc(collection(db2,'notifications'), {
+        toUid: sellerUid, type:'follow',
+        message: u.name + ' mulai mengikuti toko kamu!',
+        followerUid: u.uid, followerName: u.name,
+        read: false, createdAt: serverTimestamp()
+      });
+      showToast('Berhasil follow toko ini!', 'green');
+    } else {
+      // Unfollow
+      await deleteDoc(doc(db2,'follows',snap.docs[0].id));
+      showToast('Berhenti mengikuti toko', 'green');
+    }
+    renderEtalaseFollow(sellerUid);
+    renderProfileFollowCounts();
+  } catch(e){ showToast('Gagal: '+(e.message||e),'red'); }
+};
+
+window.renderProfileFollowCounts = async function() {
+  const u = window._S.user; if(!u) return;
+  try {
+    const {getFirestore, collection, getDocs, query, where} =
+      await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const db2 = getFirestore();
+    const [followersSnap, followingSnap] = await Promise.all([
+      getDocs(query(collection(db2,'follows'), where('sellerUid','==',u.uid))),
+      getDocs(query(collection(db2,'follows'), where('followerUid','==',u.uid)))
+    ]);
+    const fcEl = document.getElementById('myFollowersCount');
+    const fgEl = document.getElementById('myFollowingCount');
+    if(fcEl) fcEl.textContent = followersSnap.size;
+    if(fgEl) fgEl.textContent = followingSnap.size;
+    // Cek notifikasi follow baru
+    checkFollowNotifications(u.uid);
+  } catch(e){}
+};
+
+window.checkFollowNotifications = async function(uid) {
+  try {
+    const {getFirestore, collection, getDocs, query, where} =
+      await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const db2 = getFirestore();
+    const snap = await getDocs(query(collection(db2,'notifications'), where('toUid','==',uid), where('read','==',false)));
+    if(snap.size > 0){
+      // Tampilkan notifikasi pertama yang belum dibaca
+      const notif = snap.docs[0].data();
+      showToast('🔔 '+notif.message, 'green');
+      // Tandai sudah dibaca
+      for(const d of snap.docs){
+        const {doc, updateDoc} = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+        await updateDoc(doc(db2,'notifications',d.id), {read:true});
+      }
+    }
+  } catch(e){}
 };
 
 // ── Cart ───────────────────────────────────────────────────────
@@ -1776,8 +2289,28 @@ window.doLogout=async()=>{await window._FB.logout();};
 // ── Post Ad ────────────────────────────────────────────────────
 window.guardedPost=()=>{if(!window._S.user){showToast('Login dulu untuk pasang iklan','red');openAuth('login');return;}openPostModal();};
 window.openPostModal=()=>{const ov=document.getElementById('postOverlay');ov.style.display='flex';requestAnimationFrame(()=>ov.style.opacity='1');document.body.style.overflow='hidden';};
-window.closePostModal=()=>{const ov=document.getElementById('postOverlay');ov.style.opacity='0';setTimeout(()=>ov.style.display='none',300);document.body.style.overflow='';};
+window.closePostModal=()=>{
+  const ov=document.getElementById('postOverlay');ov.style.opacity='0';setTimeout(()=>ov.style.display='none',300);document.body.style.overflow='';
+  // Reset checkbox Siap Taushil
+  const cb=document.getElementById('siapTaushil'); if(cb){cb.checked=false;updateTaushilStyle(cb);}
+};
 window.closePostOv=e=>{if(e.target===document.getElementById('postOverlay'))closePostModal();};
+
+// Animasi custom checkbox Siap Taushil
+window.updateTaushilStyle = (cb) => {
+  const box = document.getElementById('taushilBox');
+  const chk = document.getElementById('taushilCheck');
+  const wrap = cb.closest ? cb.closest('[onclick]') : null;
+  if(cb.checked){
+    box.className='w-5 h-5 rounded-md border-2 border-primary flex items-center justify-center transition-all bg-primary shadow-[0_0_0_3px_rgba(16,185,129,.15)]';
+    chk.classList.remove('hidden');
+    if(wrap) wrap.style.background='rgba(16,185,129,0.08)';
+  } else {
+    box.className='w-5 h-5 rounded-md border-2 border-gray-300 flex items-center justify-center transition-all bg-white';
+    chk.classList.add('hidden');
+    if(wrap) wrap.style.background='';
+  }
+};
 window.previewPhoto=input=>{
   const f=input.files[0];if(!f)return;
   const r=new FileReader();r.onload=e=>{document.getElementById('photoPreview').innerHTML=`<img src="${e.target.result}" class="w-full h-full object-cover rounded-2xl"/>`;};
@@ -1788,11 +2321,11 @@ window.submitAd=async()=>{
   const price=document.getElementById('adPrice').value;
   const cat=document.getElementById('adCat').value;
   const desc=document.getElementById('adDesc').value.trim();
-  const phone=document.getElementById('adPhone').value.trim();
+  const siapTaushil=document.getElementById('siapTaushil').checked;
   const file=document.getElementById('photoInput').files[0];
-  if(!title||!price||!cat||!phone){showToast('Lengkapi kolom wajib','red');return;}
+  if(!title||!price||!cat){showToast('Lengkapi kolom wajib','red');return;}
   if(!file){showToast('Pilih foto produk dari galeri','red');return;}
-  try{await window._FB.postAd(title,price,cat,desc,phone,file);}
+  try{await window._FB.postAd(title,price,cat,desc,siapTaushil,file);}
   catch(e){showToast('Gagal: '+(e.message||e),'red');}
 };
 
@@ -1891,10 +2424,21 @@ async function loadBillboardImages(){
 
 // ── Init ───────────────────────────────────────────────────────
 initCarousel();
-showProductSkeletons(8);  // show skeleton while ads load
+showProductSkeletons(8);  // tampilkan skeleton sementara
 updateCart();
 renderUserState();
-if(window.loadAds) loadAds();  // loadAds calls renderProducts when done
+
+// Mulai real-time ads listener — poll sampai Firebase module siap
+(function tryStartAds(attempts) {
+  if(window.startAdsListener) {
+    startAdsListener();
+  } else if(attempts < 25) {
+    setTimeout(()=>tryStartAds(attempts+1), 200);
+  } else {
+    // Terakhir: render static ads saja jika Firebase tidak tersedia
+    renderProducts();
+  }
+})(0);
 </script>
 </body>
 </html>
