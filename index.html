@@ -108,6 +108,21 @@ tailwind.config={theme:{extend:{colors:{
 #chatMessages::-webkit-scrollbar{width:3px}
 #chatMessages::-webkit-scrollbar-thumb{background:var(--primary);border-radius:4px}
 
+/* ONLINE INDICATOR */
+.online-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;border:1.5px solid #fff;display:inline-block;flex-shrink:0;box-shadow:0 0 0 2px rgba(34,197,94,.25)}
+@keyframes onlinePulse{0%,100%{box-shadow:0 0 0 2px rgba(34,197,94,.25)}50%{box-shadow:0 0 0 4px rgba(34,197,94,.1)}}
+.online-dot{animation:onlinePulse 2s ease-in-out infinite}
+
+/* TYPING INDICATOR */
+@keyframes typingBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.typing-dot{width:6px;height:6px;background:#9ca3af;border-radius:50%;display:inline-block;margin:0 1.5px;animation:typingBounce 1.2s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+.typing-wrap{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#F3F4F6;border-radius:16px;width:fit-content}
+
+/* MSG TIMESTAMP */
+.msg-time{font-size:9px;opacity:.55;letter-spacing:.2px;margin-top:3px;display:block;line-height:1;white-space:nowrap}
+
 /* SHIMMER SKELETON */
 .skel{background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
 
@@ -121,6 +136,265 @@ tailwind.config={theme:{extend:{colors:{
 /* QTY BTN */
 .qb:hover{background:var(--primary);color:#fff}
 .qb{transition:all .15s}
+
+/* NOTIF PANEL */
+#notifPanel{animation:mIn .22s cubic-bezier(.34,1.2,.64,1)}
+.notif-item{transition:background .15s}
+.notif-item.unread{background:#f0fdf4}
+.notif-item:hover{background:#f9fafb}
+
+/* ═══════════════════════════════════════════
+   PREMIUM PROFILE & ETALASE — LUXURY REDESIGN
+═══════════════════════════════════════════ */
+
+/* Cover Photo */
+.cover-photo-wrap{
+  position:relative;
+  height:180px;
+  overflow:hidden;
+  background:linear-gradient(135deg,#022c22 0%,#064E3B 40%,#10B981 100%);
+}
+.cover-photo-wrap img{
+  width:100%;height:100%;object-fit:cover;
+  transition:transform .6s ease;
+}
+.cover-photo-wrap:hover img{transform:scale(1.04)}
+.cover-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,0) 40%,rgba(0,0,0,.45) 100%);
+}
+
+/* Glassmorphism sticky header on scroll */
+.store-sticky-header{
+  position:sticky;top:0;z-index:30;
+  background:rgba(255,255,255,0);
+  backdrop-filter:blur(0px);
+  border-bottom:1px solid transparent;
+  transition:background .35s ease,backdrop-filter .35s ease,border-color .35s ease,box-shadow .35s ease;
+  pointer-events:none;
+}
+.store-sticky-header.scrolled{
+  background:rgba(255,255,255,.82);
+  backdrop-filter:blur(18px);
+  border-bottom-color:rgba(16,185,129,.12);
+  box-shadow:0 2px 20px rgba(0,0,0,.06);
+  pointer-events:auto;
+}
+
+/* Profile card premium */
+.profile-card-premium{
+  background:#fff;
+  border-radius:28px;
+  overflow:hidden;
+  box-shadow:0 4px 32px rgba(0,0,0,.07),0 1px 4px rgba(0,0,0,.04);
+  border:1px solid rgba(16,185,129,.08);
+  margin-bottom:16px;
+  position:relative;
+}
+
+/* Avatar positioning — floats over cover */
+.avatar-over-cover{
+  position:absolute;
+  bottom:-52px;
+  left:24px;
+}
+.avatar-ring-premium{
+  background:linear-gradient(135deg,#10B981,#059669,#F59E0B,#10B981);
+  background-size:300% 300%;
+  animation:ringShimmer 3s ease infinite;
+  padding:3px;
+  border-radius:50%;
+  display:inline-block;
+  box-shadow:0 4px 20px rgba(16,185,129,.35);
+}
+@keyframes ringShimmer{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+/* Upload cover button */
+.cover-upload-btn{
+  position:absolute;bottom:12px;right:12px;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.18);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.3);
+  color:#fff;
+  font-size:11px;font-weight:700;
+  padding:7px 14px;border-radius:20px;
+  cursor:pointer;transition:all .2s;
+  letter-spacing:.3px;
+}
+.cover-upload-btn:hover{background:rgba(255,255,255,.3)}
+
+/* Stats strip — light numbers */
+.stat-strip{
+  display:flex;align-items:center;
+  gap:0;
+  padding:16px 24px;
+  border-top:1px solid #f1f5f9;
+  background:linear-gradient(to right,#fafffe,#f0fdf8);
+}
+.stat-item{
+  flex:1;text-align:center;position:relative;
+}
+.stat-item+.stat-item::before{
+  content:'';position:absolute;left:0;top:20%;height:60%;
+  width:1px;background:rgba(16,185,129,.15);
+}
+.stat-num{
+  font-size:20px;
+  font-weight:300;
+  letter-spacing:-0.5px;
+  line-height:1;
+  color:#111827;
+}
+.stat-num.colored{color:#10B981}
+.stat-label{
+  font-size:9px;font-weight:600;letter-spacing:.6px;
+  text-transform:uppercase;
+  color:#9ca3af;margin-top:3px;
+}
+.stat-num .star-accent{color:#F59E0B;font-size:14px;vertical-align:middle}
+
+/* Action buttons — Follow & Chat side by side */
+.action-btn-group{
+  display:flex;gap:10px;margin-top:14px;
+}
+.btn-follow-prem{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+  background:linear-gradient(135deg,#10B981,#059669);
+  color:#fff;font-size:12px;font-weight:700;
+  padding:10px 16px;border-radius:14px;
+  transition:all .22s;letter-spacing:.2px;
+  box-shadow:0 3px 14px rgba(16,185,129,.35);
+  border:none;cursor:pointer;
+}
+.btn-follow-prem:hover{background:linear-gradient(135deg,#059669,#047857);transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,.4)}
+.btn-follow-prem.following{
+  background:linear-gradient(135deg,#f3f4f6,#e5e7eb);
+  color:#374151;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+
+.btn-chat-prem{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  background:#fff;
+  color:#10B981;font-size:12px;font-weight:700;
+  padding:10px 20px;border-radius:14px;
+  transition:all .22s;letter-spacing:.2px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+  border:1.5px solid #10B981;cursor:pointer;
+}
+.btn-chat-prem:hover{background:#f0fdf4;transform:translateY(-1px);box-shadow:0 4px 16px rgba(16,185,129,.2)}
+
+/* Etalase cover — taller, luxury */
+.etalase-cover{
+  height:200px;
+  position:relative;overflow:hidden;
+}
+.etalase-cover-bg{
+  width:100%;height:100%;object-fit:cover;
+  background:linear-gradient(135deg,#022c22 0%,#064E3B 50%,#065F46 75%,#10B981 100%);
+}
+
+/* Back button glassmorphism */
+.back-btn-glass{
+  position:absolute;top:16px;left:16px;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(0,0,0,.25);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;cursor:pointer;transition:all .2s;z-index:5;
+}
+.back-btn-glass:hover{background:rgba(0,0,0,.4)}
+
+/* Info block below cover */
+.store-info-block{
+  padding:60px 24px 20px;
+  position:relative;
+}
+
+/* Etalase avatar */
+.etalase-avatar-wrap{
+  position:absolute;
+  top:-44px;left:20px;
+}
+
+/* Cover photo upload for etalase */
+.etalase-cover-upload{
+  position:absolute;bottom:12px;right:12px;
+}
+
+/* Store verified row */
+.store-name-row{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;
+}
+.store-name-text{
+  font-size:20px;font-weight:800;color:#111827;letter-spacing:-.4px;line-height:1.1;
+}
+.store-subtitle{
+  font-size:11px;color:#6b7280;display:flex;align-items:center;gap:5px;margin-bottom:12px;
+}
+
+/* Profile page — cover photo */
+.profile-cover-wrap{
+  position:relative;
+  height:160px;overflow:hidden;
+  background:linear-gradient(135deg,#022c22 0%,#064E3B 40%,#10B981 100%);
+  border-radius:0;
+}
+.profile-cover-img{width:100%;height:100%;object-fit:cover}
+.profile-cover-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,0) 30%,rgba(0,0,0,.5) 100%);
+}
+.profile-avatar-wrap{
+  position:absolute;
+  bottom:-40px;left:20px;
+}
+
+/* Profile info section */
+.profile-info-section{
+  padding:48px 20px 20px;
+}
+.profile-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap}
+.profile-name-text{font-size:18px;font-weight:800;color:#111827;letter-spacing:-.3px}
+
+/* Profile stat strip */
+.profile-stat-strip{
+  display:flex;
+  gap:0;
+  padding:14px 0;
+  border-top:1px solid #f1f5f9;
+  margin-top:16px;
+}
+.profile-stat-item{flex:1;text-align:center;position:relative}
+.profile-stat-item+.profile-stat-item::before{
+  content:'';position:absolute;left:0;top:15%;height:70%;
+  width:1px;background:#f1f5f9;
+}
+.profile-stat-num{
+  font-size:18px;font-weight:300;letter-spacing:-.4px;
+  color:#111827;line-height:1;
+}
+.profile-stat-num.clr{color:#10B981}
+.profile-stat-lbl{font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#9ca3af;margin-top:3px}
+
+/* Profile edit btn */
+.profile-edit-strip{
+  display:flex;gap:8px;margin-top:14px;
+}
+
+@keyframes coverFadeIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:scale(1)}}
+.cover-img-loaded{animation:coverFadeIn .5s ease forwards}
+
+/* Responsive cover heights */
+@media(max-width:480px){
+  .cover-photo-wrap,.etalase-cover{height:150px}
+  .profile-cover-wrap{height:130px}
+}
 </style>
 </head>
 <body class="bg-gray-50 pb-16 md:pb-0 min-h-screen">
@@ -165,6 +439,38 @@ tailwind.config={theme:{extend:{colors:{
         <i class="fa-solid fa-image text-xs"></i>
         Billboard
       </button>
+      <!-- Bell Notification Button -->
+      <div class="relative">
+        <button onclick="toggleNotifPanel()" id="bellBtn" class="relative p-2 text-gray-500 hover:text-primary transition-colors rounded-xl hover:bg-gray-50">
+          <i class="fa-solid fa-bell text-lg"></i>
+          <span id="notifBadge" style="display:none" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[8px] font-black min-w-[16px] h-[16px] rounded-full flex items-center justify-center">0</span>
+        </button>
+        <!-- Notification Dropdown Panel -->
+        <div id="notifPanel" style="display:none" class="absolute right-0 top-full mt-2 w-80 max-w-[92vw] bg-white rounded-2xl shadow-2xl border border-gray-100 z-[200] overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-primary to-pd">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-bell text-white text-sm"></i>
+              <span class="text-white font-black text-sm">Notifikasi</span>
+            </div>
+            <button onclick="markAllNotifsRead()" class="text-white/80 hover:text-white text-[10px] font-semibold">Tandai semua dibaca</button>
+          </div>
+          <!-- Broadcast Form (Developer Only) -->
+          <div id="broadcastForm" style="display:none" class="px-4 py-3 bg-amber-50 border-b border-amber-100">
+            <p class="text-[10px] font-black text-amber-700 mb-2 flex items-center gap-1"><i class="fa-solid fa-crown text-xs"></i> Broadcast ke Semua User</p>
+            <textarea id="broadcastMsg" rows="2" placeholder="Tulis pesan broadcast..." class="inp w-full px-3 py-2 text-xs border border-amber-200 rounded-xl bg-white resize-none mb-2"></textarea>
+            <button onclick="sendBroadcast()" class="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-2 rounded-xl text-xs transition-all">
+              <i class="fa-solid fa-bullhorn mr-1"></i> Kirim Broadcast
+            </button>
+          </div>
+          <!-- Notif List -->
+          <div id="notifList" class="max-h-72 overflow-y-auto divide-y divide-gray-50">
+            <div class="text-center py-8 px-4 text-gray-300">
+              <i class="fa-solid fa-bell-slash text-3xl mb-2"></i>
+              <p class="text-xs font-semibold text-gray-400">Belum ada notifikasi</p>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- Chat button -->
       <button onclick="openChatList()" class="relative p-2 text-gray-500 hover:text-primary transition-colors rounded-xl hover:bg-gray-50">
         <i class="fa-solid fa-comment-dots text-lg"></i>
@@ -368,58 +674,73 @@ tailwind.config={theme:{extend:{colors:{
 <div id="page-profile" class="page">
 <main class="max-w-2xl mx-auto px-3 md:px-6 py-5">
 
-  <!-- Profile Card -->
-  <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 mb-4">
-    <div class="h-28 relative" style="background:linear-gradient(135deg,#064E3B,#065F46,#10B981)">
-      <!-- Upload cover photo area -->
-      <div class="absolute inset-0 flex items-center justify-end px-6 opacity-20">
-        <i class="fa-solid fa-store text-white text-6xl"></i>
+  <!-- Profile Card — Premium Redesign -->
+  <div class="profile-card-premium mb-4">
+
+    <!-- Cover Photo -->
+    <div class="profile-cover-wrap" id="profileCoverWrap">
+      <img id="profileCoverImg" class="profile-cover-img cover-img-loaded" src="" alt="" style="display:none" onerror="this.style.display='none'"/>
+      <div class="profile-cover-overlay"></div>
+
+      <!-- Upload cover button -->
+      <label for="profileCoverInput" class="cover-upload-btn" style="z-index:5">
+        <i class="fa-solid fa-camera text-xs"></i> Ganti Sampul
+      </label>
+      <input id="profileCoverInput" type="file" accept="image/*" class="hidden" onchange="uploadProfileCover(this)"/>
+
+      <!-- Admin badge on cover -->
+      <div id="adminBadgeProfile" style="display:none" class="absolute top-3 right-3 adm-badge text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10">
+        <i class="fa-solid fa-crown text-xs"></i> Developer
+      </div>
+
+      <!-- Avatar — overlaps cover bottom -->
+      <div class="profile-avatar-wrap" style="z-index:5">
+        <label for="profilePhotoInput" class="cursor-pointer group relative inline-block">
+          <div class="avatar-ring-premium">
+            <div id="profileAvatar" class="w-16 h-16 rounded-full bg-primary text-white font-black text-2xl flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">U</div>
+          </div>
+          <div class="absolute bottom-0.5 right-0.5 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-camera text-primary text-[9px]"></i>
+          </div>
+        </label>
+        <input id="profilePhotoInput" type="file" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)"/>
       </div>
     </div>
-    <div class="px-5 pb-5">
-      <!-- Avatar with upload -->
-      <div class="flex items-end justify-between -mt-8 mb-4">
-        <div class="relative">
-          <label for="profilePhotoInput" class="cursor-pointer group">
-            <div class="profile-photo-ring">
-              <div id="profileAvatar" class="w-16 h-16 rounded-full bg-primary text-white font-black text-2xl flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">U</div>
-            </div>
-            <div class="absolute bottom-0 right-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-2 border-white shadow-sm group-hover:bg-pd transition-colors">
-              <i class="fa-solid fa-camera text-white text-[9px]"></i>
-            </div>
-          </label>
-          <input id="profilePhotoInput" type="file" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)"/>
-        </div>
-        <div id="adminBadgeProfile" style="display:none" class="adm-badge text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 mb-2">
-          <i class="fa-solid fa-crown text-xs"></i> Developer
-        </div>
-      </div>
-      <!-- Name & info -->
-      <div class="flex items-center gap-2 mb-1">
-        <h2 id="profileName" class="font-black text-gray-900 text-lg leading-tight"></h2>
+
+    <!-- Info section (padded top for avatar overlap) -->
+    <div class="profile-info-section">
+      <!-- Name & badges -->
+      <div class="profile-name-row">
+        <h2 id="profileName" class="profile-name-text"></h2>
         <span id="profileGoldBadge" style="display:none" class="gold-badge text-xl verified-ring"><i class="fa-solid fa-circle-check"></i></span>
       </div>
-      <p id="profileEmail" class="text-xs text-gray-500 flex items-center gap-1"><i class="fa-solid fa-envelope text-gray-300 text-[10px]"></i> <span></span></p>
-      <p id="profilePhone" class="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><i class="fa-solid fa-phone text-gray-300 text-[10px]"></i> <span></span></p>
-      <!-- Stats -->
-      <div class="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-100">
-        <div class="text-center">
-          <p id="myAdCount" class="font-black text-primary text-2xl">0</p>
-          <p class="text-[10px] text-gray-500 font-medium">Iklan Aktif</p>
+      <!-- Email & Phone -->
+      <p id="profileEmail" class="text-xs text-gray-500 flex items-center gap-1.5 leading-relaxed">
+        <i class="fa-solid fa-envelope text-gray-300 text-[10px]"></i> <span></span>
+      </p>
+      <p id="profilePhone" class="text-xs text-gray-400 flex items-center gap-1.5 leading-relaxed">
+        <i class="fa-solid fa-phone text-gray-300 text-[10px]"></i> <span></span>
+      </p>
+
+      <!-- Stats strip — light font -->
+      <div class="profile-stat-strip">
+        <div class="profile-stat-item">
+          <p id="myAdCount" class="profile-stat-num clr">0</p>
+          <p class="profile-stat-lbl">Iklan</p>
         </div>
-        <div class="text-center">
-          <p id="myFollowersCount" class="font-black text-gray-700 text-2xl">0</p>
-          <p class="text-[10px] text-gray-500 font-medium">Followers</p>
+        <div class="profile-stat-item">
+          <p id="myFollowersCount" class="profile-stat-num">0</p>
+          <p class="profile-stat-lbl">Follower</p>
         </div>
-        <div class="text-center">
-          <p id="myFollowingCount" class="font-black text-gray-700 text-2xl">0</p>
-          <p class="text-[10px] text-gray-500 font-medium">Following</p>
+        <div class="profile-stat-item">
+          <p id="myFollowingCount" class="profile-stat-num">0</p>
+          <p class="profile-stat-lbl">Following</p>
         </div>
-        <div class="text-center">
-          <p class="font-black text-gray-700 text-2xl flex items-center justify-center gap-1">
-            <i class="fa-solid fa-star text-amber-400 text-lg"></i>5.0
+        <div class="profile-stat-item">
+          <p class="profile-stat-num" style="display:flex;align-items:center;justify-content:center;gap:3px">
+            <i class="fa-solid fa-star text-amber-400" style="font-size:12px"></i>5.0
           </p>
-          <p class="text-[10px] text-gray-500 font-medium">Rating</p>
+          <p class="profile-stat-lbl">Rating</p>
         </div>
       </div>
     </div>
@@ -481,47 +802,76 @@ tailwind.config={theme:{extend:{colors:{
 ═══════════════════════════════════════════════ -->
 <div id="page-etalase" class="page">
 <main class="max-w-2xl mx-auto px-3 md:px-6 py-5">
-  <!-- Store Header -->
-  <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 mb-4">
-    <div class="h-20 relative" style="background:linear-gradient(135deg,#064E3B,#10B981)">
-      <button onclick="history.back();showPage('home')" class="absolute top-3 left-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors">
+
+  <!-- Store Header — Premium Redesign -->
+  <div class="profile-card-premium mb-4">
+
+    <!-- Cover Photo -->
+    <div class="etalase-cover" id="etalaseCoverWrap">
+      <!-- Dynamic cover image -->
+      <div id="etalaseCoverBg" class="etalase-cover-bg" style="position:absolute;inset:0;background:linear-gradient(135deg,#022c22 0%,#064E3B 50%,#10B981 100%)"></div>
+      <img id="etalaseCoverImg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none" alt="Cover" onerror="this.style.display='none'"/>
+      <!-- Gradient overlay for readability -->
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1) 30%,rgba(0,0,0,.55) 100%)"></div>
+
+      <!-- Decorative subtle pattern -->
+      <div style="position:absolute;inset:0;opacity:.06;background-image:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);background-size:16px 16px"></div>
+
+      <!-- Back button -->
+      <button onclick="showPage('home')" class="back-btn-glass">
         <i class="fa-solid fa-arrow-left text-sm"></i>
       </button>
-    </div>
-    <div class="px-5 pb-4">
-      <div class="-mt-7 mb-3">
-        <div class="profile-photo-ring inline-block">
-          <div id="etalaseAvatar" class="w-14 h-14 rounded-full bg-primary text-white font-black text-xl flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">P</div>
+
+      <!-- Avatar overlapping cover -->
+      <div class="etalase-avatar-wrap">
+        <div class="avatar-ring-premium">
+          <div id="etalaseAvatar" class="w-16 h-16 rounded-full bg-primary text-white font-black text-xl flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">P</div>
         </div>
       </div>
-      <div class="flex items-center gap-2 mb-0.5">
-        <h2 id="etalaseName" class="font-black text-gray-900 text-lg"></h2>
+    </div>
+
+    <!-- Store Info block -->
+    <div class="store-info-block">
+      <!-- Store name & verified -->
+      <div class="store-name-row">
+        <h2 id="etalaseName" class="store-name-text"></h2>
         <span id="etalaseGold" style="display:none" class="gold-badge text-xl"><i class="fa-solid fa-circle-check"></i></span>
       </div>
-      <p id="etalaseSubtitle" class="text-xs text-gray-500 flex items-center gap-1">
-        <i class="fa-solid fa-store text-primary text-[10px]"></i> Etalase Penjual
+      <!-- Subtitle -->
+      <p id="etalaseSubtitle" class="store-subtitle">
+        <i class="fa-solid fa-store text-primary" style="font-size:10px"></i> Etalase Penjual
       </p>
-      <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-        <div class="flex items-center gap-4">
-          <div class="text-center">
-            <p id="etalaseCount" class="font-black text-primary text-xl">0</p>
-            <p class="text-[10px] text-gray-500">Produk</p>
-          </div>
-          <div class="text-center">
-            <p id="etalaseFollowers" class="font-black text-gray-700 text-xl">0</p>
-            <p class="text-[10px] text-gray-500">Follower</p>
-          </div>
-          <div class="text-center">
-            <p class="font-black text-gray-700 text-xl flex items-center gap-1"><i class="fa-solid fa-star text-amber-400 text-sm"></i>5.0</p>
-            <p class="text-[10px] text-gray-500">Rating</p>
-          </div>
-        </div>
-        <button id="followBtn" onclick="toggleFollow()" class="flex items-center gap-1.5 bg-primary hover:bg-pd text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-[0_2px_10px_rgba(16,185,129,.3)]">
-          <i class="fa-solid fa-plus text-[10px]"></i> Follow
+
+      <!-- Action buttons: Follow + Chat -->
+      <div class="action-btn-group">
+        <button id="followBtn" onclick="toggleFollow()" class="btn-follow-prem">
+          <i class="fa-solid fa-plus" style="font-size:11px"></i> Follow
         </button>
+        <button onclick="openChatWithSeller()" class="btn-chat-prem">
+          <i class="fa-regular fa-comment-dots" style="font-size:13px"></i> Chat
+        </button>
+      </div>
+
+      <!-- Stats strip — light numbers -->
+      <div class="stat-strip" style="margin:16px -24px -20px;border-radius:0 0 28px 28px">
+        <div class="stat-item">
+          <p id="etalaseCount" class="stat-num colored">0</p>
+          <p class="stat-label">Produk</p>
+        </div>
+        <div class="stat-item">
+          <p id="etalaseFollowers" class="stat-num">0</p>
+          <p class="stat-label">Follower</p>
+        </div>
+        <div class="stat-item">
+          <p class="stat-num" style="display:flex;align-items:center;justify-content:center;gap:4px">
+            <span class="star-accent">★</span>5.0
+          </p>
+          <p class="stat-label">Rating</p>
+        </div>
       </div>
     </div>
   </div>
+
   <!-- Seller Products Grid -->
   <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
     <i class="fa-solid fa-box text-primary"></i> Semua Produk
@@ -941,17 +1291,23 @@ tailwind.config={theme:{extend:{colors:{
         <i class="fa-solid fa-arrow-left text-gray-700 text-base"></i>
       </button>
       <button onclick="viewSellerStore(window._S.activeChatOther)" class="flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-75 transition-opacity">
-        <div id="chatRoomAvatarWrap" class="profile-photo-ring flex-shrink-0">
+        <div id="chatRoomAvatarWrap" class="profile-photo-ring flex-shrink-0 relative">
           <div id="chatRoomAvatar" class="w-9 h-9 rounded-full bg-primary text-white text-sm font-black flex items-center justify-center overflow-hidden">?</div>
+          <span id="chatOnlineDot" class="online-dot absolute -bottom-0.5 -right-0.5" style="display:none"></span>
         </div>
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1.5">
             <p id="chatRoomName" class="font-black text-gray-900 text-sm truncate"></p>
             <span id="chatRoomGold" style="display:none" class="text-amber-400 text-sm flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
           </div>
-          <p class="text-[10px] text-primary font-medium flex items-center gap-1">
-            <i class="fa-solid fa-store text-[8px]"></i> Ketuk untuk lihat etalase
-          </p>
+          <!-- Online status + typing indicator -->
+          <div id="chatStatusRow" class="flex items-center gap-1.5 h-4">
+            <span id="chatOnlineText" class="text-[10px] text-green-500 font-semibold" style="display:none">● Online</span>
+            <span id="chatOfflineText" class="text-[10px] text-gray-400 font-medium flex items-center gap-1" style="display:none">
+              <i class="fa-solid fa-store text-[8px]"></i> Ketuk untuk lihat etalase
+            </span>
+            <span id="chatTypingText" class="text-[10px] text-primary font-semibold italic" style="display:none">sedang mengetik...</span>
+          </div>
         </div>
       </button>
     </div>
@@ -973,12 +1329,25 @@ tailwind.config={theme:{extend:{colors:{
   <!-- ── Messages Area ── -->
   <div id="chatMessages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 max-w-2xl mx-auto w-full" style="background:#f9fafb"></div>
 
+  <!-- ── Typing Indicator Bubble ── -->
+  <div id="chatTypingBubble" style="display:none" class="flex-shrink-0 px-4 pb-1 max-w-2xl mx-auto w-full">
+    <div class="flex items-center gap-2">
+      <div class="typing-wrap">
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+      </div>
+      <span id="chatTypingName" class="text-[10px] text-gray-400"></span>
+    </div>
+  </div>
+
   <!-- ── Input Bar ── -->
   <div class="flex-shrink-0 bg-white border-t border-gray-100 max-w-2xl mx-auto w-full">
     <div class="px-4 py-3 flex gap-2 items-center">
       <input id="chatInput" type="text" placeholder="Ketik pesan..."
         class="inp flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-full bg-gray-50"
-        onkeydown="if(event.key==='Enter')sendChatMsg()"/>
+        onkeydown="if(event.key==='Enter')sendChatMsg()"
+        oninput="handleChatTyping()"/>
       <button onclick="sendChatMsg()" class="w-10 h-10 bg-primary hover:bg-pd text-white rounded-full flex items-center justify-center flex-shrink-0 transition-colors shadow-sm">
         <i class="fa-solid fa-paper-plane text-sm"></i>
       </button>
@@ -1069,7 +1438,7 @@ import { initializeApp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, increment, arrayUnion, arrayRemove, query, orderBy, where, onSnapshot, serverTimestamp }
+import { getFirestore, collection, addDoc, getDocs, doc, setDoc, updateDoc, increment, arrayUnion, arrayRemove, query, orderBy, where, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ================================================================
@@ -1159,10 +1528,17 @@ onAuthStateChanged(auth, async user => {
     // Mulai listener langsung dari sini — db & user sudah pasti siap
     if(window.startUnreadListener) startUnreadListener();
     else setTimeout(()=>{ if(window.startUnreadListener) startUnreadListener(); }, 500);
+    if(window.startNotifListener) startNotifListener();
+    else setTimeout(()=>{ if(window.startNotifListener) startNotifListener(); }, 600);
+    // Set presence online — ditunda agar _FB sudah siap
+    setTimeout(()=>{ try { window._FB?.setPresence(true); } catch(e){} }, 1000);
   } else {
+    // Set presence offline — ditunda agar _FB sudah siap
+    setTimeout(()=>{ try { if(window._S.user) window._FB?.setPresence(false); } catch(e){} }, 300);
     window._S.user = null;
     renderUserState();
     if(window.stopUnreadListener) stopUnreadListener();
+    if(window.stopNotifListener) stopNotifListener();
   }
 });
 
@@ -1334,7 +1710,6 @@ window._FB = {
       // Coba get by doc ID dulu (lebih efisien)
       const directSnap = await getDocs(query(collection(db,'chats'),where('chatId','==',chatId)));
       if(directSnap.empty) {
-        const {setDoc} = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
         await setDoc(chatRef, {
           chatId, adId, adTitle, adImg, adPrice,
           participants:[window._S.user.uid, sellerId],
@@ -1373,6 +1748,57 @@ window._FB = {
     applyBillboardImage(slideIndex, imgUrl, customText);
     showToast('Billboard berhasil diperbarui!', 'green');
     closeBillModal();
+  },
+
+  // ── Typing Indicator ─────────────────────────────────────────
+  async setTyping(chatId, isTyping) {
+    if(!window._S.user || !chatId) return;
+    try {
+      await setDoc(doc(db,'typing', chatId+'_'+window._S.user.uid), {
+        uid: window._S.user.uid,
+        chatId,
+        isTyping,
+        updatedAt: serverTimestamp()
+      }, {merge:true});
+    } catch(e) {}
+  },
+
+  listenTyping(chatId, otherUid, callback) {
+    try {
+      const ref = doc(db,'typing', chatId+'_'+otherUid);
+      return onSnapshot(ref, snap => {
+        if(!snap.exists()) { callback(false); return; }
+        const data = snap.data();
+        const updSec = data.updatedAt?.seconds || 0;
+        const fresh = (Date.now()/1000 - updSec) < 5;
+        callback(!!(data.isTyping && fresh));
+      }, ()=>callback(false));
+    } catch(e) { callback(false); return ()=>{}; }
+  },
+
+  // ── Online Presence ───────────────────────────────────────────
+  async setPresence(isOnline) {
+    if(!window._S.user) return;
+    try {
+      await setDoc(doc(db,'presence', window._S.user.uid), {
+        uid: window._S.user.uid,
+        online: isOnline,
+        lastSeen: serverTimestamp()
+      }, {merge:true});
+    } catch(e) {}
+  },
+
+  listenPresence(otherUid, callback) {
+    try {
+      const ref = doc(db,'presence', otherUid);
+      return onSnapshot(ref, snap => {
+        if(!snap.exists()) { callback(false); return; }
+        const data = snap.data();
+        const lastSec = data.lastSeen?.seconds || 0;
+        const recentlyActive = (Date.now()/1000 - lastSec) < 120;
+        callback(!!(data.online && recentlyActive));
+      }, ()=>callback(false));
+    } catch(e) { callback(false); return ()=>{}; }
   }
 };
 
@@ -1519,6 +1945,86 @@ window.stopUnreadListener = function() {
   updateChatBadge(0);
 };
 
+// ══════════════════════════════════════════════════════════════
+// 🔔 NOTIFICATION SYSTEM — Real-time onSnapshot
+// ══════════════════════════════════════════════════════════════
+let _notifUnsub = null;
+
+window.startNotifListener = function() {
+  if(!window._S.user || !db) return;
+  if(_notifUnsub) { _notifUnsub(); _notifUnsub = null; }
+  const uid = window._S.user.uid;
+  const q = query(
+    collection(db, 'notifications'),
+    where('toUid', 'in', [uid, 'broadcast']),
+    orderBy('createdAt', 'desc')
+  );
+  _notifUnsub = onSnapshot(q, (snap) => {
+    const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    window._S.notifs = notifs;
+    const unread = notifs.filter(n => !n.read && !n.readBy?.includes(uid)).length;
+    updateNotifBadge(unread);
+    if(document.getElementById('notifPanel').style.display !== 'none') {
+      renderNotifList(notifs);
+    }
+  }, (err) => {
+    console.warn('[NotifListener] error:', err.message);
+  });
+};
+
+window.stopNotifListener = function() {
+  if(_notifUnsub) { _notifUnsub(); _notifUnsub = null; }
+  updateNotifBadge(0);
+};
+
+// Send broadcast from Developer account to all users
+window.sendBroadcast = async function() {
+  const msg = document.getElementById('broadcastMsg').value.trim();
+  if(!msg) { showToast('Tulis pesan broadcast dulu','red'); return; }
+  if(!window._S.user || !isAdmin(window._S.user.email)) { showToast('Hanya Developer yang bisa broadcast','red'); return; }
+  try {
+    await addDoc(collection(db, 'notifications'), {
+      toUid: 'broadcast',       // special sentinel — diterima semua user
+      type: 'broadcast',
+      message: msg,
+      senderName: window._S.user.name || 'Developer',
+      read: false,
+      readBy: [],               // list uid yang sudah baca
+      createdAt: serverTimestamp()
+    });
+    document.getElementById('broadcastMsg').value = '';
+    showToast('Broadcast berhasil dikirim ke semua user!', 'green');
+  } catch(e) { showToast('Gagal broadcast: '+(e.message||e), 'red'); }
+};
+
+// Mark a single notif as read
+window.markNotifRead = async function(notifId, isBroadcast) {
+  if(!window._S.user || !db) return;
+  try {
+    const ref = doc(db, 'notifications', notifId);
+    if(isBroadcast) {
+      await updateDoc(ref, { readBy: arrayUnion(window._S.user.uid) });
+    } else {
+      await updateDoc(ref, { read: true });
+    }
+  } catch(e) {}
+};
+
+// Mark all as read
+window.markAllNotifsRead = async function() {
+  const uid = window._S.user?.uid; if(!uid || !db) return;
+  const notifs = window._S.notifs || [];
+  await Promise.all(notifs.map(n => {
+    if(n.toUid === 'broadcast') {
+      if(!(n.readBy||[]).includes(uid)) return updateDoc(doc(db,'notifications',n.id), { readBy: arrayUnion(uid) });
+    } else {
+      if(!n.read) return updateDoc(doc(db,'notifications',n.id), { read: true });
+    }
+    return Promise.resolve();
+  }));
+  showToast('Semua notifikasi ditandai dibaca','green');
+};
+
 // ── NOTIF SOUND: Web Audio API (no file needed) ────────────────
 window.playNotifSound = function() {
   try {
@@ -1565,7 +2071,8 @@ window.markChatRead = async function(chatId) {
 window._S = {
   user:null, fbAds:[], cart:[], curCat:'semua', searchQ:'',
   activeAdId:null, activeAdData:null, billSlide:0,
-  activeChatId:null, activeChatOther:null, chatUnsub:null,
+  activeChatId:null, activeChatOther:null, chatUnsub:null, notifs:[],
+  typingUnsub:null, presenceUnsub:null, typingTimer:null, _otherOnline:false,
   staticAds:[
     {id:'s1',name:"iPhone 15 Pro Max 256GB",price:21999,img:"https://picsum.photos/seed/iph15/300/300",loc:"Cairo",rating:4.9,sold:1243,cat:"elektronik",badge:"Terlaris",disc:0,sellerName:"iStore Cairo",sellerUid:"static",phone:"0111234567",desc:"Kondisi baru, garansi resmi. Warna Natural Titanium. Lengkap box & aksesoris."},
     {id:'s2',name:"Samsung Galaxy S24 Ultra 512GB",price:18499,img:"https://picsum.photos/seed/s24u/300/300",loc:"Alexandria",rating:4.8,sold:876,cat:"elektronik",badge:"Official",disc:5,sellerName:"Samsung Store",sellerUid:"static",phone:"01298765432",desc:"Resmi, garansi 1 tahun. Kamera 200MP, fitur AI canggih."},
@@ -1636,6 +2143,9 @@ window.renderUserState = () => {
   document.getElementById('adminBillBtn').style.display      = admin ? 'flex' : 'none';
   document.getElementById('adminBillAction').style.display   = admin ? 'flex' : 'none';
   document.getElementById('adminBadgeProfile').style.display = admin ? 'flex' : 'none';
+  // Show broadcast form for admin
+  const bf = document.getElementById('broadcastForm');
+  if(bf) bf.style.display = admin ? 'block' : 'none';
   // Gold badge in header
   const goldH = document.getElementById('hGoldBadge');
   if (goldH) goldH.style.display = admin ? 'inline' : 'none';
@@ -1650,7 +2160,6 @@ window.renderUserState = () => {
     }
     document.getElementById('hName').textContent = u.name || u.email;
     // Start real-time unread listener saat user login
-    // Sebagai fallback jika onAuthStateChanged belum memanggilnya
     if(window.startUnreadListener){
       startUnreadListener();
     } else {
@@ -1659,10 +2168,98 @@ window.renderUserState = () => {
         else if(attempts < 20){ setTimeout(()=>tryStartListener(attempts+1), 200); }
       })(0);
     }
+    // Start notification listener
+    if(window.startNotifListener){
+      startNotifListener();
+    } else {
+      (function tryNotifListener(attempts){
+        if(window.startNotifListener){ startNotifListener(); }
+        else if(attempts < 20){ setTimeout(()=>tryNotifListener(attempts+1), 200); }
+      })(0);
+    }
   } else {
-    // Stop listener on logout
+    // Stop listeners on logout
     if(window.stopUnreadListener) stopUnreadListener();
+    if(window.stopNotifListener) stopNotifListener();
+    updateNotifBadge(0);
   }
+};
+
+// ── Notification badge & panel UI ──────────────────────────────
+window.updateNotifBadge = function(count) {
+  const badge = document.getElementById('notifBadge');
+  if(!badge) return;
+  if(count > 0) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.style.display = 'flex';
+    badge.classList.remove('bp');
+    void badge.offsetWidth;
+    badge.classList.add('bp');
+    setTimeout(()=>badge.classList.remove('bp'), 300);
+  } else {
+    badge.style.display = 'none';
+  }
+};
+
+window.toggleNotifPanel = function() {
+  const panel = document.getElementById('notifPanel');
+  const isOpen = panel.style.display !== 'none';
+  if(isOpen) {
+    panel.style.display = 'none';
+  } else {
+    panel.style.display = 'block';
+    // Render current notifs
+    renderNotifList(window._S.notifs || []);
+    // Show broadcast form for admin
+    const bf = document.getElementById('broadcastForm');
+    const admin = window._S.user && isAdmin(window._S.user.email);
+    if(bf) bf.style.display = admin ? 'block' : 'none';
+  }
+};
+
+// Close notif panel if click outside
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('notifPanel');
+  const btn = document.getElementById('bellBtn');
+  if(panel && panel.style.display !== 'none' && !panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
+
+window.renderNotifList = function(notifs) {
+  const el = document.getElementById('notifList');
+  if(!el) return;
+  const uid = window._S.user?.uid || '';
+  if(!notifs || !notifs.length) {
+    el.innerHTML = `<div class="text-center py-8 px-4 text-gray-300">
+      <i class="fa-solid fa-bell-slash text-3xl mb-2"></i>
+      <p class="text-xs font-semibold text-gray-400">Belum ada notifikasi</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = notifs.slice(0,30).map(n => {
+    const isBroadcast = n.toUid === 'broadcast';
+    const isUnread = isBroadcast ? !(n.readBy||[]).includes(uid) : !n.read;
+    const icon = n.type==='broadcast' ? 'fa-bullhorn text-amber-500'
+               : n.type==='follow'    ? 'fa-user-plus text-primary'
+               : n.type==='chat'      ? 'fa-comment-dots text-blue-500'
+               : 'fa-bell text-gray-400';
+    const timeStr = n.createdAt?.seconds
+      ? new Date(n.createdAt.seconds*1000).toLocaleString('id-ID',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '';
+    return `<div class="notif-item ${isUnread?'unread':''} px-4 py-3 flex items-start gap-3 cursor-pointer"
+      onclick="markNotifRead('${n.id}',${isBroadcast})">
+      <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <i class="fa-solid ${icon} text-sm"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs ${isUnread?'font-semibold text-gray-800':'font-medium text-gray-600'} leading-snug">${n.message}</p>
+        ${n.senderName?`<p class="text-[10px] text-gray-400 mt-0.5">dari: ${n.senderName}</p>`:''}
+        <p class="text-[10px] text-gray-300 mt-0.5">${timeStr}</p>
+      </div>
+      ${isUnread?`<div class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1.5"></div>`:''}
+    </div>`;
+  }).join('');
 };
 
 // ── Profile page ───────────────────────────────────────────────
@@ -2054,6 +2651,9 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
   // ── Langsung reset unread badge saat chat dibuka ───────────────
   if(window.markChatRead) markChatRead(chatId);
 
+  // ── Mulai real-time typing + online presence ───────────────────
+  startChatRealtime(chatId, sellerId, sellerName);
+
   if(window._S.chatUnsub) window._S.chatUnsub();
   let _prevMsgCount = 0;
   window._S.chatUnsub=window._FB.listenChatMessages(chatId, msgs=>{
@@ -2066,13 +2666,30 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
     }
     _prevMsgCount = msgs.length;
     el.innerHTML=msgs.length===0?'<p class="text-xs text-gray-400 text-center py-8">Mulai percakapan dengan penjual</p>':
-      msgs.map(m=>`
-        <div class="flex ${isMe(m)?'justify-end':'justify-start'} chat-msg">
-          <div class="${isMe(m)?'chat-bubble-me':'chat-bubble-other'} px-3.5 py-2 max-w-[75%] text-xs leading-relaxed">
-            ${!isMe(m)?`<p class="text-[10px] font-bold mb-0.5 opacity-70">${m.senderName}</p>`:'' }
-            ${m.text}
+      msgs.map(m=>{
+        const me=isMe(m);
+        // Format timestamp
+        let timeStr='';
+        if(m.createdAt?.seconds){
+          const d=new Date(m.createdAt.seconds*1000);
+          timeStr=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+        } else if(m.createdAt?.toDate) {
+          try { timeStr=m.createdAt.toDate().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}); } catch(e){}
+        } else {
+          // Pesan lokal (offline fallback) — pakai waktu sekarang
+          timeStr=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+        }
+        return `
+        <div class="flex ${me?'justify-end':'justify-start'} chat-msg">
+          <div class="flex flex-col ${me?'items-end':'items-start'} max-w-[75%]">
+            <div class="${me?'chat-bubble-me':'chat-bubble-other'} px-3.5 py-2 text-xs leading-relaxed">
+              ${!me?`<p class="text-[10px] font-bold mb-0.5 opacity-70">${m.senderName}</p>`:''}
+              ${m.text}
+            </div>
+            ${timeStr?`<span class="msg-time ${me?'text-gray-400 pr-1':'text-gray-400 pl-1'}">${timeStr}</span>`:''}
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     el.scrollTop=el.scrollHeight;
     // Mark as read setiap kali pesan baru masuk dan chat sedang terbuka
     if(window.markChatRead) markChatRead(chatId);
@@ -2094,8 +2711,73 @@ window.closeChatRoomOv=e=>{/* full screen — tidak dismiss by backdrop */};
 window.closeChatRoom=()=>{
   document.getElementById('chatRoomOverlay').style.display='none';
   if(window._S.chatUnsub){window._S.chatUnsub();window._S.chatUnsub=null;}
+  // Bersihkan typing & presence listeners
+  if(window._S.typingUnsub){window._S.typingUnsub();window._S.typingUnsub=null;}
+  if(window._S.presenceUnsub){window._S.presenceUnsub();window._S.presenceUnsub=null;}
+  if(window._S.typingTimer){clearTimeout(window._S.typingTimer);window._S.typingTimer=null;}
+  // Reset typing status di Firestore saat keluar
+  if(window._FB && window._S.activeChatId) window._FB.setTyping(window._S.activeChatId, false).catch(()=>{});
   document.body.style.overflow='';
 };
+// ── Typing handler (dipanggil saat user mengetik di input) ────
+window.handleChatTyping = function() {
+  if(!window._FB || !window._S.activeChatId) return;
+  // Set typing = true
+  window._FB.setTyping(window._S.activeChatId, true).catch(()=>{});
+  // Auto-reset setelah 2.5 detik tidak mengetik
+  if(window._S.typingTimer) clearTimeout(window._S.typingTimer);
+  window._S.typingTimer = setTimeout(()=>{
+    if(window._FB && window._S.activeChatId)
+      window._FB.setTyping(window._S.activeChatId, false).catch(()=>{});
+  }, 2500);
+};
+
+// ── Start presence & typing listeners saat chat room dibuka ──
+function startChatRealtime(chatId, otherUid, otherName) {
+  if(!window._FB) return;
+  // Listener typing
+  if(window._S.typingUnsub){ window._S.typingUnsub(); window._S.typingUnsub=null; }
+  window._S.typingUnsub = window._FB.listenTyping(chatId, otherUid, isTyping => {
+    const hdrTyping = document.getElementById('chatTypingText');
+    const hdrOnline = document.getElementById('chatOnlineText');
+    const hdrOffline = document.getElementById('chatOfflineText');
+    const bubble = document.getElementById('chatTypingBubble');
+    const nameEl = document.getElementById('chatTypingName');
+    if(isTyping) {
+      if(hdrTyping) hdrTyping.style.display='inline';
+      if(hdrOnline) hdrOnline.style.display='none';
+      if(hdrOffline) hdrOffline.style.display='none';
+      if(bubble) bubble.style.display='block';
+      if(nameEl) nameEl.textContent = otherName + ' sedang mengetik';
+    } else {
+      if(hdrTyping) hdrTyping.style.display='none';
+      if(bubble) bubble.style.display='none';
+      // Tampilkan kembali online/offline status
+      _refreshOnlineStatus();
+    }
+  });
+  // Listener online presence
+  if(window._S.presenceUnsub){ window._S.presenceUnsub(); window._S.presenceUnsub=null; }
+  window._S.presenceUnsub = window._FB.listenPresence(otherUid, isOnline => {
+    window._S._otherOnline = isOnline;
+    _refreshOnlineStatus();
+  });
+  // Set own presence ke online
+  window._FB.setPresence(true).catch(()=>{});
+}
+
+function _refreshOnlineStatus() {
+  const isTyping = document.getElementById('chatTypingText')?.style.display !== 'none';
+  if(isTyping) return;
+  const dot = document.getElementById('chatOnlineDot');
+  const onlineText = document.getElementById('chatOnlineText');
+  const offlineText = document.getElementById('chatOfflineText');
+  const online = window._S._otherOnline;
+  if(dot) dot.style.display = online ? 'block' : 'none';
+  if(onlineText) onlineText.style.display = online ? 'inline' : 'none';
+  if(offlineText) offlineText.style.display = online ? 'none' : 'inline';
+}
+
 window.openChatList=async()=>{
   if(!window._S.user){showToast('Login dulu untuk melihat pesan','red');openAuth('login');return;}
   const ov=document.getElementById('chatListOverlay');
@@ -2306,14 +2988,12 @@ window.renderEtalaseFollow = async function(sellerUid) {
     if(followerEl) followerEl.textContent = count;
     // Check if current user follows
     const u = window._S.user;
-    if(!u) { btn.innerHTML='<i class="fa-solid fa-plus text-[10px]"></i> Follow'; return; }
+    if(!u) { btn.innerHTML='<i class="fa-solid fa-plus" style="font-size:11px"></i> Follow'; btn.className='btn-follow-prem'; return; }
     const already = snap.docs.some(d => d.data().followerUid === u.uid);
     btn.innerHTML = already
-      ? '<i class="fa-solid fa-check text-[10px]"></i> Mengikuti'
-      : '<i class="fa-solid fa-plus text-[10px]"></i> Follow';
-    btn.className = already
-      ? 'flex items-center gap-1.5 bg-gray-100 text-gray-600 border border-gray-200 text-xs font-bold px-4 py-2 rounded-xl transition-all'
-      : 'flex items-center gap-1.5 bg-primary hover:bg-pd text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-[0_2px_10px_rgba(16,185,129,.3)]';
+      ? '<i class="fa-solid fa-check" style="font-size:11px"></i> Mengikuti'
+      : '<i class="fa-solid fa-plus" style="font-size:11px"></i> Follow';
+    btn.className = already ? 'btn-follow-prem following' : 'btn-follow-prem';
   } catch(e){}
 };
 
@@ -2367,6 +3047,43 @@ window.renderProfileFollowCounts = async function() {
     // Cek notifikasi follow baru
     checkFollowNotifications(u.uid);
   } catch(e){}
+};
+
+// ── Chat with Seller (from Etalase page) ─────────────────────
+window.openChatWithSeller = function() {
+  const sellerUid = window._S.etalaseSellerUid;
+  const sellerName = document.getElementById('etalaseName')?.textContent || 'Penjual';
+  const sellerAvatarEl = document.getElementById('etalaseAvatar');
+  const sellerPhoto = sellerAvatarEl?.querySelector('img')?.src || '';
+
+  if(!window._S.user){ showToast('Login dulu untuk chat','red'); openAuth('login'); return; }
+  if(!sellerUid){ showToast('Info penjual tidak tersedia','red'); return; }
+  if(sellerUid === window._S.user.uid){ showToast('Ini toko kamu sendiri','red'); return; }
+
+  // Buka chat dengan penjual (tanpa produk spesifik)
+  openChatRoom('', sellerUid, sellerName, sellerPhoto, 'Hubungi Penjual', '', 0);
+};
+
+// ── Upload Cover Photo (Profile) ─────────────────────────────
+window.uploadProfileCover = async function(input) {
+  const file = input.files[0]; if(!file) return;
+  if(!window._S.user){ showToast('Login dulu','red'); return; }
+  // Preview lokal dulu
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('profileCoverImg');
+    if(img){ img.src = e.target.result; img.style.display='block'; }
+  };
+  reader.readAsDataURL(file);
+  // Upload ke Firebase jika tersedia
+  if(window._FB && window._FB.uploadCoverPhoto){
+    try{
+      await window._FB.uploadCoverPhoto(file);
+      showToast('Foto sampul berhasil diperbarui!','green');
+    }catch(e){ showToast('Gagal upload sampul: '+(e.message||e),'red'); }
+  } else {
+    showToast('Foto sampul diperbarui (lokal)','green');
+  }
 };
 
 window.checkFollowNotifications = async function(uid) {
