@@ -2062,16 +2062,20 @@ onAuthStateChanged(auth, async user => {
       const snap = await getDocs(query(collection(db,'users'), where('uid','==',user.uid)));
       if (!snap.empty) {
         const d = snap.docs[0].data();
-        profile.name     = d.name     || profile.name;
-        profile.phone    = d.phone    || '';
+        profile.name       = d.name       || profile.name;
+        profile.phone      = d.phone      || '';
         // FIX 3: Always load photoUrl from Firestore, never from Auth displayPhoto
-        profile.photoUrl = d.photoUrl || '';
+        profile.photoUrl   = d.photoUrl   || '';
+        // Load coverPhoto from Firestore
+        profile.coverPhoto = d.coverPhoto || '';
         // Store docId for fast updates later
-        profile.docId    = snap.docs[0].id;
+        profile.docId      = snap.docs[0].id;
       }
     } catch(e){}
     window._S.user = profile;
     renderUserState();
+    // ── Start real-time profile listener (coverPhoto, photoUrl, name) ──
+    startProfileListener(user.uid);
     // Mulai listener langsung dari sini — db & user sudah pasti siap
     if(window.startUnreadListener) startUnreadListener();
     else setTimeout(()=>{ if(window.startUnreadListener) startUnreadListener(); }, 500);
@@ -2080,6 +2084,8 @@ onAuthStateChanged(auth, async user => {
     // Set presence online — ditunda agar _FB sudah siap
     setTimeout(()=>{ try { window._FB?.setPresence(true); } catch(e){} }, 1000);
   } else {
+    // Stop profile real-time listener on logout
+    if (_profileUnsub) { _profileUnsub(); _profileUnsub = null; }
     // Set presence offline — ditunda agar _FB sudah siap
     setTimeout(()=>{ try { if(window._S.user) window._FB?.setPresence(false); } catch(e){} }, 300);
     window._S.user = null;
@@ -2088,6 +2094,36 @@ onAuthStateChanged(auth, async user => {
     if(window.stopNotifListener) stopNotifListener();
   }
 });
+
+// ── Real-time Profile Listener — onSnapshot untuk coverPhoto & photoUrl ──
+let _profileUnsub = null;
+function startProfileListener(uid) {
+  if (_profileUnsub) { _profileUnsub(); _profileUnsub = null; }
+  try {
+    const q = query(collection(db, 'users'), where('uid', '==', uid));
+    _profileUnsub = onSnapshot(q, snap => {
+      if (!snap.empty && window._S.user) {
+        const d = snap.docs[0].data();
+        const changed =
+          window._S.user.coverPhoto !== (d.coverPhoto || '') ||
+          window._S.user.photoUrl   !== (d.photoUrl   || '');
+        window._S.user.coverPhoto = d.coverPhoto || '';
+        window._S.user.photoUrl   = d.photoUrl   || '';
+        window._S.user.name       = d.name       || window._S.user.name;
+        window._S.user.phone      = d.phone      || '';
+        window._S.user.docId      = snap.docs[0].id;
+        if (changed) {
+          renderUserState();
+          // Jika halaman profil sedang aktif, render ulang cover
+          const profilePage = document.getElementById('page-profile');
+          if (profilePage && profilePage.classList.contains('active')) {
+            renderProfilePage();
+          }
+        }
+      }
+    }, err => { console.warn('[ProfileListener] onSnapshot error:', err.message); });
+  } catch(e) { console.warn('[ProfileListener] start error:', e.message); }
+}
 
 // ── Firebase actions ────────────────────────────────────────────
 window._FB = {
@@ -2390,6 +2426,38 @@ window._FB = {
         lastSeen: serverTimestamp()
       }, {merge:true});
     } catch(e) {}
+  },
+
+  // ── Upload Cover Photo — simpan ke Firestore field coverPhoto ──
+  async uploadCoverPhoto(file) {
+    showToast('Mengunggah foto sampul...', 'green');
+    const imgUrl = await uploadToCloudinary(file);
+    const uid = window._S.user.uid;
+
+    // Cari / pastikan docId tersedia
+    let docId = window._S.user.docId || null;
+    if (!docId) {
+      const snap = await getDocs(query(collection(db,'users'), where('uid','==',uid)));
+      if (!snap.empty) { docId = snap.docs[0].id; window._S.user.docId = docId; }
+    }
+
+    if (!docId) {
+      // Buat dokumen baru jika belum ada
+      const newRef = await addDoc(collection(db,'users'), {
+        uid, name: window._S.user.name, phone: window._S.user.phone||'',
+        email: window._S.user.email||'', photoUrl: '', coverPhoto: imgUrl,
+        createdAt: serverTimestamp()
+      });
+      window._S.user.docId = newRef.id;
+    } else {
+      // Update HANYA field coverPhoto di Firestore
+      await updateDoc(doc(db,'users', docId), { coverPhoto: imgUrl });
+    }
+
+    // Update state lokal & render ulang langsung (optimistic update)
+    window._S.user.coverPhoto = imgUrl;
+    renderProfilePage();
+    showToast('Foto sampul berhasil diperbarui!', 'green');
   },
 
   listenPresence(otherUid, callback) {
@@ -3156,6 +3224,7 @@ window.sendBroadcastFs = async function() {
 
 // ── Hapus Massal Pesan Siaran (Admin Only) ─────────────────────
 // Menghapus dokumen broadcast dari sub-koleksi notifications SEMUA user
+// Strategi: query broadcastId (untuk broadcast baru) + fallback docId (untuk broadcast lama)
 window.deleteBroadcastMessage = async function(docId, encodedTitle) {
   const u = window._S.user;
   if(!u || !isAdmin(u.email)) { showToast('Akses ditolak!', 'red'); return; }
@@ -3165,50 +3234,86 @@ window.deleteBroadcastMessage = async function(docId, encodedTitle) {
   const shortTitle = title.length > 40 ? title.slice(0,40)+'…' : title;
   if(!confirm(`Hapus pesan siaran ini dari semua pengguna?\n\n"${shortTitle}"\n\nTindakan ini tidak bisa dibatalkan.`)) return;
 
-  showToast('Menghapus pesan siaran...', 'green');
+  showToast('Menghapus pesan siaran dari semua user...', 'green');
 
   try {
-    const { getFirestore, collection, getDocs, writeBatch, doc: fsDoc, deleteDoc }
+    const { getFirestore, collection, getDocs, query, where,
+            writeBatch, doc: fsDoc, deleteDoc }
       = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const _db = window.db || getFirestore();
     if(!_db) throw new Error('Firebase belum siap');
 
-    // Ambil semua user
+    // ── Cari broadcastId dari notif lokal admin ──────────────
+    // (disimpan di window._S.notifs saat renderNotifFull dipanggil)
+    const localNotif = (window._S.notifs || []).find(n => {
+      const nRawId = (n.id||'').startsWith('sub_') ? n.id.slice(4) : n.id;
+      return nRawId === docId;
+    });
+    const broadcastId = localNotif?.broadcastId || null;
+
+    // ── Ambil semua user ─────────────────────────────────────
     const usersSnap = await getDocs(collection(_db, 'users'));
+
     const LIMIT = 499;
     let batch = writeBatch(_db);
     let opCount = 0;
     let totalDel = 0;
 
-    // Hapus dokumen dengan ID yang sama dari sub-koleksi setiap user
     for(const userDoc of usersSnap.docs) {
       const uid = userDoc.data().uid;
       if(!uid) continue;
+
       try {
-        // Coba hapus langsung pakai docId (paling cepat — O(1) per user)
-        const notifRef = fsDoc(_db, 'users', uid, 'notifications', docId);
-        batch.delete(notifRef);
-        opCount++;
-        totalDel++;
+        if(broadcastId) {
+          // ── Strategi A (broadcast baru): query berdasarkan broadcastId ──
+          // Ini memastikan dokumen di SETIAP user ditemukan walau auto-ID berbeda
+          const q = query(
+            collection(_db, 'users', uid, 'notifications'),
+            where('broadcastId', '==', broadcastId)
+          );
+          const snap = await getDocs(q);
+          snap.forEach(d => {
+            batch.delete(d.ref);
+            opCount++;
+            totalDel++;
+            // Jika mendekati batas batch, commit dan reset
+            if(opCount >= LIMIT) {
+              // Tidak bisa await di dalam forEach, kita tandai batas dan flush di luar
+            }
+          });
+        } else {
+          // ── Strategi B (broadcast lama, tidak ada broadcastId): pakai docId langsung ──
+          const notifRef = fsDoc(_db, 'users', uid, 'notifications', docId);
+          batch.delete(notifRef);
+          opCount++;
+          totalDel++;
+        }
+
+        // Commit batch jika mendekati limit
         if(opCount >= LIMIT) {
           await batch.commit();
           batch = writeBatch(_db);
           opCount = 0;
         }
       } catch(innerErr) {
-        // skip jika dokumen tidak ada pada user tertentu
+        // skip error per-user (dokumen mungkin tidak ada)
+        console.warn('[deleteBroadcastMessage] skip uid:', uid, innerErr.message);
       }
     }
+
+    // Commit sisa batch
     if(opCount > 0) await batch.commit();
 
-    // Hapus juga dari koleksi global 'notifications' jika ada (broadcast lama)
+    // ── Hapus juga dari koleksi global 'notifications' jika ada (broadcast lama) ──
     try {
       await deleteDoc(fsDoc(_db, 'notifications', docId));
     } catch(e) { /* tidak masalah jika tidak ada */ }
 
-    // Update state lokal — hapus dari notifs
+    // ── Update state lokal — hapus dari notifs ──────────────
     if(window._S.notifs) {
       window._S.notifs = window._S.notifs.filter(n => {
+        // Cocokkan via broadcastId (baru) ATAU docId (lama)
+        if(broadcastId && n.broadcastId === broadcastId) return false;
         const nRawId = (n.id||'').startsWith('sub_') ? n.id.slice(4) : n.id;
         return nRawId !== docId;
       });
@@ -3279,6 +3384,25 @@ window.renderNotifList = function(notifs) {
 function renderProfilePage() {
   const u=window._S.user; if(!u) return;
   const admin = isAdmin(u.email);
+
+  // ── Cover Photo — tampilkan dari coverPhoto, default gradient jika kosong ──
+  const coverImg = document.getElementById('profileCoverImg');
+  if (coverImg) {
+    if (u.coverPhoto && u.coverPhoto.length > 0) {
+      coverImg.src = u.coverPhoto;
+      coverImg.style.display = 'block';
+      coverImg.onerror = function(){ this.style.display='none'; };
+    } else {
+      coverImg.src = '';
+      coverImg.style.display = 'none';
+    }
+  }
+  // Pastikan wrap selalu punya gradient default sebagai background
+  const coverWrap = document.getElementById('profileCoverWrap');
+  if (coverWrap) {
+    coverWrap.style.background = 'linear-gradient(135deg,#022c22 0%,#064E3B 40%,#10B981 100%)';
+  }
+
   // FIX 3: Avatar — always use photoUrl if set, with error fallback
   const av = document.getElementById('profileAvatar');
   const initChar = (u.name||'U').charAt(0).toUpperCase();
@@ -4367,21 +4491,17 @@ window.openChatWithSeller = function() {
 window.uploadProfileCover = async function(input) {
   const file = input.files[0]; if(!file) return;
   if(!window._S.user){ showToast('Login dulu','red'); return; }
-  // Preview lokal dulu
+  // Preview lokal langsung (sebelum upload selesai)
   const reader = new FileReader();
   reader.onload = e => {
     const img = document.getElementById('profileCoverImg');
     if(img){ img.src = e.target.result; img.style.display='block'; }
   };
   reader.readAsDataURL(file);
-  // Upload ke Firebase jika tersedia
-  if(window._FB && window._FB.uploadCoverPhoto){
-    try{
-      await window._FB.uploadCoverPhoto(file);
-      showToast('Foto sampul berhasil diperbarui!','green');
-    }catch(e){ showToast('Gagal upload sampul: '+(e.message||e),'red'); }
-  } else {
-    showToast('Foto sampul diperbarui (lokal)','green');
+  try {
+    await window._FB.uploadCoverPhoto(file);
+  } catch(e) {
+    showToast('Gagal upload sampul: '+(e.message||e),'red');
   }
 };
 
@@ -4814,19 +4934,23 @@ window.sendBroadcastFs = async function() {
     let opCount = 0;
     let totalSent = 0;
 
+    // Buat broadcastId unik yang sama untuk semua user agar bisa dihapus massal
+    const broadcastId = 'bc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+
     for(const userDoc of usersSnap.docs) {
       const uid = userDoc.data().uid;
       if(!uid) continue; // skip jika field uid kosong
       const notifRef = doc(collection(_db, 'users', uid, 'notifications'));
       batch.set(notifRef, {
-        title     : 'Pesan Siaran',
-        message   : msg,
-        type      : 'official_broadcast',
-        isSticky  : true,
-        isRead    : false,
-        senderName: u.name || 'Developer',
-        senderEmail: u.email,
-        timestamp : serverTimestamp()
+        title       : 'Pesan Siaran',
+        message     : msg,
+        type        : 'official_broadcast',
+        isSticky    : true,
+        isRead      : false,
+        senderName  : u.name || 'Developer',
+        senderEmail : u.email,
+        broadcastId : broadcastId,
+        timestamp   : serverTimestamp()
       });
       opCount++; totalSent++;
       if(opCount >= BATCH_LIMIT) { await batch.commit(); batch = writeBatch(_db); opCount = 0; }
@@ -4878,7 +5002,10 @@ window.sendBroadcastMassal = async function() {
     let opCount  = 0;
     let totalSent = 0;
 
-    // ── 2. Tulis ke users/{uid}/notifications setiap user ──────
+    // ── 2. Buat broadcastId unik yang sama untuk semua user ───
+    const broadcastId = 'bc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+
+    // ── 3. Tulis ke users/{uid}/notifications setiap user ──────
     for(const userDoc of usersSnap.docs) {
       const uid = userDoc.data().uid;
       if(!uid) continue; // skip jika field uid kosong
@@ -4892,6 +5019,7 @@ window.sendBroadcastMassal = async function() {
         isRead             : false,
         senderName         : u.name || 'Developer',
         senderEmail        : u.email,
+        broadcastId        : broadcastId,
         timestamp          : serverTimestamp()
       });
       opCount++;
