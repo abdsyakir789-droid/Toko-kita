@@ -2051,56 +2051,91 @@ async function uploadToCloudinary(file, onProgress) {
   });
 }
 
-// ── Upload Cover Photo ke Cloudinary — dengan kompresi Cloudinary & return {secure_url, public_id} ──
-// Berbeda dari uploadToCloudinary biasa: mengembalikan OBJEK lengkap termasuk public_id
-// public_id diperlukan untuk menghapus foto lama secara otomatis.
+// ── Upload Cover Photo ke Cloudinary — kompresi client-side + Cloudinary transformation ──
+// Mengembalikan OBJEK { secure_url, public_id } — public_id wajib untuk auto-delete foto lama.
 async function uploadCoverToCloudinary(file, onProgress) {
-  // Kompres dulu di sisi client (canvas) sebelum kirim ke Cloudinary
+  // Langkah 1: Kompres di sisi client (max lebar 1280px, kualitas 82%) sebelum kirim
   const blob = await compressImage(file, 1280, 0.82);
   const fd   = new FormData();
   fd.append('file', blob, 'cover.jpg');
   fd.append('upload_preset', CLOUDINARY_PRESET);
-  fd.append('cloud_name', CLOUDINARY_CLOUD);
-  // Transformasi Cloudinary: resize lebar maks 1280px, kualitas auto, format webp
-  fd.append('transformation', 'w_1280,q_auto:good,f_webp');
-  fd.append('folder', 'cover_photos');          // Simpan di folder khusus cover
+  fd.append('cloud_name',    CLOUDINARY_CLOUD);
+  // Langkah 2: Transformasi Cloudinary sisi server — resize, kompresi adaptif, format WebP
+  // eager: menghasilkan versi yang sudah di-transform langsung saat upload
+  fd.append('eager',         'w_1280,h_460,c_fill,g_auto,q_auto:good,f_webp');
+  fd.append('eager_async',   'false');                 // proses sync agar URL langsung tersedia
+  fd.append('folder',        'cover_photos');          // semua cover di folder terpisah
+  fd.append('invalidate',    'true');                  // paksa invalidasi CDN cache lama
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`);
     xhr.upload.onprogress = e => {
-      if(e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+      if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
     };
     xhr.onload = () => {
       try {
         const r = JSON.parse(xhr.responseText);
         if (xhr.status === 200) {
-          resolve({ secure_url: r.secure_url, public_id: r.public_id });
+          // Gunakan eager URL jika tersedia (sudah di-transform), fallback ke secure_url asli
+          const finalUrl = (r.eager && r.eager[0]?.secure_url) ? r.eager[0].secure_url : r.secure_url;
+          resolve({ secure_url: finalUrl, public_id: r.public_id });
         } else {
           reject(new Error(r.error?.message || 'Upload cover gagal'));
         }
-      } catch(e) { reject(new Error('Response tidak valid')); }
+      } catch(parseErr) { reject(new Error('Response Cloudinary tidak valid')); }
     };
-    xhr.onerror = () => reject(new Error('Koneksi gagal'));
+    xhr.onerror = () => reject(new Error('Koneksi ke Cloudinary gagal — periksa internet'));
     xhr.send(fd);
   });
 }
 
-// ── Hapus foto dari Cloudinary via server-side delete (menggunakan unsigned delete token) ──
-// CATATAN: Cloudinary unsigned delete hanya bisa jika preset mengizinkan.
-// Jika tidak, foto lama tetap ter-track di DB dan bisa dibersihkan via Cloudinary dashboard.
+// ── Hapus foto lama dari Cloudinary — dua strategi ──────────────────────────────────────────────
+// STRATEGI A: Unsigned delete (hanya berhasil jika Cloudinary preset mengizinkan unsigned destroy).
+// STRATEGI B: Catat public_id ke Firestore collection "_coverCleanup" sebagai audit trail & fallback.
+//             Admin bisa hapus manual dari Cloudinary dashboard, atau dihapus via Cloud Function.
 async function deleteCoverFromCloudinary(publicId) {
   if (!publicId) return;
+
+  // ── Strategi A: Coba unsigned delete langsung ke Cloudinary ─────
+  let deletedViaApi = false;
   try {
-    // Coba hapus via Cloudinary destroy endpoint (butuh signed request — gunakan fetch ke endpoint)
-    // Karena ini client-side tanpa server, kita simpan public_id di DB untuk audit/cleanup manual
-    // dan set invalidate agar CDN cache dihapus jika berhasil.
-    // Untuk keamanan, opsi terbaik adalah menghapus via Cloud Function / backend.
-    // Implementasi ini mencatat public_id ke console untuk referensi admin.
-    console.info('[CoverPhoto] Old cover public_id for cleanup:', publicId);
-    // Simpan ke collection khusus untuk cleanup task (opsional, bisa dihapus manual via Cloudinary)
-    // Tidak blocking — lanjut tanpa tunggu
-  } catch(e) {
-    console.warn('[CoverPhoto] Cleanup note:', e.message);
+    const delFd = new FormData();
+    delFd.append('public_id',     publicId);
+    delFd.append('upload_preset', CLOUDINARY_PRESET);  // preset harus allow unsigned delete
+    const delRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/destroy`,
+      { method: 'POST', body: delFd }
+    );
+    if (delRes.ok) {
+      const delJson = await delRes.json();
+      if (delJson.result === 'ok') {
+        deletedViaApi = true;
+        console.info('[CoverPhoto] ✅ Foto lama berhasil dihapus dari Cloudinary:', publicId);
+      } else {
+        console.warn('[CoverPhoto] Cloudinary destroy result:', delJson.result, '— akan dicatat ke DB');
+      }
+    }
+  } catch(apiErr) {
+    console.warn('[CoverPhoto] Unsigned delete tidak tersedia:', apiErr.message);
+  }
+
+  // ── Strategi B: Catat ke Firestore untuk audit / cleanup fallback ─
+  // Selalu jalankan ini terlepas dari hasil Strategi A, agar ada log audit.
+  try {
+    const uid = window._S.user?.uid;
+    if (!uid || !window.db) return;
+    const { addDoc, collection, serverTimestamp } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    await addDoc(collection(window.db, '_coverCleanup'), {
+      public_id:   publicId,
+      uid:         uid,
+      deletedViaApi,
+      status:      deletedViaApi ? 'deleted' : 'pending',
+      createdAt:   serverTimestamp()
+    });
+    console.info('[CoverPhoto] Cleanup record saved. Deleted via API:', deletedViaApi);
+  } catch(dbErr) {
+    console.warn('[CoverPhoto] Tidak bisa catat ke _coverCleanup:', dbErr.message);
   }
 }
 
@@ -2492,77 +2527,126 @@ window._FB = {
 
   // ══════════════════════════════════════════════════════════════════
   // 📸 UPDATE COVER PHOTO — Full Pipeline
-  //   1. Upload ke Cloudinary dengan kompresi & transformasi otomatis
-  //   2. Simpan coverPhotoURL + coverPhotoPublicId ke Firestore
-  //   3. Hapus foto lama dari Cloudinary (auto-delete via public_id)
-  //   4. Real-time sync via onSnapshot sudah aktif — user lain langsung lihat
+  //   1. Validasi file (tipe & ukuran)
+  //   2. Upload ke Cloudinary dengan kompresi client-side + transformasi server-side
+  //   3. Update Firestore: coverPhotoURL + coverPhotoPublicId → semua visitor lihat real-time
+  //   4. Auto-delete foto lama dari Cloudinary (Strategi A: unsigned destroy, B: Firestore cleanup)
+  //   5. Update state lokal + re-render halaman profil
   // ══════════════════════════════════════════════════════════════════
   async uploadCoverPhoto(file) {
     const u = window._S.user;
     if (!u) { showToast('Login dulu', 'red'); return; }
 
-    // ── 1. Ambil public_id foto LAMA sebelum upload baru ──────────
+    // ── 0. Validasi file sebelum apapun ──────────────────────────
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const MAX_SIZE_MB   = 10;
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      showToast('Format tidak didukung. Gunakan JPG, PNG, atau WebP.', 'red');
+      return;
+    }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      showToast(`Ukuran file maks ${MAX_SIZE_MB}MB.`, 'red');
+      return;
+    }
+
+    // ── 1. Simpan public_id foto LAMA sebelum dioverwrite ────────
     const oldPublicId = u.coverPhotoPublicId || null;
+
+    // ── 2. Tampilkan preview lokal langsung (optimistic UI) ───────
+    // Preview ini akan diganti dengan URL Cloudinary begitu upload selesai.
+    const coverImg = document.getElementById('profileCoverImg');
 
     showToast('⏳ Mengunggah foto sampul...', 'green');
 
-    // ── 2. Upload foto baru ke Cloudinary (dengan kompresi & transformasi) ──
-    // uploadCoverToCloudinary mengembalikan { secure_url, public_id }
-    const { secure_url: newUrl, public_id: newPublicId } =
-      await uploadCoverToCloudinary(file);
+    let newUrl      = '';
+    let newPublicId = '';
 
-    // ── 3. Pastikan docId user di Firestore tersedia ──────────────
-    let docId = u.docId || null;
-    if (!docId) {
-      const snap = await getDocs(query(collection(db, 'users'), where('uid', '==', u.uid)));
-      if (!snap.empty) {
-        docId = snap.docs[0].id;
-        window._S.user.docId = docId;
+    try {
+      // ── 3. Upload ke Cloudinary dengan kompresi + transformasi ──
+      const result = await uploadCoverToCloudinary(file, progress => {
+        // Update toast progress jika perlu (opsional — bisa diperluas ke progress bar)
+        if (progress < 100) showToast(`⏳ Mengupload... ${progress}%`, 'green');
+      });
+      newUrl      = result.secure_url;
+      newPublicId = result.public_id;
+
+      if (!newUrl) throw new Error('URL dari Cloudinary kosong — upload gagal');
+
+    } catch(uploadErr) {
+      // Rollback preview ke foto lama jika upload gagal
+      const oldUrl = u.coverPhotoURL || u.coverPhoto || '';
+      if (coverImg) {
+        if (oldUrl) { coverImg.src = oldUrl; coverImg.style.display = 'block'; }
+        else        { coverImg.style.display = 'none'; }
       }
+      showToast('❌ Upload gagal: ' + (uploadErr.message || uploadErr), 'red');
+      console.error('[uploadCoverPhoto] Upload error:', uploadErr);
+      return; // Hentikan proses — jangan sentuh Firestore
     }
 
-    // ── 4. Sync ke Firestore: update coverPhotoURL & coverPhotoPublicId ──
-    //    Field coverPhotoURL   → URL Cloudinary (untuk ditampilkan ke semua user)
-    //    Field coverPhotoPublicId → public_id Cloudinary (untuk delete nanti)
-    //    Field coverPhoto      → tetap diisi sama agar kompatibel dengan kode lama
-    if (!docId) {
-      // Dokumen belum ada — buat baru
-      const newRef = await addDoc(collection(db, 'users'), {
-        uid:                u.uid,
-        name:               u.name,
-        phone:              u.phone  || '',
-        email:              u.email  || '',
-        photoUrl:           u.photoUrl || '',
-        coverPhoto:         newUrl,          // kompatibilitas kode lama
-        coverPhotoURL:      newUrl,          // field utama baru
-        coverPhotoPublicId: newPublicId,     // untuk auto-delete nanti
-        createdAt:          serverTimestamp()
-      });
-      window._S.user.docId = newRef.id;
-    } else {
-      // Update dokumen yang ada — HANYA field cover, tidak ganggu field lain
-      await updateDoc(doc(db, 'users', docId), {
-        coverPhoto:         newUrl,          // kompatibilitas kode lama
-        coverPhotoURL:      newUrl,          // field utama baru
-        coverPhotoPublicId: newPublicId      // simpan public_id baru
-      });
+    // ── 4. Perbarui preview dengan URL Cloudinary final ──────────
+    if (coverImg) { coverImg.src = newUrl; coverImg.style.display = 'block'; }
+
+    // ── 5. Sync ke Firestore ─────────────────────────────────────
+    //    coverPhotoURL       → URL CDN Cloudinary (dibaca semua user via onSnapshot)
+    //    coverPhotoPublicId  → public_id untuk auto-delete di masa depan
+    //    coverPhoto          → tetap diisi untuk kompatibilitas kode lama
+    try {
+      let docId = u.docId || null;
+      if (!docId) {
+        const snap = await getDocs(query(collection(db, 'users'), where('uid', '==', u.uid)));
+        if (!snap.empty) { docId = snap.docs[0].id; window._S.user.docId = docId; }
+      }
+
+      const coverPayload = {
+        coverPhoto:         newUrl,        // kompatibilitas kode lama
+        coverPhotoURL:      newUrl,        // ← field utama — dibaca semua visitor via onSnapshot
+        coverPhotoPublicId: newPublicId    // ← dipakai untuk auto-delete foto lama
+      };
+
+      if (!docId) {
+        // Dokumen user belum ada di Firestore — buat baru
+        const newRef = await addDoc(collection(db, 'users'), {
+          uid:      u.uid,
+          name:     u.name     || '',
+          phone:    u.phone    || '',
+          email:    u.email    || '',
+          photoUrl: u.photoUrl || '',
+          createdAt: serverTimestamp(),
+          ...coverPayload
+        });
+        window._S.user.docId = newRef.id;
+        console.info('[uploadCoverPhoto] Dokumen user baru dibuat:', newRef.id);
+      } else {
+        // Update dokumen yang ada — HANYA field cover, tidak ganggu field lain
+        await updateDoc(doc(db, 'users', docId), coverPayload);
+        console.info('[uploadCoverPhoto] Firestore updated. docId:', docId);
+      }
+    } catch(dbErr) {
+      // Firestore gagal — foto sudah di Cloudinary, tapi DB belum tersimpan
+      showToast('⚠️ Upload berhasil tapi gagal sinkron ke database. Coba lagi.', 'red');
+      console.error('[uploadCoverPhoto] Firestore sync error:', dbErr);
+      return;
     }
 
-    // ── 5. Auto-delete foto LAMA dari Cloudinary ──────────────────
-    //    Dipanggil SETELAH Firestore berhasil di-update
-    //    agar tidak kehilangan foto jika proses update gagal.
-    if (oldPublicId && oldPublicId !== newPublicId) {
-      await deleteCoverFromCloudinary(oldPublicId);
-    }
-
-    // ── 6. Update state lokal (optimistic) ────────────────────────
+    // ── 6. Update state lokal (in-memory) ────────────────────────
     window._S.user.coverPhoto         = newUrl;
     window._S.user.coverPhotoURL      = newUrl;
     window._S.user.coverPhotoPublicId = newPublicId;
 
-    // Re-render halaman profil langsung
+    // ── 7. Re-render halaman profil dengan URL final ──────────────
     renderProfilePage();
     showToast('✅ Foto sampul berhasil diperbarui!', 'green');
+
+    // ── 8. Auto-delete foto LAMA dari Cloudinary (non-blocking) ──
+    //    Dipanggil SETELAH Firestore berhasil agar tidak kehilangan
+    //    referensi jika proses gagal di tengah.
+    if (oldPublicId && oldPublicId !== newPublicId) {
+      // Jalankan tanpa await — tidak blocking, tidak membatalkan sukses upload
+      deleteCoverFromCloudinary(oldPublicId).catch(e => {
+        console.warn('[uploadCoverPhoto] Auto-delete foto lama gagal (tidak kritis):', e.message);
+      });
+    }
   },
 
   listenPresence(otherUid, callback) {
@@ -4497,6 +4581,37 @@ window.viewSellerStore = async function(sellerUid) {
   showPage('etalase');
   // Load followers count
   renderEtalaseFollow(sellerUid);
+
+  // ── Real-time cover photo seller (onSnapshot) ─────────────────
+  // Hentikan listener etalase sebelumnya jika ada
+  if (window._etalaseCoverUnsub) {
+    try { window._etalaseCoverUnsub(); } catch(e) {}
+    window._etalaseCoverUnsub = null;
+  }
+  try {
+    const { onSnapshot, collection, query, where } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || (await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')).getFirestore();
+    const q2  = query(collection(db2, 'users'), where('uid', '==', sellerUid));
+    window._etalaseCoverUnsub = onSnapshot(q2, snap => {
+      if (snap.empty) return;
+      const d         = snap.docs[0].data();
+      const coverUrl  = d.coverPhotoURL || d.coverPhoto || '';
+      const coverImgEl = document.getElementById('etalaseCoverImg');
+      if (coverImgEl) {
+        if (coverUrl) {
+          coverImgEl.src          = coverUrl;
+          coverImgEl.style.display = 'block';
+          coverImgEl.onerror      = () => { coverImgEl.style.display = 'none'; };
+        } else {
+          coverImgEl.src          = '';
+          coverImgEl.style.display = 'none';
+        }
+      }
+    }, err => { console.warn('[EtalaseCover] onSnapshot error:', err.message); });
+  } catch(e) {
+    console.warn('[EtalaseCover] Listener gagal dipasang:', e.message);
+  }
 };
 
 // ── Follow System ─────────────────────────────────────────────
