@@ -2048,28 +2048,39 @@ window._FB = {
 
   async loadChatList() {
     if(!window._S.user) return [];
-    const snap=await getDocs(query(
-      collection(db,'chats'),
-      where('participants','array-contains',window._S.user.uid),
-      orderBy('lastAt','desc')
-    ));
-    const docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+
+    let docs = [];
+    try {
+      // Tanpa orderBy — hindari kebutuhan composite index di Firestore
+      // Sorting dilakukan di sisi client setelah data diterima
+      const snap = await getDocs(query(
+        collection(db,'chats'),
+        where('participants','array-contains', window._S.user.uid)
+      ));
+      docs = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    } catch(e) {
+      console.warn('loadChatList error:', e.message);
+      return [];
+    }
 
     // Deduplikasi: satu entri per pasangan UID, ambil yang lastAt terbaru
-    const pairMap=new Map();
-    docs.forEach(ch=>{
-      const uid=window._S.user.uid;
-      const otherId=ch.sellerId===uid ? ch.buyerId : ch.sellerId;
+    const pairMap = new Map();
+    docs.forEach(ch => {
+      const uid = window._S.user.uid;
+      const otherId = ch.sellerId === uid ? ch.buyerId : ch.sellerId;
       if(!otherId) return;
-      const pairKey=[uid,otherId].sort().join('_');
-      if(!pairMap.has(pairKey)){
-        pairMap.set(pairKey,ch);
+      const pairKey = [uid, otherId].sort().join('_');
+      if(!pairMap.has(pairKey)) {
+        pairMap.set(pairKey, ch);
       } else {
-        const cur=pairMap.get(pairKey);
-        if((ch.lastAt?.seconds||0)>(cur.lastAt?.seconds||0)) pairMap.set(pairKey,ch);
+        const cur = pairMap.get(pairKey);
+        if((ch.lastAt?.seconds||0) > (cur.lastAt?.seconds||0)) pairMap.set(pairKey, ch);
       }
     });
-    return Array.from(pairMap.values());
+
+    // Sort di client: terbaru di atas
+    return Array.from(pairMap.values())
+      .sort((a,b) => (b.lastAt?.seconds||0) - (a.lastAt?.seconds||0));
   },
 
   // ── Billboard ─────────────────────────────────────────────────
