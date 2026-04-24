@@ -2615,25 +2615,67 @@ let _chatListUnsub = null;   // real-time listener untuk daftar chat
 window.startNotifListener = function() {
   if(!window._S.user || !db) return;
   if(_notifUnsub) { _notifUnsub(); _notifUnsub = null; }
+  if(window._S._notifSubUnsub) { window._S._notifSubUnsub(); window._S._notifSubUnsub = null; }
+
   const uid = window._S.user.uid;
-  const q = query(
+
+  // Helper — merge & render gabungan dua sumber notif
+  function mergeAndRender(globalNotifs, subNotifs) {
+    // Gabung, deduplicate by id
+    const seen = new Set();
+    const all = [...(globalNotifs||[]), ...(subNotifs||[])].filter(n => {
+      if(seen.has(n.id)) return false;
+      seen.add(n.id); return true;
+    });
+    // Sort: isSticky/pinned dulu, lalu timestamp desc
+    all.sort((a, b) => {
+      const aSticky = (a.isSticky||a.pinned) ? 1 : 0;
+      const bSticky = (b.isSticky||b.pinned) ? 1 : 0;
+      if(bSticky !== aSticky) return bSticky - aSticky;
+      const aT = a.timestamp?.seconds || a.createdAt?.seconds || 0;
+      const bT = b.timestamp?.seconds || b.createdAt?.seconds || 0;
+      return bT - aT;
+    });
+    window._S.notifs = all;
+    const unread = all.filter(n => {
+      if(n.toUid === 'broadcast' || n.type === 'broadcast') return !(n.readBy||[]).includes(uid);
+      return !n.read;
+    }).length;
+    updateNotifBadge(unread);
+    const _fs = document.getElementById('notifFullScreen');
+    if(_fs && _fs.classList.contains('active')) {
+      renderNotifFull(all);
+    } else if(document.getElementById('notifPanel').style.display !== 'none') {
+      renderNotifList(all);
+    }
+  }
+
+  // ── Listener 1: koleksi global 'notifications' (broadcast lama) ──
+  const qGlobal = query(
     collection(db, 'notifications'),
     where('toUid', 'in', [uid, 'broadcast']),
     orderBy('createdAt', 'desc')
   );
-  _notifUnsub = onSnapshot(q, (snap) => {
-    const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    window._S.notifs = notifs;
-    const unread = notifs.filter(n => !n.read && !n.readBy?.includes(uid)).length;
-    updateNotifBadge(unread);
-    const _fs=document.getElementById('notifFullScreen');
-    if(_fs && _fs.classList.contains('active')) {
-      renderNotifFull(notifs);
-    } else if(document.getElementById('notifPanel').style.display !== 'none') {
-      renderNotifList(notifs);
-    }
+  let _globalNotifs = [];
+  let _subNotifs    = [];
+
+  _notifUnsub = onSnapshot(qGlobal, (snap) => {
+    _globalNotifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    mergeAndRender(_globalNotifs, _subNotifs);
   }, (err) => {
-    console.warn('[NotifListener] error:', err.message);
+    console.warn('[NotifListener-global] error:', err.message);
+  });
+
+  // ── Listener 2: sub-koleksi users/{uid}/notifications (broadcast baru) ──
+  const qSub = query(
+    collection(db, 'users', uid, 'notifications'),
+    orderBy('createdAt', 'desc')
+  );
+  window._S._notifSubUnsub = onSnapshot(qSub, (snap) => {
+    _subNotifs = snap.docs.map(d => ({ id: 'sub_' + d.id, ...d.data() }));
+    mergeAndRender(_globalNotifs, _subNotifs);
+  }, (err) => {
+    console.warn('[NotifListener-sub] error:', err.message);
   });
 };
 
@@ -2960,8 +3002,9 @@ window.closeBroadcastModalDirect = function() {
 // ── Render full-screen notif (split broadcast vs activity) ─────
 window.renderNotifFull = function(notifs) {
   const uid = window._S.user?.uid || '';
-  const broadcasts = notifs.filter(n => n.toUid === 'broadcast' || n.type === 'broadcast');
-  const activities = notifs.filter(n => n.toUid !== 'broadcast' && n.type !== 'broadcast');
+  // Sudah tersort dari mergeAndRender (isSticky dulu, lalu timestamp desc)
+  const broadcasts = notifs.filter(n => n.toUid === 'broadcast' || n.type === 'broadcast' || n.isSticky || n.pinned);
+  const activities = notifs.filter(n => n.toUid !== 'broadcast' && n.type !== 'broadcast' && !n.isSticky && !n.pinned);
 
   // ── Broadcast section ──────────────────────────────────────
   const bcSection = document.getElementById('notifBroadcastSection');
@@ -2980,13 +3023,15 @@ window.renderNotifFull = function(notifs) {
       return `<div class="notif-broadcast-card ${isUnread?'':'read-bc'}" onclick="openBroadcastModal(${bcIdx})">
         <div class="flex items-start gap-3">
           <div class="notif-bc-icon">
-            <i class="fa-solid fa-bullhorn text-white text-xs"></i>
+            <i class="fa-solid fa-satellite-dish text-white text-xs"></i>
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
+              ${n.isSticky||n.pinned?`<span class="text-[9px] font-black bg-amber-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1"><i class="fa-solid fa-thumbtack" style="font-size:7px"></i>PINNED</span>`:''}
               <span class="text-[10px] font-black text-amber-700">${n.senderName||'YallaMart'}</span>
               ${isUnread?`<span class="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0"></span>`:''}
             </div>
+            ${n.title?`<p class="text-xs font-black text-amber-900 mb-0.5">${n.title}</p>`:''}
             <p class="notif-bc-msg">${n.message||''}</p>
             <p class="text-[10px] text-amber-600/70 mt-1.5 flex items-center gap-1">
               <i class="fa-solid fa-clock" style="font-size:8px"></i>${timeStr}
@@ -4630,46 +4675,45 @@ window.sendBroadcastMassal = async function() {
     const usersSnap = await getDocs(collection(db, 'users'));
     if(usersSnap.empty) { showToast('Tidak ada user ditemukan', 'red'); return; }
 
-    const now = new Date();
-    const BATCH_LIMIT = 499; // Firestore writeBatch max 500 ops
+    const BATCH_LIMIT = 499;
     let batch = writeBatch(db);
     let opCount = 0;
     let totalSent = 0;
 
     for(const userDoc of usersSnap.docs) {
       const uid = userDoc.id;
-      // Buat doc baru di sub-koleksi notifications tiap user
       const notifRef = doc(collection(db, 'users', uid, 'notifications'));
       batch.set(notifRef, {
-        type    : 'official',
-        pinned  : true,
-        title   : title,
-        message : body,
+        type       : 'broadcast',
+        isSticky   : true,
+        pinned     : true,
+        title      : title,
+        message    : body,
         senderName : u.name || 'Developer',
         senderEmail: u.email,
-        read    : false,
-        createdAt: now
+        read       : false,
+        readBy     : [],
+        timestamp  : serverTimestamp(),
+        createdAt  : serverTimestamp()
       });
       opCount++;
       totalSent++;
 
-      // Commit batch setiap 499 operasi lalu buat batch baru
       if(opCount >= BATCH_LIMIT) {
         await batch.commit();
-        batch   = writeBatch(db);
-        opCount = 0;
+        batch    = writeBatch(db);
+        opCount  = 0;
       }
     }
-
-    // Commit sisa batch
     if(opCount > 0) await batch.commit();
 
-    // Juga kirim ke koleksi 'notifications' global (untuk listener lama)
-    const globalRef = doc(collection(db, 'notifications'));
-    const globalBatch = writeBatch(db);
-    globalBatch.set(globalRef, {
+    // Juga kirim ke koleksi 'notifications' global (listener lama)
+    const globalRef  = doc(collection(db, 'notifications'));
+    const gBatch     = writeBatch(db);
+    gBatch.set(globalRef, {
       toUid      : 'broadcast',
-      type       : 'official',
+      type       : 'broadcast',
+      isSticky   : true,
       pinned     : true,
       title      : title,
       message    : body,
@@ -4677,11 +4721,12 @@ window.sendBroadcastMassal = async function() {
       senderEmail: u.email,
       read       : false,
       readBy     : [],
-      createdAt  : now
+      timestamp  : serverTimestamp(),
+      createdAt  : serverTimestamp()
     });
-    await globalBatch.commit();
+    await gBatch.commit();
 
-    showToast(`✅ Siaran terkirim ke ${totalSent} pengguna!`, 'green');
+    showToast('✅ Siaran terkirim ke ' + totalSent + ' pengguna!', 'green');
     closeBroadcastModal();
 
   } catch(e) {
