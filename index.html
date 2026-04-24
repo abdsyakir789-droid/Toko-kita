@@ -4703,7 +4703,8 @@ window.sendBroadcastFs = async function() {
     let totalSent = 0;
 
     for(const userDoc of usersSnap.docs) {
-      const uid = userDoc.id;
+      const uid = userDoc.data().uid;
+      if(!uid) continue; // skip jika field uid kosong
       const notifRef = doc(collection(_db, 'users', uid, 'notifications'));
       batch.set(notifRef, {
         title     : 'Pesan Siaran',
@@ -4767,7 +4768,8 @@ window.sendBroadcastMassal = async function() {
 
     // ── 2. Tulis ke users/{uid}/notifications setiap user ──────
     for(const userDoc of usersSnap.docs) {
-      const uid = userDoc.id;
+      const uid = userDoc.data().uid;
+      if(!uid) continue; // skip jika field uid kosong
       // Target path: users/[UID]/notifications/[NEW_DOC]
       const notifRef = doc(collection(_db, 'users', uid, 'notifications'));
       batch.set(notifRef, {
