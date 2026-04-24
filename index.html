@@ -2638,8 +2638,9 @@ window.startNotifListener = function() {
     });
     window._S.notifs = all;
     const unread = all.filter(n => {
-      if(n.toUid === 'broadcast' || n.type === 'broadcast') return !(n.readBy||[]).includes(uid);
-      return !n.read;
+      const isBc = n.toUid === 'broadcast' || n.type === 'broadcast' || n.type === 'official_broadcast';
+      if(isBc) return !(n.readBy||[]).includes(uid) && !n.isRead;
+      return !n.read && !n.isRead;
     }).length;
     updateNotifBadge(unread);
     const _fs = document.getElementById('notifFullScreen');
@@ -2666,13 +2667,21 @@ window.startNotifListener = function() {
     console.warn('[NotifListener-global] error:', err.message);
   });
 
-  // ── Listener 2: sub-koleksi users/{uid}/notifications (broadcast baru) ──
-  const qSub = query(
-    collection(db, 'users', uid, 'notifications'),
-    orderBy('createdAt', 'desc')
-  );
+  // ── Listener 2: sub-koleksi users/{uid}/notifications ────────
+  // Tanpa orderBy di Firestore — sorting dilakukan di JavaScript
+  // sehingga tidak butuh composite index sama sekali
+  const qSub = collection(db, 'users', uid, 'notifications');
   window._S._notifSubUnsub = onSnapshot(qSub, (snap) => {
     _subNotifs = snap.docs.map(d => ({ id: 'sub_' + d.id, ...d.data() }));
+    // Sort di JavaScript: isSticky dulu, lalu timestamp desc
+    _subNotifs.sort((a, b) => {
+      const aS = (a.isSticky || a.pinned) ? 1 : 0;
+      const bS = (b.isSticky || b.pinned) ? 1 : 0;
+      if(bS !== aS) return bS - aS;
+      const aT = a.timestamp?.seconds || a.createdAt?.seconds || 0;
+      const bT = b.timestamp?.seconds || b.createdAt?.seconds || 0;
+      return bT - aT;
+    });
     mergeAndRender(_globalNotifs, _subNotifs);
   }, (err) => {
     console.warn('[NotifListener-sub] error:', err.message);
@@ -3003,8 +3012,9 @@ window.closeBroadcastModalDirect = function() {
 window.renderNotifFull = function(notifs) {
   const uid = window._S.user?.uid || '';
   // Sudah tersort dari mergeAndRender (isSticky dulu, lalu timestamp desc)
-  const broadcasts = notifs.filter(n => n.toUid === 'broadcast' || n.type === 'broadcast' || n.isSticky || n.pinned);
-  const activities = notifs.filter(n => n.toUid !== 'broadcast' && n.type !== 'broadcast' && !n.isSticky && !n.pinned);
+  const isBroadcastNotif = n => n.toUid === 'broadcast' || n.type === 'broadcast' || n.type === 'official_broadcast' || n.isSticky || n.pinned;
+  const broadcasts = notifs.filter(n => isBroadcastNotif(n));
+  const activities = notifs.filter(n => !isBroadcastNotif(n));
 
   // ── Broadcast section ──────────────────────────────────────
   const bcSection = document.getElementById('notifBroadcastSection');
@@ -3710,7 +3720,7 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
               ${!me?`<p class="text-[10px] font-bold mb-1 opacity-70 px-1">${m.senderName||''}</p>`:''}
               <img src="${imgUrl}" class="max-w-[220px] w-full rounded-2xl object-cover cursor-pointer" style="max-height:280px"
                 onclick="viewChatPhoto('${imgUrl}')"
-                onerror="this.outerHTML='<div class=\\"chat-bubble-${me?'me':'other'} px-3.5 py-2 text-xs\\">📷 Foto tidak tersedia</div>'"
+                onerror="chatImgError(this,me?'me':'other')"
               />
               <button onclick="saveChatPhoto('${imgUrl}');event.stopPropagation()"
                 class="absolute bottom-2 right-2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-sm">
@@ -3797,6 +3807,19 @@ window.sendChatPhoto = async function(input) {
   }
 };
 // ── Lihat & Save foto chat ────────────────────────────────────
+// ── Chat image error handler ─────────────────────────────────
+window.chatImgError = function(img, side) {
+  // Sembunyikan wrapper (relative div) lalu tampilkan bubble error
+  var wrapper = img.closest('.relative.rounded-2xl');
+  if(wrapper) {
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble-' + (side||'other') + ' px-3.5 py-2 text-xs';
+    bubble.textContent = '📷 Foto tidak tersedia';
+    wrapper.parentNode.insertBefore(bubble, wrapper);
+    wrapper.style.display = 'none';
+  }
+};
+
 window.viewChatPhoto = function(url) {
   // Buka foto full screen di tab baru
   const ov = document.createElement('div');
@@ -4666,71 +4689,58 @@ window.sendBroadcastMassal = async function() {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...';
 
   try {
-    const { getFirestore, collection, getDocs, writeBatch, doc, serverTimestamp }
-      = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    // Gunakan db & fungsi Firebase yang sudah diimport secara global
+    if(!db) throw new Error('Firebase belum siap');
 
-    const db = getFirestore();
-
-    // ── Ambil semua user ────────────────────────────────────────
+    // ── 1. Ambil semua UID dari koleksi users ──────────────────
     const usersSnap = await getDocs(collection(db, 'users'));
-    if(usersSnap.empty) { showToast('Tidak ada user ditemukan', 'red'); return; }
+    if(usersSnap.empty) {
+      showToast('Tidak ada user ditemukan', 'red');
+      return;
+    }
 
-    const BATCH_LIMIT = 499;
-    let batch = writeBatch(db);
-    let opCount = 0;
+    const BATCH_LIMIT = 499; // Firestore max 500 ops per batch
+    let batch    = writeBatch(db);
+    let opCount  = 0;
     let totalSent = 0;
 
+    // ── 2. Tulis ke users/{uid}/notifications setiap user ──────
     for(const userDoc of usersSnap.docs) {
       const uid = userDoc.id;
+      // Target path: users/[UID]/notifications/[NEW_DOC]
       const notifRef = doc(collection(db, 'users', uid, 'notifications'));
       batch.set(notifRef, {
-        type       : 'broadcast',
-        isSticky   : true,
-        pinned     : true,
-        title      : title,
-        message    : body,
-        senderName : u.name || 'Developer',
-        senderEmail: u.email,
-        read       : false,
-        readBy     : [],
-        timestamp  : serverTimestamp(),
-        createdAt  : serverTimestamp()
+        title              : title,
+        message            : body,
+        type               : 'official_broadcast',
+        isSticky           : true,
+        isRead             : false,
+        senderName         : u.name || 'Developer',
+        senderEmail        : u.email,
+        timestamp          : serverTimestamp()
       });
       opCount++;
       totalSent++;
 
+      // Commit setiap 499 operasi, buat batch baru
       if(opCount >= BATCH_LIMIT) {
         await batch.commit();
-        batch    = writeBatch(db);
-        opCount  = 0;
+        batch   = writeBatch(db);
+        opCount = 0;
       }
     }
+
+    // Commit sisa batch terakhir
     if(opCount > 0) await batch.commit();
 
-    // Juga kirim ke koleksi 'notifications' global (listener lama)
-    const globalRef  = doc(collection(db, 'notifications'));
-    const gBatch     = writeBatch(db);
-    gBatch.set(globalRef, {
-      toUid      : 'broadcast',
-      type       : 'broadcast',
-      isSticky   : true,
-      pinned     : true,
-      title      : title,
-      message    : body,
-      senderName : u.name || 'Developer',
-      senderEmail: u.email,
-      read       : false,
-      readBy     : [],
-      timestamp  : serverTimestamp(),
-      createdAt  : serverTimestamp()
-    });
-    await gBatch.commit();
-
+    // ── 3. Log & notifikasi hasil ──────────────────────────────
+    console.log('[Broadcast] Berhasil dikirim ke ' + totalSent + ' user.');
+    alert('✅ Pesan siaran berhasil dikirim ke ' + totalSent + ' pengguna!');
     showToast('✅ Siaran terkirim ke ' + totalSent + ' pengguna!', 'green');
     closeBroadcastModal();
 
   } catch(e) {
-    console.error('Broadcast error:', e);
+    console.error('[Broadcast] Error:', e);
     showToast('Gagal kirim siaran: ' + (e.message||e), 'red');
   } finally {
     btn.disabled = false;
