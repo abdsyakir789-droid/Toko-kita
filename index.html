@@ -1674,7 +1674,7 @@ html{scroll-behavior:smooth}
 </div>
 
 <!-- BOTTOM NAV — Mobile Only -->
-<nav id="mobileBottomNav" class="mob-bottom-nav fixed bottom-0 left-0 right-0 bg-white/97 backdrop-blur-md border-t border-gray-100 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]" style="display:none">
+<nav id="mobileBottomNav" class="mob-bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]" style="display:none">
 
   <!-- 1. Beranda -->
   <button id="mnav-home" onclick="showPage('home');setMobTab('home')" class="mob-nav-btn active-tab">
@@ -2684,8 +2684,8 @@ window.renderProducts = () => {
     const badgeCls=p.badge==='Terlaris'?'bg-red-500 text-white':p.badge==='Official'?'bg-blue-500 text-white':p.badge==='New'?'bg-purple-500 text-white':'bg-amber-400 text-white';
     const locationText = p.location || p.loc || '';
     const d=document.createElement('div');
-    d.className='pc bg-white overflow-hidden border border-gray-100/80 cursor-pointer';
-    d.style=`animation:fadeUp .3s ease ${i*.03}s both;border-radius:18px`;
+    d.className='pc bg-white overflow-hidden cursor-pointer';
+    d.style=`animation:fadeUp .3s ease ${i*.03}s both;border-radius:14px;border:0.5px solid #e5e7eb`;
     d.onclick = () => openDetail(p.id||'');
     d.innerHTML=`
       <div class="relative overflow-hidden bg-gray-50" style="aspect-ratio:1/1">
@@ -2715,9 +2715,6 @@ window.renderProducts = () => {
           <i class="fa-solid fa-location-dot text-primary/50 text-[9px]"></i>
           <span class="text-[10px] text-gray-400 lc1">${locationText}</span>
         </div>`:''}
-        <button onclick="quickChat('${p.id||''}');event.stopPropagation()" class="mt-1 w-full flex items-center justify-center gap-1.5 bg-pl hover:bg-primary hover:text-white text-primary text-[10px] font-bold py-2 rounded-xl transition-all">
-          <i class="fa-solid fa-comment-dots text-[10px]"></i> Chat Penjual
-        </button>
       </div>`;
     g.appendChild(d);
   });
