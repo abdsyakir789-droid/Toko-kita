@@ -1,0 +1,26 @@
+{
+  "name": "YallaMart — Premium Marketplace",
+  "short_name": "YallaMart",
+  "description": "Marketplace premium untuk jual beli produk berkualitas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10B981",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/10B981/ffffff?text=YM&font=poppins",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://placehold.co/512x512/10B981/ffffff?text=YM&font=poppins",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle"],
+  "lang": "id"
+}
