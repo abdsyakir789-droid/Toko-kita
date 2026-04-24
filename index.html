@@ -1724,7 +1724,7 @@ import { initializeApp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, setDoc, updateDoc, increment, arrayUnion, arrayRemove, query, orderBy, where, onSnapshot, serverTimestamp }
+import { getFirestore, collection, addDoc, getDocs, getDoc, doc, setDoc, updateDoc, increment, arrayUnion, arrayRemove, query, orderBy, where, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ================================================================
@@ -1855,17 +1855,36 @@ window._FB = {
   async uploadProfilePhoto(file) {
     showToast('Mengunggah foto profil...', 'green');
     const imgUrl = await uploadToCloudinary(file);
-    // Use stored docId if available, otherwise query
+    const uid = window._S.user.uid;
+
+    // ── 1. Cari docId user — selalu query ulang jika belum ada ────
     let docId = window._S.user.docId || null;
     if(!docId) {
-      const snap = await getDocs(query(collection(db,'users'), where('uid','==',window._S.user.uid)));
+      const snap = await getDocs(query(collection(db,'users'), where('uid','==',uid)));
       if(!snap.empty) { docId = snap.docs[0].id; window._S.user.docId = docId; }
     }
-    if(docId) {
-      // FIX 3: Save photoUrl permanently to Firestore
+
+    if(!docId) {
+      // Dokumen user belum ada sama sekali — buat baru
+      const newRef = await addDoc(collection(db,'users'), {
+        uid, name: window._S.user.name, phone: window._S.user.phone||'',
+        email: window._S.user.email||'', photoUrl: imgUrl, createdAt: serverTimestamp()
+      });
+      window._S.user.docId = newRef.id;
+    } else {
+      // ── 2. Update HANYA field photoUrl — tidak menyentuh field lain ──
       await updateDoc(doc(db,'users',docId), { photoUrl: imgUrl });
     }
-    // Update in-memory state
+
+    // ── 3. Update sellerPhoto di semua iklan milik user ini ───────
+    // Agar user lain yang melihat iklan langsung dapat foto terbaru
+    try {
+      const adsSnap = await getDocs(query(collection(db,'ads'), where('sellerUid','==',uid)));
+      const batchUpdates = adsSnap.docs.map(d => updateDoc(doc(db,'ads',d.id), { sellerPhoto: imgUrl }));
+      await Promise.all(batchUpdates);
+    } catch(e) { /* non-critical */ }
+
+    // ── 4. Sinkronisasi state lokal & render ulang UI ─────────────
     window._S.user.photoUrl = imgUrl;
     renderUserState();
     renderProfilePage();
@@ -1957,16 +1976,24 @@ window._FB = {
   },
 
   // ── Real-time Chat ────────────────────────────────────────────
-  async sendChatMessage(chatId, text) {
-    if(!window._S.user||!text.trim()) return;
+  async sendChatMessage(chatId, text, type='text') {
+    if(!window._S.user) return;
+    if(type==='text' && !text.trim()) return;
     const senderUid = window._S.user.uid;
     const receiverId = window._S.activeChatOther;
+
+    // Simpan pesan dengan field type yang eksplisit
     await addDoc(collection(db,'chats',chatId,'messages'), {
-      text:text.trim(), senderId:senderUid,
-      senderName:window._S.user.name, createdAt:serverTimestamp(),
+      text: type==='text' ? text.trim() : text,
+      type,                  // 'text' | 'image'
+      senderId: senderUid,
+      senderName: window._S.user.name,
+      createdAt: serverTimestamp(),
       isRead: false
     });
-    const isPhoto = text.trim().startsWith('__PHOTO__');
+
+    // Update lastMessage & unread di dokumen chat
+    const isPhoto = type==='image';
     if(receiverId) {
       await updateDoc(doc(db,'chats',chatId), {
         lastMessage: isPhoto ? '📷 Foto' : text.trim(),
@@ -1988,42 +2015,61 @@ window._FB = {
   async initChat(adId, sellerId, sellerName, sellerPhoto, adTitle, adImg, adPrice) {
     if(!window._S.user){showToast('Login dulu untuk chat','red');openAuth('login');return null;}
     if(window._S.user.uid===sellerId){showToast('Ini iklan kamu sendiri','red');return null;}
-    const chatId=[window._S.user.uid, sellerId].sort().join('_')+'_'+adId;
-    // Gunakan chatId langsung sebagai document ID — lebih cepat & reliable
+
+    // ── chatId hanya dari dua UID (tanpa adId) ─────────────────
+    // Urutkan alfabetis → ID selalu sama dari kedua sisi
+    const chatId=[window._S.user.uid, sellerId].sort().join('_');
     const chatRef=doc(db,'chats',chatId);
-    const snap=await getDocs(query(collection(db,'chats'),where('chatId','==',chatId)));
-    if(snap.empty) {
-      // Coba get by doc ID dulu (lebih efisien)
-      const directSnap = await getDocs(query(collection(db,'chats'),where('chatId','==',chatId)));
-      if(directSnap.empty) {
-        await setDoc(chatRef, {
-          chatId, adId, adTitle, adImg, adPrice,
-          participants:[window._S.user.uid, sellerId],
-          buyerId:window._S.user.uid, buyerName:window._S.user.name, buyerPhoto:window._S.user.photoUrl||'',
-          sellerId, sellerName, sellerPhoto,
-          lastMessage:'', lastAt:serverTimestamp(),
-          [`unread_${window._S.user.uid}`]: 0,
-          [`unread_${sellerId}`]: 0
-        });
-      }
+
+    const existSnap=await getDoc(chatRef);
+    if(!existSnap.exists()) {
+      // Belum ada → buat percakapan baru
+      await setDoc(chatRef, {
+        chatId,
+        adId, adTitle, adImg, adPrice,
+        participants:[window._S.user.uid, sellerId],
+        buyerId:window._S.user.uid, buyerName:window._S.user.name, buyerPhoto:window._S.user.photoUrl||'',
+        sellerId, sellerName, sellerPhoto,
+        lastMessage:'', lastAt:serverTimestamp(),
+        [`unread_${window._S.user.uid}`]: 0,
+        [`unread_${sellerId}`]: 0
+      });
     } else {
-      // Pastikan field participants ada (untuk chat lama yang mungkin belum punya)
-      const chatData = snap.docs[0].data();
-      if(!chatData.participants) {
-        await updateDoc(doc(db,'chats',snap.docs[0].id), {
-          participants:[window._S.user.uid, sellerId],
-          [`unread_${window._S.user.uid}`]: chatData[`unread_${window._S.user.uid}`] || 0,
-          [`unread_${sellerId}`]: chatData[`unread_${sellerId}`] || 0
-        });
-      }
+      // Sudah ada → migrasi field yang mungkin belum ada
+      const chatData=existSnap.data();
+      const updates={};
+      if(!chatData.participants) updates.participants=[window._S.user.uid, sellerId];
+      if(chatData[`unread_${window._S.user.uid}`]===undefined) updates[`unread_${window._S.user.uid}`]=0;
+      if(chatData[`unread_${sellerId}`]===undefined) updates[`unread_${sellerId}`]=0;
+      if(Object.keys(updates).length) await updateDoc(chatRef, updates);
     }
     return chatId;
   },
 
   async loadChatList() {
     if(!window._S.user) return [];
-    const snap=await getDocs(query(collection(db,'chats'),where('participants','array-contains',window._S.user.uid)));
-    return snap.docs.map(d=>({id:d.id,...d.data()}));
+    const snap=await getDocs(query(
+      collection(db,'chats'),
+      where('participants','array-contains',window._S.user.uid),
+      orderBy('lastAt','desc')
+    ));
+    const docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+
+    // Deduplikasi: satu entri per pasangan UID, ambil yang lastAt terbaru
+    const pairMap=new Map();
+    docs.forEach(ch=>{
+      const uid=window._S.user.uid;
+      const otherId=ch.sellerId===uid ? ch.buyerId : ch.sellerId;
+      if(!otherId) return;
+      const pairKey=[uid,otherId].sort().join('_');
+      if(!pairMap.has(pairKey)){
+        pairMap.set(pairKey,ch);
+      } else {
+        const cur=pairMap.get(pairKey);
+        if((ch.lastAt?.seconds||0)>(cur.lastAt?.seconds||0)) pairMap.set(pairKey,ch);
+      }
+    });
+    return Array.from(pairMap.values());
   },
 
   // ── Billboard ─────────────────────────────────────────────────
@@ -3092,24 +3138,33 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
         } else if(m.createdAt?.toDate) {
           try { timeStr=m.createdAt.toDate().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}); } catch(e){}
         } else {
-          // Pesan lokal (offline fallback) — pakai waktu sekarang
           timeStr=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
         }
+
+        // Tentukan apakah ini pesan foto
+        // Support: field type='image' (baru) ATAU prefix __PHOTO__ (lama)
+        const isImg = m.type==='image' || (m.text||'').startsWith('__PHOTO__');
+        const imgUrl = isImg ? (m.text||'').replace('__PHOTO__','') : '';
+
         return `
         <div class="flex ${me?'justify-end':'justify-start'} chat-msg">
           <div class="flex flex-col ${me?'items-end':'items-start'} max-w-[75%]">
-            ${m.text.startsWith('__PHOTO__') ? `
+            ${isImg ? `
             <div class="relative rounded-2xl overflow-hidden shadow-sm">
-              ${!me?`<p class="text-[10px] font-bold mb-1 opacity-70 px-1">${m.senderName}</p>`:''}
-              <img src="${m.text.replace('__PHOTO__','')}" class="max-w-[220px] w-full rounded-2xl object-cover cursor-pointer" style="max-height:280px" onclick="viewChatPhoto('${m.text.replace('__PHOTO__','')}')"/>
-              <button onclick="saveChatPhoto('${m.text.replace('__PHOTO__','')}');event.stopPropagation()" class="absolute bottom-2 right-2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-sm">
+              ${!me?`<p class="text-[10px] font-bold mb-1 opacity-70 px-1">${m.senderName||''}</p>`:''}
+              <img src="${imgUrl}" class="max-w-[220px] w-full rounded-2xl object-cover cursor-pointer" style="max-height:280px"
+                onclick="viewChatPhoto('${imgUrl}')"
+                onerror="this.outerHTML='<div class=\\"chat-bubble-${me?'me':'other'} px-3.5 py-2 text-xs\\">📷 Foto tidak tersedia</div>'"
+              />
+              <button onclick="saveChatPhoto('${imgUrl}');event.stopPropagation()"
+                class="absolute bottom-2 right-2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-sm">
                 <i class="fa-solid fa-download text-[10px]"></i>
               </button>
             </div>
             ` : `
             <div class="${me?'chat-bubble-me':'chat-bubble-other'} px-3.5 py-2 text-xs leading-relaxed">
-              ${!me?`<p class="text-[10px] font-bold mb-0.5 opacity-70">${m.senderName}</p>`:''}
-              ${m.text}
+              ${!me?`<p class="text-[10px] font-bold mb-0.5 opacity-70">${m.senderName||''}</p>`:''}
+              ${(m.text||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
             </div>
             `}
             ${timeStr?`<span class="msg-time ${me?'text-gray-400 pr-1':'text-gray-400 pl-1'}">${timeStr}</span>`:''}
@@ -3137,30 +3192,52 @@ window.sendChatMsg=async()=>{
 // ── Kirim Foto di Chat ────────────────────────────────────────
 window.sendChatPhoto = async function(input) {
   const file = input.files[0];
-  if(!file || !window._S.activeChatId) return;
+  if(!file || !window._S.activeChatId) { input.value=''; return; }
   input.value = '';
+
   if(!window._FB){ showToast('Firebase belum dikonfigurasi','red'); return; }
   if(!window._S.user){ showToast('Login dulu untuk kirim foto','red'); return; }
+
+  // Validasi tipe & ukuran file
+  if(!file.type.startsWith('image/')){ showToast('File harus berupa gambar','red'); return; }
+  if(file.size > 10 * 1024 * 1024){ showToast('Ukuran foto maksimal 10MB','red'); return; }
 
   // Tampilkan loading bubble sementara
   const el = document.getElementById('chatMessages');
   const loadDiv = document.createElement('div');
   loadDiv.className = 'flex justify-end chat-msg';
   loadDiv.id = 'chatPhotoLoading';
-  loadDiv.innerHTML = `<div class="chat-bubble-me px-3.5 py-2 max-w-[75%] text-xs flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> Mengirim foto...</div>`;
-  el.appendChild(loadDiv); el.scrollTop = el.scrollHeight;
+  loadDiv.innerHTML = `<div class="chat-bubble-me px-3.5 py-2 max-w-[75%] text-xs flex items-center gap-2 opacity-60">
+    <i class="fa-solid fa-spinner fa-spin"></i> Mengirim foto...
+  </div>`;
+  el.appendChild(loadDiv);
+  el.scrollTop = el.scrollHeight;
 
   try {
+    // Upload ke Cloudinary — sama seperti foto produk/profil
     const imgUrl = await uploadToCloudinary(file);
+
     // Hapus loading bubble
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
-    // Kirim sebagai pesan dengan prefix khusus foto
-    await window._FB.sendChatMessage(window._S.activeChatId, '__PHOTO__' + imgUrl);
+
+    // Kirim sebagai pesan dengan type='image' (bukan lagi prefix __PHOTO__)
+    await window._FB.sendChatMessage(window._S.activeChatId, imgUrl, 'image');
+
   } catch(e) {
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
-    showToast('Gagal mengirim foto','red');
+    console.error('sendChatPhoto error:', e);
+
+    // Tampilkan pesan error yang lebih informatif
+    const errMsg = e.message || 'Upload gagal';
+    if(errMsg.includes('Upload gagal') || errMsg.includes('preset')) {
+      showToast('Gagal upload foto — periksa konfigurasi Cloudinary','red');
+    } else if(errMsg.includes('Koneksi') || errMsg.includes('network')) {
+      showToast('Gagal: koneksi internet bermasalah','red');
+    } else {
+      showToast('Gagal mengirim foto: ' + errMsg, 'red');
+    }
   }
 };
 // ── Lihat & Save foto chat ────────────────────────────────────
