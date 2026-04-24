@@ -2089,54 +2089,31 @@ async function uploadCoverToCloudinary(file, onProgress) {
   });
 }
 
-// ── Hapus foto lama dari Cloudinary — dua strategi ──────────────────────────────────────────────
-// STRATEGI A: Unsigned delete (hanya berhasil jika Cloudinary preset mengizinkan unsigned destroy).
-// STRATEGI B: Catat public_id ke Firestore collection "_coverCleanup" sebagai audit trail & fallback.
-//             Admin bisa hapus manual dari Cloudinary dashboard, atau dihapus via Cloud Function.
-async function deleteCoverFromCloudinary(publicId) {
+// ── Hapus foto dari Cloudinary via Vercel Function (signed delete) ───────────────────────────────
+// Dipakai untuk: foto cover profil, foto profil, foto iklan/produk
+async function deleteFromCloudinary(publicId, label) {
   if (!publicId) return;
-
-  // ── Strategi A: Coba unsigned delete langsung ke Cloudinary ─────
-  let deletedViaApi = false;
+  const tag = label || 'Photo';
   try {
-    const delFd = new FormData();
-    delFd.append('public_id',     publicId);
-    delFd.append('upload_preset', CLOUDINARY_PRESET);  // preset harus allow unsigned delete
-    const delRes = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/destroy`,
-      { method: 'POST', body: delFd }
-    );
-    if (delRes.ok) {
-      const delJson = await delRes.json();
-      if (delJson.result === 'ok') {
-        deletedViaApi = true;
-        console.info('[CoverPhoto] ✅ Foto lama berhasil dihapus dari Cloudinary:', publicId);
-      } else {
-        console.warn('[CoverPhoto] Cloudinary destroy result:', delJson.result, '— akan dicatat ke DB');
-      }
-    }
-  } catch(apiErr) {
-    console.warn('[CoverPhoto] Unsigned delete tidak tersedia:', apiErr.message);
-  }
-
-  // ── Strategi B: Catat ke Firestore untuk audit / cleanup fallback ─
-  // Selalu jalankan ini terlepas dari hasil Strategi A, agar ada log audit.
-  try {
-    const uid = window._S.user?.uid;
-    if (!uid || !window.db) return;
-    const { addDoc, collection, serverTimestamp } =
-      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    await addDoc(collection(window.db, '_coverCleanup'), {
-      public_id:   publicId,
-      uid:         uid,
-      deletedViaApi,
-      status:      deletedViaApi ? 'deleted' : 'pending',
-      createdAt:   serverTimestamp()
+    const res = await fetch('/api/delete-cloudinary', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ public_id: publicId }),
     });
-    console.info('[CoverPhoto] Cleanup record saved. Deleted via API:', deletedViaApi);
-  } catch(dbErr) {
-    console.warn('[CoverPhoto] Tidak bisa catat ke _coverCleanup:', dbErr.message);
+    const json = await res.json();
+    if (json.success) {
+      console.info(`[${tag}] ✅ Foto berhasil dihapus dari Cloudinary:`, publicId);
+    } else {
+      console.warn(`[${tag}] Cloudinary delete result:`, json.result || json.error);
+    }
+  } catch(err) {
+    console.warn(`[${tag}] Gagal hapus foto dari Cloudinary:`, err.message);
   }
+}
+
+// Alias untuk kompatibilitas kode lama (cover photo)
+async function deleteCoverFromCloudinary(publicId) {
+  await deleteFromCloudinary(publicId, 'CoverPhoto');
 }
 
 // ── Expose ke window agar bisa diakses dari script block lain ──
