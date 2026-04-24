@@ -1236,7 +1236,7 @@ html{scroll-behavior:smooth}
       </div>
       <div><p class="text-xs font-bold text-gray-800">Billboard Manager</p><p class="text-[10px] text-amber-600 font-semibold">Akses Developer</p></div>
     </div>
-    <div id="adminBroadcastAction" style="display:none" onclick="openBroadcastModal()" class="flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer col-span-2">
+    <div id="adminBroadcastAction" style="display:none" onclick="openBroadcastSendModal()" class="flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer col-span-2">
       <div class="w-10 h-10 rounded-2xl bg-purple-200 flex items-center justify-center flex-shrink-0">
         <i class="fa-solid fa-satellite-dish text-purple-600"></i>
       </div>
@@ -4612,7 +4612,7 @@ renderUserState();
 <!-- ═══════════════════════════════════════════
    BROADCAST MODAL — Developer Only
 ═══════════════════════════════════════════ -->
-<div id="broadcastModal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)" class="flex items-end justify-center" onclick="if(event.target===this)closeBroadcastModal()">
+<div id="broadcastModal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)" class="flex items-end justify-center" onclick="if(event.target===this)closeBroadcastSendModal()">
   <div class="bg-white w-full max-w-lg rounded-t-3xl p-5 pb-8 min shadow-2xl" style="max-height:90vh;overflow-y:auto">
     <!-- Handle -->
     <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4"></div>
@@ -4625,7 +4625,7 @@ renderUserState();
         <h2 class="text-sm font-bold text-gray-800">Kirim Pesan Siaran</h2>
         <p class="text-[10px] text-purple-500 font-semibold">Pesan akan dikirim ke seluruh pengguna</p>
       </div>
-      <button onclick="closeBroadcastModal()" class="ml-auto w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors flex-shrink-0">
+      <button onclick="closeBroadcastSendModal()" class="ml-auto w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors flex-shrink-0">
         <i class="fa-solid fa-xmark text-xs"></i>
       </button>
     </div>
@@ -4658,8 +4658,8 @@ renderUserState();
 </div>
 
 <script>
-// ── Broadcast Modal ─────────────────────────────────────────────
-window.openBroadcastModal = function() {
+// ── Broadcast Send Modal ─────────────────────────────────────────
+window.openBroadcastSendModal = function() {
   const u = window._S.user;
   if(!u || (u.email||'').toLowerCase() !== 'abdsyakir160@gmail.com') {
     showToast('Akses ditolak — bukan Developer', 'red'); return;
@@ -4670,9 +4670,64 @@ window.openBroadcastModal = function() {
   document.body.style.overflow = 'hidden';
 };
 
-window.closeBroadcastModal = function() {
+window.closeBroadcastSendModal = function() {
   document.getElementById('broadcastModal').style.display = 'none';
   document.body.style.overflow = '';
+};
+
+// sendBroadcastFs — dipanggil dari panel notifikasi (broadcastFormFs)
+window.sendBroadcastFs = async function() {
+  const u = window._S.user;
+  if(!u || (u.email||'').toLowerCase() !== 'abdsyakir160@gmail.com') {
+    showToast('Akses ditolak!', 'red'); return;
+  }
+  const msgEl = document.getElementById('broadcastMsgFs');
+  const msg = msgEl ? msgEl.value.trim() : '';
+  if(!msg) { showToast('Tulis pesan broadcast dulu', 'red'); return; }
+
+  const btn = msgEl ? msgEl.nextElementSibling : null;
+  if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...'; }
+
+  try {
+    const { getFirestore, collection, getDocs, writeBatch, doc, serverTimestamp }
+      = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const _db = window.db || getFirestore();
+    if(!_db) throw new Error('Firebase belum siap');
+
+    const usersSnap = await getDocs(collection(_db, 'users'));
+    if(usersSnap.empty) { showToast('Tidak ada user ditemukan', 'red'); return; }
+
+    const BATCH_LIMIT = 499;
+    let batch = writeBatch(_db);
+    let opCount = 0;
+    let totalSent = 0;
+
+    for(const userDoc of usersSnap.docs) {
+      const uid = userDoc.id;
+      const notifRef = doc(collection(_db, 'users', uid, 'notifications'));
+      batch.set(notifRef, {
+        title     : 'Pesan Siaran',
+        message   : msg,
+        type      : 'official_broadcast',
+        isSticky  : true,
+        isRead    : false,
+        senderName: u.name || 'Developer',
+        senderEmail: u.email,
+        timestamp : serverTimestamp()
+      });
+      opCount++; totalSent++;
+      if(opCount >= BATCH_LIMIT) { await batch.commit(); batch = writeBatch(_db); opCount = 0; }
+    }
+    if(opCount > 0) await batch.commit();
+
+    if(msgEl) msgEl.value = '';
+    showToast('✅ Siaran terkirim ke ' + totalSent + ' pengguna!', 'green');
+  } catch(e) {
+    console.error('[BroadcastFs] Error:', e);
+    showToast('Gagal kirim siaran: ' + (e.message||e), 'red');
+  } finally {
+    if(btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-bullhorn mr-1"></i> Kirim Broadcast'; }
+  }
 };
 
 window.sendBroadcastMassal = async function() {
@@ -4743,7 +4798,7 @@ window.sendBroadcastMassal = async function() {
     console.log('[Broadcast] Berhasil dikirim ke ' + totalSent + ' user.');
     alert('✅ Pesan siaran berhasil dikirim ke ' + totalSent + ' pengguna!');
     showToast('✅ Siaran terkirim ke ' + totalSent + ' pengguna!', 'green');
-    closeBroadcastModal();
+    closeBroadcastSendModal();
 
   } catch(e) {
     console.error('[Broadcast] Error:', e);
