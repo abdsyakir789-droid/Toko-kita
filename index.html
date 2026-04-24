@@ -2060,10 +2060,6 @@ async function uploadCoverToCloudinary(file, onProgress) {
   fd.append('file', blob, 'cover.jpg');
   fd.append('upload_preset', CLOUDINARY_PRESET);
   fd.append('cloud_name',    CLOUDINARY_CLOUD);
-  // Langkah 2: Transformasi Cloudinary sisi server — resize, kompresi adaptif, format WebP
-  // eager: menghasilkan versi yang sudah di-transform langsung saat upload
-  fd.append('eager',         'w_1280,h_460,c_fill,g_auto,q_auto:good,f_webp');
-  fd.append('eager_async',   'false');                 // proses sync agar URL langsung tersedia
   fd.append('folder',        'cover_photos');          // semua cover di folder terpisah
   fd.append('invalidate',    'true');                  // paksa invalidasi CDN cache lama
   return new Promise((resolve, reject) => {
@@ -2076,8 +2072,7 @@ async function uploadCoverToCloudinary(file, onProgress) {
       try {
         const r = JSON.parse(xhr.responseText);
         if (xhr.status === 200) {
-          // Gunakan eager URL jika tersedia (sudah di-transform), fallback ke secure_url asli
-          const finalUrl = (r.eager && r.eager[0]?.secure_url) ? r.eager[0].secure_url : r.secure_url;
+          const finalUrl = r.secure_url;
           resolve({ secure_url: finalUrl, public_id: r.public_id });
         } else {
           reject(new Error(r.error?.message || 'Upload cover gagal'));
