@@ -2976,6 +2976,39 @@ window.openNotifFullScreen = function() {
   if(bfFs) bfFs.style.display = admin ? 'block' : 'none';
   // Render
   renderNotifFull(window._S.notifs || []);
+  // ── AUTO-CLEAR: tandai semua sub-koleksi notif sebagai isRead:true ──
+  autoMarkSubNotifsRead();
+};
+
+// Tandai semua notif di sub-koleksi users/{uid}/notifications sebagai isRead:true
+window.autoMarkSubNotifsRead = async function() {
+  const u = window._S.user;
+  if(!u || !db) return;
+  const uid = u.uid;
+  try {
+    const { collection, getDocs, writeBatch, doc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const snap = await getDocs(collection(db, 'users', uid, 'notifications'));
+    const unreadDocs = snap.docs.filter(d => d.data().isRead === false);
+    if(!unreadDocs.length) return;
+    // Batch update — maks 500 per batch
+    const LIMIT = 499;
+    let batch = writeBatch(db);
+    let count = 0;
+    for(const d of unreadDocs) {
+      batch.update(doc(db, 'users', uid, 'notifications', d.id), { isRead: true });
+      count++;
+      if(count >= LIMIT) { await batch.commit(); batch = writeBatch(db); count = 0; }
+    }
+    if(count > 0) await batch.commit();
+    // Optimistic update di state lokal agar badge langsung hilang
+    if(window._S.notifs) {
+      window._S.notifs = window._S.notifs.map(n => ({ ...n, isRead: true }));
+    }
+    updateNotifBadge(0);
+  } catch(e) {
+    console.warn('[autoMarkSubNotifsRead] error:', e.message);
+  }
 };
 
 window.closeNotifFullScreen = function() {
@@ -3028,11 +3061,14 @@ window.renderNotifFull = function(notifs) {
     if(divider) divider.style.display = activities.length ? 'block' : 'none';
     // Simpan referensi broadcast ke state agar onclick bisa akses tanpa embed JSON di HTML
     window._S._bcNotifs = broadcasts;
+    const isAdminUser = window._S.user && isAdmin(window._S.user.email);
     bcList.innerHTML = broadcasts.map((n, bcIdx) => {
       const isUnread = !(n.readBy||[]).includes(uid);
       const timeStr = n.createdAt?.seconds
         ? new Date(n.createdAt.seconds*1000).toLocaleString('id-ID',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
         : '';
+      // Ambil ID dokumen asli (buang prefix 'sub_' jika ada)
+      const rawDocId = (n.id||'').startsWith('sub_') ? n.id.slice(4) : n.id;
       return `<div class="notif-broadcast-card ${isUnread?'':'read-bc'}" onclick="openBroadcastModal(${bcIdx})">
         <div class="flex items-start gap-3">
           <div class="notif-bc-icon">
@@ -3040,8 +3076,8 @@ window.renderNotifFull = function(notifs) {
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
-              ${n.isSticky||n.pinned?`<span class="text-[9px] font-black bg-amber-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1"><i class="fa-solid fa-thumbtack" style="font-size:7px"></i>PINNED</span>`:''}
-              <span class="text-[10px] font-black text-amber-700">${n.senderName||'YallaMart'}</span>
+              ${n.isSticky||n.pinned?`<span class="text-[9px] font-black bg-amber-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1"><i class="fa-solid fa-bullhorn" style="font-size:7px"></i>PINNED</span>`:''}
+              <span class="text-[10px] font-black text-amber-700">Admin Yalla Mart</span>
               ${isUnread?`<span class="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0"></span>`:''}
             </div>
             ${n.title?`<p class="text-xs font-black text-amber-900 mb-0.5">${n.title}</p>`:''}
@@ -3051,6 +3087,12 @@ window.renderNotifFull = function(notifs) {
               <span class="ml-auto text-[10px] text-amber-700 font-semibold">Baca selengkapnya →</span>
             </p>
           </div>
+          ${isAdminUser ? `
+          <button onclick="event.stopPropagation();deleteBroadcastMessage('${rawDocId}','${encodeURIComponent(n.title||n.message||'')}')"
+            class="flex-shrink-0 w-7 h-7 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center transition-colors ml-1"
+            title="Hapus pesan siaran dari semua user">
+            <i class="fa-solid fa-trash-can text-red-500" style="font-size:10px"></i>
+          </button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -3112,6 +3154,76 @@ window.sendBroadcastFs = async function() {
   document.getElementById('broadcastMsgFs').value = '';
 };
 
+// ── Hapus Massal Pesan Siaran (Admin Only) ─────────────────────
+// Menghapus dokumen broadcast dari sub-koleksi notifications SEMUA user
+window.deleteBroadcastMessage = async function(docId, encodedTitle) {
+  const u = window._S.user;
+  if(!u || !isAdmin(u.email)) { showToast('Akses ditolak!', 'red'); return; }
+  if(!docId) { showToast('ID pesan tidak valid', 'red'); return; }
+
+  const title = decodeURIComponent(encodedTitle);
+  const shortTitle = title.length > 40 ? title.slice(0,40)+'…' : title;
+  if(!confirm(`Hapus pesan siaran ini dari semua pengguna?\n\n"${shortTitle}"\n\nTindakan ini tidak bisa dibatalkan.`)) return;
+
+  showToast('Menghapus pesan siaran...', 'green');
+
+  try {
+    const { getFirestore, collection, getDocs, writeBatch, doc: fsDoc, deleteDoc }
+      = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const _db = window.db || getFirestore();
+    if(!_db) throw new Error('Firebase belum siap');
+
+    // Ambil semua user
+    const usersSnap = await getDocs(collection(_db, 'users'));
+    const LIMIT = 499;
+    let batch = writeBatch(_db);
+    let opCount = 0;
+    let totalDel = 0;
+
+    // Hapus dokumen dengan ID yang sama dari sub-koleksi setiap user
+    for(const userDoc of usersSnap.docs) {
+      const uid = userDoc.data().uid;
+      if(!uid) continue;
+      try {
+        // Coba hapus langsung pakai docId (paling cepat — O(1) per user)
+        const notifRef = fsDoc(_db, 'users', uid, 'notifications', docId);
+        batch.delete(notifRef);
+        opCount++;
+        totalDel++;
+        if(opCount >= LIMIT) {
+          await batch.commit();
+          batch = writeBatch(_db);
+          opCount = 0;
+        }
+      } catch(innerErr) {
+        // skip jika dokumen tidak ada pada user tertentu
+      }
+    }
+    if(opCount > 0) await batch.commit();
+
+    // Hapus juga dari koleksi global 'notifications' jika ada (broadcast lama)
+    try {
+      await deleteDoc(fsDoc(_db, 'notifications', docId));
+    } catch(e) { /* tidak masalah jika tidak ada */ }
+
+    // Update state lokal — hapus dari notifs
+    if(window._S.notifs) {
+      window._S.notifs = window._S.notifs.filter(n => {
+        const nRawId = (n.id||'').startsWith('sub_') ? n.id.slice(4) : n.id;
+        return nRawId !== docId;
+      });
+      renderNotifFull(window._S.notifs);
+      const unread = window._S.notifs.filter(n => !n.isRead && !n.read).length;
+      updateNotifBadge(unread);
+    }
+
+    showToast('✅ Pesan siaran berhasil dihapus dari ' + totalDel + ' pengguna!', 'green');
+  } catch(e) {
+    console.error('[deleteBroadcastMessage] Error:', e);
+    showToast('Gagal hapus: ' + (e.message||e), 'red');
+  }
+};
+
 // Close notif panel if click outside (legacy — now no-op since full-screen)
 document.addEventListener('click', function(e) {
   const panel = document.getElementById('notifPanel');
@@ -3155,7 +3267,7 @@ window.renderNotifList = function(notifs) {
       </div>
       <div class="flex-1 min-w-0">
         <p class="text-xs ${isUnread?'font-semibold text-gray-800':'font-medium text-gray-600'} leading-snug">${n.message}</p>
-        ${n.senderName?`<p class="text-[10px] text-gray-400 mt-0.5">dari: ${n.senderName}</p>`:''}
+        ${n.senderName?`<p class="text-[10px] text-gray-400 mt-0.5">dari: ${(n.type==='broadcast'||n.type==='official_broadcast'||n.isSticky)?'Admin Yalla Mart':n.senderName}</p>`:''}
         <p class="text-[10px] text-gray-300 mt-0.5">${timeStr}</p>
       </div>
       ${isUnread?`<div class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1.5"></div>`:''}
