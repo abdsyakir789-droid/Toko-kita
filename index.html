@@ -2041,6 +2041,10 @@ async function uploadToCloudinary(file, onProgress) {
   });
 }
 
+// ── Expose ke window agar bisa diakses dari script block lain ──
+window.uploadToCloudinary = uploadToCloudinary;
+window.compressImage      = compressImage;
+
 // ── Auth observer ───────────────────────────────────────────────
 onAuthStateChanged(auth, async user => {
   if (user) {
@@ -2537,9 +2541,70 @@ window.stopUnreadListener = function() {
 };
 
 // ══════════════════════════════════════════════════════════════
+// 💬 CHAT LIST REAL-TIME LISTENER — onSnapshot
+// ══════════════════════════════════════════════════════════════
+
+// Helper: deduplikasi + sort (sama seperti loadChatList lama)
+function _processChatDocs(docs, uid) {
+  const pairMap = new Map();
+  docs.forEach(ch => {
+    const otherId = ch.sellerId === uid ? ch.buyerId : ch.sellerId;
+    if(!otherId) return;
+    const pairKey = [uid, otherId].sort().join('_');
+    if(!pairMap.has(pairKey)) {
+      pairMap.set(pairKey, ch);
+    } else {
+      const cur = pairMap.get(pairKey);
+      if((ch.lastAt?.seconds||0) > (cur.lastAt?.seconds||0)) pairMap.set(pairKey, ch);
+    }
+  });
+  return Array.from(pairMap.values())
+    .sort((a,b) => (b.lastAt?.seconds||0) - (a.lastAt?.seconds||0));
+}
+
+window.startChatListListener = function() {
+  if(!window._S.user || !db) return;
+  // Bersihkan listener lama dulu
+  if(_chatListUnsub) { _chatListUnsub(); _chatListUnsub = null; }
+
+  const uid = window._S.user.uid;
+  const q = query(
+    collection(db, 'chats'),
+    where('participants', 'array-contains', uid)
+  );
+
+  _chatListUnsub = onSnapshot(q,
+    (snap) => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const sorted = _processChatDocs(docs, uid);
+
+      // Selalu simpan ke state (dipakai filter pencarian)
+      window._S._chatList = sorted;
+
+      // Update UI hanya jika chat list overlay sedang terbuka
+      const ov = document.getElementById('chatListOverlay');
+      if(ov && ov.style.display !== 'none') {
+        // Pertahankan query pencarian yang sedang aktif
+        const si = document.getElementById('chatSearchInput');
+        const currentQuery = (si && si.value) ? si.value : '';
+        renderChatListUI(sorted, currentQuery);
+      }
+    },
+    (err) => {
+      console.warn('[ChatListListener] onSnapshot error:', err.message);
+    }
+  );
+};
+
+window.stopChatListListener = function() {
+  if(_chatListUnsub) { _chatListUnsub(); _chatListUnsub = null; }
+};
+
+// ══════════════════════════════════════════════════════════════
 // 🔔 NOTIFICATION SYSTEM — Real-time onSnapshot
 // ══════════════════════════════════════════════════════════════
 let _notifUnsub = null;
+let _chatListUnsub = null;   // real-time listener untuk daftar chat
 
 window.startNotifListener = function() {
   if(!window._S.user || !db) return;
@@ -2650,18 +2715,32 @@ window.playNotifSound = function() {
 // ── Mark chat as read — langsung pakai doc ID, tanpa query lambat ─
 window.markChatRead = async function(chatId) {
   if(!window._S.user || !db) return;
+  const uid = window._S.user.uid;
+  // Optimistic update: langsung reset badge di state lokal
+  // supaya UI chat list langsung bersih sebelum onSnapshot balik
+  if(window._S._chatList) {
+    window._S._chatList = window._S._chatList.map(ch =>
+      (ch.id === chatId || ch.chatId === chatId)
+        ? { ...ch, [`unread_${uid}`]: 0 }
+        : ch
+    );
+    // Refresh UI jika chat list sedang terbuka
+    const ov = document.getElementById('chatListOverlay');
+    if(ov && ov.style.display !== 'none') {
+      const si = document.getElementById('chatSearchInput');
+      renderChatListUI(window._S._chatList, si?.value || '');
+    }
+  }
   try {
-    // chatId = document ID langsung di koleksi chats
     await updateDoc(doc(db,'chats',chatId), {
-      [`unread_${window._S.user.uid}`]: 0
+      [`unread_${uid}`]: 0
     });
   } catch(e) {
-    // Fallback: cari via query jika doc ID tidak match (chat lama)
     try {
       const snap = await getDocs(query(collection(db,'chats'), where('chatId','==',chatId)));
       if(!snap.empty) {
         await updateDoc(doc(db,'chats',snap.docs[0].id), {
-          [`unread_${window._S.user.uid}`]: 0
+          [`unread_${uid}`]: 0
         });
       }
     } catch(e2) {}
@@ -2784,10 +2863,21 @@ window.renderUserState = () => {
         else if(attempts < 20){ setTimeout(()=>tryNotifListener(attempts+1), 200); }
       })(0);
     }
+    // Start chat list real-time listener
+    if(window.startChatListListener){
+      startChatListListener();
+    } else {
+      (function tryChatListListener(attempts){
+        if(window.startChatListListener){ startChatListListener(); }
+        else if(attempts < 20){ setTimeout(()=>tryChatListListener(attempts+1), 200); }
+      })(0);
+    }
   } else {
     // Stop listeners on logout
     if(window.stopUnreadListener) stopUnreadListener();
     if(window.stopNotifListener) stopNotifListener();
+    if(window.stopChatListListener) stopChatListListener();
+    window._S._chatList = [];
     updateNotifBadge(0);
   }
 };
@@ -3628,7 +3718,7 @@ window.sendChatPhoto = async function(input) {
 
   try {
     // Upload ke Cloudinary — sama seperti foto produk/profil
-    const imgUrl = await uploadToCloudinary(file);
+    const imgUrl = await window.uploadToCloudinary(file);
 
     // Hapus loading bubble
     const ld = document.getElementById('chatPhotoLoading');
@@ -3752,7 +3842,7 @@ function _refreshOnlineStatus() {
   if(offlineText) offlineText.style.display = online ? 'none' : 'inline';
 }
 
-window.openChatList=async()=>{
+window.openChatList=()=>{
   if(!window._S.user){showToast('Login dulu untuk melihat pesan','red');openAuth('login');return;}
   const ov=document.getElementById('chatListOverlay');
   ov.style.display='flex';
@@ -3760,21 +3850,29 @@ window.openChatList=async()=>{
   // Reset search
   const si=document.getElementById('chatSearchInput'); if(si) si.value='';
   const sw=document.getElementById('chatSearchWrap'); if(sw) sw.style.display='none';
-  const content=document.getElementById('chatListContent');
-  content.innerHTML='<div class="flex flex-col gap-0 pt-2">'
-    +Array(4).fill('').map(()=>`<div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
-      <div class="skel w-12 h-12 rounded-full flex-shrink-0"></div>
-      <div class="flex-1 space-y-2"><div class="skel h-3 w-3/4 rounded-full"></div><div class="skel h-3 w-1/2 rounded-full"></div></div>
-      <div class="skel h-2 w-8 rounded-full self-start mt-1"></div></div>`).join('')
-    +'</div>';
 
-  if(window._FB){
-    const chats=await window._FB.loadChatList();
-    // Simpan di state untuk filter pencarian
-    window._S._chatList = chats;
-    renderChatListUI(chats);
+  if(!window._FB){
+    document.getElementById('chatListContent').innerHTML='<div class="text-center py-16 px-6"><i class="fa-solid fa-comment-slash text-5xl text-gray-200 mb-4"></i><p class="text-sm font-semibold text-gray-400">Belum ada percakapan</p></div>';
+    return;
+  }
+
+  // Jika sudah ada data di state, langsung render (tidak perlu skeleton lagi)
+  if(window._S._chatList && window._S._chatList.length > 0) {
+    renderChatListUI(window._S._chatList);
   } else {
-    content.innerHTML='<div class="text-center py-16 px-6"><i class="fa-solid fa-comment-slash text-5xl text-gray-200 mb-4"></i><p class="text-sm font-semibold text-gray-400">Belum ada percakapan</p></div>';
+    // Skeleton hanya saat pertama kali & data belum ada
+    document.getElementById('chatListContent').innerHTML='<div class="flex flex-col gap-0 pt-2">'
+      +Array(4).fill('').map(()=>`<div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
+        <div class="skel w-12 h-12 rounded-full flex-shrink-0"></div>
+        <div class="flex-1 space-y-2"><div class="skel h-3 w-3/4 rounded-full"></div><div class="skel h-3 w-1/2 rounded-full"></div></div>
+        <div class="skel h-2 w-8 rounded-full self-start mt-1"></div></div>`).join('')
+      +'</div>';
+  }
+
+  // Pastikan listener real-time sudah jalan
+  // (startChatListListener dipanggil saat login, tapi ini sebagai safeguard)
+  if(!_chatListUnsub && window.startChatListListener) {
+    startChatListListener();
   }
 };
 
