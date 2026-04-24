@@ -146,11 +146,175 @@ html{scroll-behavior:smooth}
 .qb:hover{background:var(--primary);color:#fff}
 .qb{transition:all .15s}
 
-/* NOTIF PANEL */
+/* NOTIF PANEL — dropdown legacy (desktop fallback) */
 #notifPanel{animation:mIn .22s cubic-bezier(.34,1.2,.64,1)}
 .notif-item{transition:background .15s}
 .notif-item.unread{background:#f0fdf4}
 .notif-item:hover{background:#f9fafb}
+
+/* ═══════════════════════════════════════════
+   NOTIF FULL-SCREEN OVERLAY
+═══════════════════════════════════════════ */
+#notifFullScreen{
+  position:fixed;inset:0;z-index:500;
+  background:#f8fafc;
+  display:none;flex-direction:column;
+  animation:mIn .28s cubic-bezier(.34,1.2,.64,1);
+}
+#notifFullScreen.active{display:flex}
+
+/* Notif Header */
+.notif-fs-header{
+  position:sticky;top:0;z-index:10;
+  background:linear-gradient(135deg,#059669 0%,#10B981 100%);
+  padding:14px 16px 12px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 2px 16px rgba(16,185,129,.25);
+  flex-shrink:0;
+}
+.notif-fs-back{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.18);
+  border:1.5px solid rgba(255,255,255,.35);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;cursor:pointer;transition:background .18s;
+  flex-shrink:0;
+}
+.notif-fs-back:hover{background:rgba(255,255,255,.3)}
+.notif-fs-title{
+  flex:1;font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;
+}
+.notif-fs-readall{
+  font-size:11px;font-weight:600;color:rgba(255,255,255,.85);
+  padding:5px 10px;border-radius:10px;
+  background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.25);
+  cursor:pointer;transition:background .15s;
+  white-space:nowrap;
+}
+.notif-fs-readall:hover{background:rgba(255,255,255,.25)}
+
+/* Body scroll area */
+.notif-fs-body{
+  flex:1;overflow-y:auto;
+  padding-bottom:24px;
+}
+.notif-fs-body::-webkit-scrollbar{width:3px}
+.notif-fs-body::-webkit-scrollbar-thumb{background:#10B981;border-radius:4px}
+
+/* ── Broadcast Section (Sticky Top) ── */
+.notif-broadcast-section{
+  padding:12px 14px 6px;
+}
+.notif-broadcast-label{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.8px;
+  color:#92400E;margin-bottom:8px;
+}
+.notif-broadcast-card{
+  background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 60%,#FDE68A 100%);
+  border:1.5px solid #FCD34D;
+  border-radius:16px;
+  padding:12px 14px;
+  margin-bottom:8px;
+  cursor:pointer;
+  transition:transform .18s cubic-bezier(.34,1.2,.64,1),box-shadow .18s;
+  position:relative;overflow:hidden;
+}
+.notif-broadcast-card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,#F59E0B,#FBBF24,#F59E0B);
+}
+.notif-broadcast-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(245,158,11,.2);
+}
+.notif-broadcast-card.read-bc{
+  opacity:.7;
+  background:linear-gradient(135deg,#FAFAFA,#F5F5F5);
+  border-color:#e5e7eb;
+}
+.notif-broadcast-card.read-bc::before{background:#e5e7eb}
+.notif-bc-icon{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,#F59E0B,#D97706);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;box-shadow:0 2px 8px rgba(245,158,11,.35);
+}
+.notif-bc-msg{
+  font-size:12px;font-weight:600;color:#78350F;
+  line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.notif-bc-msg.full{-webkit-line-clamp:unset}
+
+/* ── Activity Section ── */
+.notif-activity-section{
+  padding:6px 14px 0;
+}
+.notif-activity-label{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.8px;
+  color:#6b7280;margin-bottom:8px;
+}
+.notif-act-item{
+  background:#fff;border-radius:14px;
+  border:1px solid #f1f5f9;
+  margin-bottom:8px;
+  padding:12px 14px;
+  display:flex;align-items:flex-start;gap:12px;
+  cursor:pointer;transition:transform .15s,box-shadow .15s;
+}
+.notif-act-item:hover{
+  transform:translateX(2px);
+  box-shadow:0 4px 16px rgba(0,0,0,.06);
+}
+.notif-act-item.unread-act{
+  background:#f0fdf4;border-color:rgba(16,185,129,.2);
+}
+.notif-act-icon{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  margin-top:1px;
+}
+
+/* ── Broadcast Modal (baca isi lengkap) ── */
+#broadcastReadModal{
+  position:fixed;inset:0;z-index:600;
+  background:rgba(0,0,0,.55);
+  display:none;align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+#broadcastReadModal.open{display:flex}
+.broadcast-modal-sheet{
+  background:#fff;
+  border-radius:24px 24px 0 0;
+  width:100%;max-width:540px;
+  max-height:75vh;
+  display:flex;flex-direction:column;
+  animation:slideUp .28s cubic-bezier(.34,1.2,.64,1);
+}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.broadcast-modal-handle{
+  width:36px;height:4px;background:#e5e7eb;border-radius:2px;
+  margin:10px auto 0;flex-shrink:0;
+}
+.broadcast-modal-header{
+  padding:14px 18px 10px;
+  border-bottom:1px solid #f1f5f9;
+  display:flex;align-items:center;gap:10px;
+  flex-shrink:0;
+}
+.broadcast-modal-body{
+  padding:16px 18px 24px;
+  overflow-y:auto;flex:1;
+  font-size:14px;line-height:1.65;color:#374151;
+}
+.broadcast-modal-body::-webkit-scrollbar{width:3px}
+.broadcast-modal-body::-webkit-scrollbar-thumb{background:#FCD34D;border-radius:4px}
 
 /* ═══════════════════════════════════════════
    PREMIUM PROFILE & ETALASE — LUXURY REDESIGN
@@ -582,6 +746,90 @@ html{scroll-behavior:smooth}
 <div id="toastWrap" class="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[999] flex flex-col gap-2 items-center pointer-events-none"></div>
 
 <!-- ═══════════════════════════════════════════════
+     NOTIF FULL-SCREEN OVERLAY
+═══════════════════════════════════════════════ -->
+<div id="notifFullScreen">
+
+  <!-- Header -->
+  <div class="notif-fs-header">
+    <button class="notif-fs-back" onclick="closeNotifFullScreen()">
+      <i class="fa-solid fa-arrow-left text-sm"></i>
+    </button>
+    <div class="notif-fs-title flex items-center gap-2">
+      <i class="fa-solid fa-bell text-white/80 text-sm"></i>
+      Notifikasi
+    </div>
+    <button class="notif-fs-readall" onclick="markAllNotifsRead()">Tandai dibaca</button>
+  </div>
+
+  <!-- Body -->
+  <div class="notif-fs-body" id="notifFsBody">
+
+    <!-- Broadcast Form (Developer Only) -->
+    <div id="broadcastFormFs" style="display:none" class="mx-3 mt-3 mb-1 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-100">
+      <p class="text-[10px] font-black text-amber-700 mb-2 flex items-center gap-1.5">
+        <i class="fa-solid fa-crown text-xs"></i> Broadcast ke Semua User
+      </p>
+      <textarea id="broadcastMsgFs" rows="2" placeholder="Tulis pesan broadcast..." class="inp w-full px-3 py-2 text-xs border border-amber-200 rounded-xl bg-white resize-none mb-2"></textarea>
+      <button onclick="sendBroadcastFs()" class="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-2 rounded-xl text-xs transition-all">
+        <i class="fa-solid fa-bullhorn mr-1"></i> Kirim Broadcast
+      </button>
+    </div>
+
+    <!-- ── PESAN SIARAN (Sticky Top) ── -->
+    <div class="notif-broadcast-section" id="notifBroadcastSection" style="display:none">
+      <div class="notif-broadcast-label">
+        <div class="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center">
+          <i class="fa-solid fa-bullhorn text-white" style="font-size:9px"></i>
+        </div>
+        Info Resmi · Pesan Siaran
+      </div>
+      <div id="notifBroadcastList"></div>
+    </div>
+
+    <!-- ── DIVIDER ── -->
+    <div id="notifDivider" style="display:none" class="mx-3 my-1 border-t border-gray-100"></div>
+
+    <!-- ── AKTIVITAS BIASA ── -->
+    <div class="notif-activity-section" id="notifActivitySection">
+      <div class="notif-activity-label">
+        <i class="fa-solid fa-clock text-gray-400" style="font-size:10px"></i>
+        Aktivitas Terbaru
+      </div>
+      <div id="notifActivityList">
+        <div class="text-center py-12 text-gray-300">
+          <i class="fa-solid fa-bell-slash text-3xl mb-2"></i>
+          <p class="text-xs font-semibold text-gray-400">Belum ada notifikasi</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /notif-fs-body -->
+</div><!-- /notifFullScreen -->
+
+<!-- ═══════════════════════════════════════════════
+     BROADCAST READ MODAL (isi lengkap)
+═══════════════════════════════════════════════ -->
+<div id="broadcastReadModal" onclick="closeBroadcastModal(event)">
+  <div class="broadcast-modal-sheet">
+    <div class="broadcast-modal-handle"></div>
+    <div class="broadcast-modal-header">
+      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center flex-shrink-0 shadow-sm">
+        <i class="fa-solid fa-bullhorn text-white text-xs"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-black text-amber-800">Info Resmi · Pesan Siaran</p>
+        <p id="broadcastModalTime" class="text-[10px] text-gray-400 mt-0.5"></p>
+      </div>
+      <button onclick="closeBroadcastModalDirect()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+        <i class="fa-solid fa-xmark text-gray-500 text-sm"></i>
+      </button>
+    </div>
+    <div class="broadcast-modal-body" id="broadcastModalBody"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
      HEADER
 ═══════════════════════════════════════════════ -->
 <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
@@ -650,11 +898,11 @@ html{scroll-behavior:smooth}
       </button>
       <!-- Bell Notification -->
       <div class="relative">
-        <button onclick="toggleNotifPanel()" id="bellBtn" class="relative p-2 text-gray-500 hover:text-primary transition-colors rounded-xl hover:bg-gray-50">
+        <button onclick="openNotifFullScreen()" id="bellBtn" class="relative p-2 text-gray-500 hover:text-primary transition-colors rounded-xl hover:bg-gray-50">
           <i class="fa-solid fa-bell text-lg"></i>
           <span id="notifBadge" style="display:none" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[8px] font-black min-w-[16px] h-[16px] rounded-full flex items-center justify-center">0</span>
         </button>
-        <!-- Notification Dropdown Panel -->
+        <!-- Notification Dropdown Panel (hidden — replaced by full-screen) -->
         <div id="notifPanel" style="display:none" class="absolute right-0 top-full mt-2 w-80 max-w-[92vw] bg-white rounded-2xl shadow-2xl border border-gray-100 z-[200] overflow-hidden">
           <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-primary to-pd">
             <div class="flex items-center gap-2">
@@ -1700,7 +1948,7 @@ html{scroll-behavior:smooth}
   </button>
 
   <!-- 4. Notifikasi -->
-  <button id="mnav-notif" onclick="toggleNotifPanel();setMobTab('notif')" class="mob-nav-btn" style="position:relative">
+  <button id="mnav-notif" onclick="openNotifFullScreen();setMobTab('notif')" class="mob-nav-btn" style="position:relative">
     <div style="position:relative;display:inline-block">
       <i class="fa-solid fa-bell"></i>
       <span id="notifBadgeMob" style="display:none" class="mob-nav-badge">0</span>
@@ -2307,7 +2555,10 @@ window.startNotifListener = function() {
     window._S.notifs = notifs;
     const unread = notifs.filter(n => !n.read && !n.readBy?.includes(uid)).length;
     updateNotifBadge(unread);
-    if(document.getElementById('notifPanel').style.display !== 'none') {
+    const _fs=document.getElementById('notifFullScreen');
+    if(_fs && _fs.classList.contains('active')) {
+      renderNotifFull(notifs);
+    } else if(document.getElementById('notifPanel').style.display !== 'none') {
       renderNotifList(notifs);
     }
   }, (err) => {
@@ -2366,6 +2617,17 @@ window.markAllNotifsRead = async function() {
     return Promise.resolve();
   }));
   showToast('Semua notifikasi ditandai dibaca','green');
+  // Refresh tampilan full-screen jika terbuka (tanpa tunggu onSnapshot)
+  const _fsEl = document.getElementById('notifFullScreen');
+  if(_fsEl && _fsEl.classList.contains('active')) {
+    const updatedNotifs = (window._S.notifs||[]).map(n => {
+      if(n.toUid==='broadcast') return {...n, readBy:[...(n.readBy||[]), uid]};
+      return {...n, read:true};
+    });
+    window._S.notifs = updatedNotifs;
+    renderNotifFull(updatedNotifs);
+    updateNotifBadge(0);
+  }
 };
 
 // ── NOTIF SOUND: Web Audio API (no file needed) ────────────────
@@ -2489,6 +2751,8 @@ window.renderUserState = () => {
   // Show broadcast form for admin
   const bf = document.getElementById('broadcastForm');
   if(bf) bf.style.display = admin ? 'block' : 'none';
+  const bfFs = document.getElementById('broadcastFormFs');
+  if(bfFs) bfFs.style.display = admin ? 'block' : 'none';
   // Gold badge in header
   const goldH = document.getElementById('hGoldBadge');
   if (goldH) goldH.style.display = admin ? 'inline' : 'none';
@@ -2545,31 +2809,169 @@ window.updateNotifBadge = function(count) {
 };
 
 window.toggleNotifPanel = function() {
-  const panel = document.getElementById('notifPanel');
-  const isOpen = panel.style.display !== 'none';
-  if(isOpen) {
-    panel.style.display = 'none';
+  // Legacy: sekarang delegate ke openNotifFullScreen
+  openNotifFullScreen();
+};
+
+// ── Notif Full-Screen ──────────────────────────────────────────
+window.openNotifFullScreen = function() {
+  const fs = document.getElementById('notifFullScreen');
+  fs.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  // Sync admin broadcast form
+  const bfFs = document.getElementById('broadcastFormFs');
+  const admin = window._S.user && isAdmin(window._S.user.email);
+  if(bfFs) bfFs.style.display = admin ? 'block' : 'none';
+  // Render
+  renderNotifFull(window._S.notifs || []);
+};
+
+window.closeNotifFullScreen = function() {
+  const fs = document.getElementById('notifFullScreen');
+  fs.classList.remove('active');
+  document.body.style.overflow = '';
+};
+
+// ── Open broadcast modal ───────────────────────────────────────
+window.openBroadcastModal = function(bcIdx) {
+  const notif = (window._S._bcNotifs || [])[bcIdx];
+  if(!notif) return;
+  const modal = document.getElementById('broadcastReadModal');
+  const body = document.getElementById('broadcastModalBody');
+  const timeEl = document.getElementById('broadcastModalTime');
+  body.textContent = notif.message || '';
+  timeEl.textContent = notif.createdAt?.seconds
+    ? new Date(notif.createdAt.seconds*1000).toLocaleString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    : '';
+  modal.classList.add('open');
+  // mark as read
+  const uid = window._S.user?.uid;
+  const isBroadcast = notif.toUid === 'broadcast';
+  if(uid) markNotifRead(notif.id, isBroadcast);
+};
+window.closeBroadcastModal = function(e) {
+  // Jika dipanggil dari backdrop (ada event), hanya tutup jika klik tepat di backdrop
+  if(e && e.target !== document.getElementById('broadcastReadModal')) return;
+  document.getElementById('broadcastReadModal').classList.remove('open');
+};
+window.closeBroadcastModalDirect = function() {
+  // Dipanggil tombol X — selalu tutup tanpa cek target
+  document.getElementById('broadcastReadModal').classList.remove('open');
+};
+
+// ── Render full-screen notif (split broadcast vs activity) ─────
+window.renderNotifFull = function(notifs) {
+  const uid = window._S.user?.uid || '';
+  const broadcasts = notifs.filter(n => n.toUid === 'broadcast' || n.type === 'broadcast');
+  const activities = notifs.filter(n => n.toUid !== 'broadcast' && n.type !== 'broadcast');
+
+  // ── Broadcast section ──────────────────────────────────────
+  const bcSection = document.getElementById('notifBroadcastSection');
+  const bcList = document.getElementById('notifBroadcastList');
+  const divider = document.getElementById('notifDivider');
+  if(broadcasts.length) {
+    bcSection.style.display = 'block';
+    if(divider) divider.style.display = activities.length ? 'block' : 'none';
+    // Simpan referensi broadcast ke state agar onclick bisa akses tanpa embed JSON di HTML
+    window._S._bcNotifs = broadcasts;
+    bcList.innerHTML = broadcasts.map((n, bcIdx) => {
+      const isUnread = !(n.readBy||[]).includes(uid);
+      const timeStr = n.createdAt?.seconds
+        ? new Date(n.createdAt.seconds*1000).toLocaleString('id-ID',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+        : '';
+      return `<div class="notif-broadcast-card ${isUnread?'':'read-bc'}" onclick="openBroadcastModal(${bcIdx})">
+        <div class="flex items-start gap-3">
+          <div class="notif-bc-icon">
+            <i class="fa-solid fa-bullhorn text-white text-xs"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[10px] font-black text-amber-700">${n.senderName||'YallaMart'}</span>
+              ${isUnread?`<span class="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0"></span>`:''}
+            </div>
+            <p class="notif-bc-msg">${n.message||''}</p>
+            <p class="text-[10px] text-amber-600/70 mt-1.5 flex items-center gap-1">
+              <i class="fa-solid fa-clock" style="font-size:8px"></i>${timeStr}
+              <span class="ml-auto text-[10px] text-amber-700 font-semibold">Baca selengkapnya →</span>
+            </p>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
   } else {
-    panel.style.display = 'block';
-    // Render current notifs
-    renderNotifList(window._S.notifs || []);
-    // Show broadcast form for admin
-    const bf = document.getElementById('broadcastForm');
-    const admin = window._S.user && isAdmin(window._S.user.email);
-    if(bf) bf.style.display = admin ? 'block' : 'none';
+    bcSection.style.display = 'none';
+    if(divider) divider.style.display = 'none';
+  }
+
+  // ── Activity section ───────────────────────────────────────
+  const actList = document.getElementById('notifActivityList');
+  const actLabel = document.querySelector('#notifActivitySection .notif-activity-label');
+  if(!activities.length) {
+    actList.innerHTML = `<div class="text-center py-10 text-gray-300">
+      <i class="fa-solid fa-bell-slash text-3xl mb-2"></i>
+      <p class="text-xs font-semibold text-gray-400">Belum ada notifikasi aktivitas</p>
+    </div>`;
+    if(actLabel) actLabel.style.display = broadcasts.length ? 'flex' : 'flex';
+  } else {
+    if(actLabel) actLabel.style.display = 'flex';
+    // Sort terbaru dulu
+    const sorted = [...activities].sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    actList.innerHTML = sorted.slice(0,30).map(n => {
+      const isUnread = !n.read;
+      const icon = n.type==='follow'    ? 'fa-user-plus'
+                 : n.type==='chat'      ? 'fa-comment-dots'
+                 : n.type==='review'    ? 'fa-star'
+                 : 'fa-bell';
+      const iconBg = n.type==='follow'  ? 'bg-emerald-100 text-emerald-600'
+                   : n.type==='chat'    ? 'bg-blue-100 text-blue-500'
+                   : n.type==='review'  ? 'bg-amber-100 text-amber-500'
+                   : 'bg-gray-100 text-gray-400';
+      const timeStr = n.createdAt?.seconds
+        ? new Date(n.createdAt.seconds*1000).toLocaleString('id-ID',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+        : '';
+      return `<div class="notif-act-item ${isUnread?'unread-act':''}" onclick="markNotifRead('${n.id}',false);this.classList.remove('unread-act')">
+        <div class="notif-act-icon ${iconBg}">
+          <i class="fa-solid ${icon} text-sm"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs ${isUnread?'font-semibold text-gray-800':'font-medium text-gray-600'} leading-snug">${n.message||''}</p>
+          ${n.senderName?`<p class="text-[10px] text-gray-400 mt-0.5">dari: ${n.senderName}</p>`:''}
+          <p class="text-[10px] text-gray-300 mt-1 flex items-center gap-1">
+            <i class="fa-solid fa-clock" style="font-size:8px"></i>${timeStr}
+          </p>
+        </div>
+        ${isUnread?`<div class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1.5"></div>`:''}
+      </div>`;
+    }).join('');
   }
 };
 
-// Close notif panel if click outside
+// ── sendBroadcast dari full-screen form ────────────────────────
+window.sendBroadcastFs = async function() {
+  const msg = document.getElementById('broadcastMsgFs').value.trim();
+  if(!msg) { showToast('Tulis pesan broadcast dulu','red'); return; }
+  // Delegate ke sendBroadcast lama tapi pakai input baru
+  document.getElementById('broadcastMsg').value = msg;
+  await sendBroadcast();
+  document.getElementById('broadcastMsgFs').value = '';
+};
+
+// Close notif panel if click outside (legacy — now no-op since full-screen)
 document.addEventListener('click', function(e) {
   const panel = document.getElementById('notifPanel');
   const btn = document.getElementById('bellBtn');
-  if(panel && panel.style.display !== 'none' && !panel.contains(e.target) && !btn.contains(e.target)) {
+  if(panel && panel.style.display !== 'none' && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
     panel.style.display = 'none';
   }
 });
 
 window.renderNotifList = function(notifs) {
+  // Legacy: juga update full-screen jika terbuka
+  const fs = document.getElementById('notifFullScreen');
+  if(fs && fs.classList.contains('active')) {
+    renderNotifFull(notifs);
+  }
+  // Update old notifList jika ada (untuk kompatibilitas)
   const el = document.getElementById('notifList');
   if(!el) return;
   const uid = window._S.user?.uid || '';
@@ -3402,13 +3804,12 @@ function renderChatListUI(chats, query='') {
   filtered.sort((a,b)=>(b.lastAt?.seconds||0)-(a.lastAt?.seconds||0));
 
   content.innerHTML = '<div class="divide-y divide-gray-50">'
-    + filtered.map(ch=>{
+    + filtered.map((ch, idx)=>{
       const isMe=ch.buyerId===window._S.user.uid;
       const other=(isMe?ch.sellerName:ch.buyerName)||'Pengguna';
       const otherPhoto=isMe?ch.sellerPhoto:ch.buyerPhoto;
       const otherId=isMe?ch.sellerId:ch.buyerId;
       const unread=ch[`unread_${window._S.user.uid}`]||0;
-      const chatDocId=ch.id||ch.chatId||'';
 
       // Format waktu
       let timeStr='';
@@ -3422,22 +3823,28 @@ function renderChatListUI(chats, query='') {
         else timeStr=d.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit'});
       }
 
-      // Preview pesan
       const preview=ch.lastMessage||'Mulai percakapan';
       const initials=(other||'?').charAt(0).toUpperCase();
 
+      // Simpan referensi ke filtered array agar onclick bisa akses data tanpa embed di HTML
+      const listKey = `_chatFiltered`;
+      if(!window._S[listKey]) window._S[listKey] = [];
+      window._S[listKey][idx] = ch;
+
+      // Avatar HTML — tidak embed URL di dalam onclick, gunakan img dengan onerror sederhana
+      const avatarHtml = otherPhoto
+        ? `<img src="${otherPhoto}" class="w-12 h-12 rounded-full object-cover"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+           /><div class="w-12 h-12 rounded-full bg-primary text-white font-black text-base items-center justify-center" style="display:none">${initials}</div>`
+        : `<div class="w-12 h-12 rounded-full bg-primary text-white font-black text-base flex items-center justify-center">${initials}</div>`;
+
       return `<div class="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer relative"
-        onclick="closeChatList();openChatRoomFromList('${chatDocId}','${(ch.adId||'').replace(/'/g,"\\'")}','${(otherId||'').replace(/'/g,"\\'")}','${other.replace(/'/g,"\\'")}','${(otherPhoto||'').replace(/'/g,"\\'")}','${(ch.adTitle||'').replace(/'/g,"\\'")}','${(ch.adImg||'').replace(/'/g,"\\'")}',${ch.adPrice||0})">
+        onclick="window._openChatFromList(${idx})">
 
         <!-- Avatar -->
-        <button onclick="event.stopPropagation();closeChatList();viewSellerStore('${otherId}')"
+        <button onclick="event.stopPropagation();window._openSellerFromList(${idx})"
           class="flex-shrink-0 relative hover:opacity-80 transition-opacity" title="Lihat Etalase">
-          <div class="profile-photo-ring">
-            ${otherPhoto
-              ? `<img src="${otherPhoto}" class="w-12 h-12 rounded-full object-cover" onerror="this.parentElement.innerHTML='<div class=\\"w-12 h-12 rounded-full bg-primary text-white font-black text-base flex items-center justify-center\\">${initials}</div>'">`
-              : `<div class="w-12 h-12 rounded-full bg-primary text-white font-black text-base flex items-center justify-center">${initials}</div>`
-            }
-          </div>
+          <div class="profile-photo-ring">${avatarHtml}</div>
           ${unread>0?`<span class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-white"></span>`:''}
         </button>
 
@@ -3458,6 +3865,26 @@ function renderChatListUI(chats, query='') {
       </div>`;
     }).join('')
   + '</div>';
+
+  // Handler onclick berbasis index — data diambil dari state, bukan dari HTML attribute
+  window._openChatFromList = function(idx) {
+    const ch = window._S._chatFiltered[idx]; if(!ch) return;
+    const isMe = ch.buyerId===window._S.user.uid;
+    const otherId = isMe?ch.sellerId:ch.buyerId;
+    const otherName = (isMe?ch.sellerName:ch.buyerName)||'Pengguna';
+    const otherPhoto = (isMe?ch.sellerPhoto:ch.buyerPhoto)||'';
+    const chatDocId = ch.id||ch.chatId||'';
+    closeChatList();
+    if(chatDocId && window.markChatRead) markChatRead(chatDocId);
+    openChatRoom(ch.adId||'', otherId, otherName, otherPhoto, ch.adTitle||'', ch.adImg||'', Number(ch.adPrice||0));
+  };
+  window._openSellerFromList = function(idx) {
+    const ch = window._S._chatFiltered[idx]; if(!ch) return;
+    const isMe = ch.buyerId===window._S.user.uid;
+    const otherId = isMe?ch.sellerId:ch.buyerId;
+    closeChatList();
+    viewSellerStore(otherId);
+  };
 }
 
 // ── Filter pencarian chat ─────────────────────────────────────
