@@ -537,7 +537,7 @@ html{scroll-behavior:smooth}
     justify-content:center;
     gap:3px;
     padding:6px 0 8px;
-    color:#9ca3af;
+    color:#4b5563;
     transition:color .18s;
     position:relative;
     -webkit-tap-highlight-color:transparent;
@@ -845,7 +845,7 @@ html{scroll-behavior:smooth}
         <i class="fa-solid fa-plus text-[9px]"></i> Pasang
       </button>
     </div>
-    <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+    <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5"></div>
     <div id="emptyState" style="display:none" class="text-center py-16">
       <i class="fa-solid fa-magnifying-glass text-5xl text-gray-300 mb-3"></i>
       <p class="font-bold text-gray-500">Produk tidak ditemukan</p>
@@ -1565,7 +1565,7 @@ html{scroll-behavior:smooth}
         <i class="fa-solid fa-arrow-left text-gray-700 text-base"></i>
       </button>
       <button onclick="viewSellerStore(window._S.activeChatOther)" class="flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-75 transition-opacity">
-        <div id="chatRoomAvatarWrap" class="profile-photo-ring flex-shrink-0 relative">
+        <div id="chatRoomAvatarWrap" class="flex-shrink-0 relative">
           <div id="chatRoomAvatar" class="w-9 h-9 rounded-full bg-primary text-white text-sm font-black flex items-center justify-center overflow-hidden">?</div>
           <span id="chatOnlineDot" class="online-dot absolute -bottom-0.5 -right-0.5" style="display:none"></span>
         </div>
@@ -1618,6 +1618,11 @@ html{scroll-behavior:smooth}
   <!-- ── Input Bar ── -->
   <div class="flex-shrink-0 bg-white border-t border-gray-100 max-w-2xl mx-auto w-full">
     <div class="px-4 py-3 flex gap-2 items-center">
+      <!-- Foto upload button -->
+      <label for="chatPhotoInput" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 cursor-pointer flex-shrink-0 transition-colors">
+        <i class="fa-solid fa-image text-base"></i>
+      </label>
+      <input id="chatPhotoInput" type="file" accept="image/*" class="hidden" onchange="sendChatPhoto(this)"/>
       <input id="chatInput" type="text" placeholder="Ketik pesan..."
         class="inp flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-full bg-gray-50"
         onkeydown="if(event.key==='Enter')sendChatMsg()"
@@ -1961,13 +1966,13 @@ window._FB = {
       senderName:window._S.user.name, createdAt:serverTimestamp(),
       isRead: false
     });
+    const isPhoto = text.trim().startsWith('__PHOTO__');
     if(receiverId) {
-      // Update chat doc langsung via document ID — lebih cepat dari query
       await updateDoc(doc(db,'chats',chatId), {
-        lastMessage: text.trim(),
+        lastMessage: isPhoto ? '📷 Foto' : text.trim(),
         lastAt: serverTimestamp(),
-        [`unread_${receiverId}`]: increment(1),  // naikan counter penerima
-        [`unread_${senderUid}`]: 0               // reset counter pengirim (sudah baca)
+        [`unread_${receiverId}`]: increment(1),
+        [`unread_${senderUid}`]: 0
       });
     }
   },
@@ -3093,10 +3098,20 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
         return `
         <div class="flex ${me?'justify-end':'justify-start'} chat-msg">
           <div class="flex flex-col ${me?'items-end':'items-start'} max-w-[75%]">
+            ${m.text.startsWith('__PHOTO__') ? `
+            <div class="relative rounded-2xl overflow-hidden shadow-sm">
+              ${!me?`<p class="text-[10px] font-bold mb-1 opacity-70 px-1">${m.senderName}</p>`:''}
+              <img src="${m.text.replace('__PHOTO__','')}" class="max-w-[220px] w-full rounded-2xl object-cover cursor-pointer" style="max-height:280px" onclick="viewChatPhoto('${m.text.replace('__PHOTO__','')}')"/>
+              <button onclick="saveChatPhoto('${m.text.replace('__PHOTO__','')}');event.stopPropagation()" class="absolute bottom-2 right-2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-sm">
+                <i class="fa-solid fa-download text-[10px]"></i>
+              </button>
+            </div>
+            ` : `
             <div class="${me?'chat-bubble-me':'chat-bubble-other'} px-3.5 py-2 text-xs leading-relaxed">
               ${!me?`<p class="text-[10px] font-bold mb-0.5 opacity-70">${m.senderName}</p>`:''}
               ${m.text}
             </div>
+            `}
             ${timeStr?`<span class="msg-time ${me?'text-gray-400 pr-1':'text-gray-400 pl-1'}">${timeStr}</span>`:''}
           </div>
         </div>`;
@@ -3118,7 +3133,65 @@ window.sendChatMsg=async()=>{
     el.appendChild(div); el.scrollTop=el.scrollHeight;
   }
 };
-window.closeChatRoomOv=e=>{/* full screen — tidak dismiss by backdrop */};
+
+// ── Kirim Foto di Chat ────────────────────────────────────────
+window.sendChatPhoto = async function(input) {
+  const file = input.files[0];
+  if(!file || !window._S.activeChatId) return;
+  input.value = '';
+  if(!window._FB){ showToast('Firebase belum dikonfigurasi','red'); return; }
+  if(!window._S.user){ showToast('Login dulu untuk kirim foto','red'); return; }
+
+  // Tampilkan loading bubble sementara
+  const el = document.getElementById('chatMessages');
+  const loadDiv = document.createElement('div');
+  loadDiv.className = 'flex justify-end chat-msg';
+  loadDiv.id = 'chatPhotoLoading';
+  loadDiv.innerHTML = `<div class="chat-bubble-me px-3.5 py-2 max-w-[75%] text-xs flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> Mengirim foto...</div>`;
+  el.appendChild(loadDiv); el.scrollTop = el.scrollHeight;
+
+  try {
+    const imgUrl = await uploadToCloudinary(file);
+    // Hapus loading bubble
+    const ld = document.getElementById('chatPhotoLoading');
+    if(ld) ld.remove();
+    // Kirim sebagai pesan dengan prefix khusus foto
+    await window._FB.sendChatMessage(window._S.activeChatId, '__PHOTO__' + imgUrl);
+  } catch(e) {
+    const ld = document.getElementById('chatPhotoLoading');
+    if(ld) ld.remove();
+    showToast('Gagal mengirim foto','red');
+  }
+};
+// ── Lihat & Save foto chat ────────────────────────────────────
+window.viewChatPhoto = function(url) {
+  // Buka foto full screen di tab baru
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  ov.onclick = () => ov.remove();
+  ov.innerHTML = `
+    <div class="relative" onclick="event.stopPropagation()">
+      <img src="${url}" style="max-width:96vw;max-height:90vh;border-radius:12px;object-fit:contain"/>
+      <button onclick="saveChatPhoto('${url}')" style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px)">
+        <i class="fa-solid fa-download"></i>
+      </button>
+      <button onclick="this.closest('div').parentElement.remove()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>`;
+  document.body.appendChild(ov);
+};
+
+window.saveChatPhoto = function(url) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'foto-chat-' + Date.now() + '.jpg';
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('Foto disimpan!', 'green');
+};
 window.closeChatRoom=()=>{
   document.getElementById('chatRoomOverlay').style.display='none';
   if(window._S.chatUnsub){window._S.chatUnsub();window._S.chatUnsub=null;}
