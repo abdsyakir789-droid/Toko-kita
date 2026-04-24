@@ -95,6 +95,15 @@ tailwind.config={theme:{extend:{colors:{
 .msc{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .msc::-webkit-scrollbar{display:none}
 
+/* SMOOTH SCROLLING GLOBAL + DETAIL */
+html{scroll-behavior:smooth}
+#detailScrollBody{scroll-behavior:smooth}
+
+/* RECOM / SELLER OTHER CARD */
+.recom-card{border-radius:16px;overflow:hidden;background:#fff;border:1px solid #f1f5f9;transition:transform .2s cubic-bezier(.34,1.2,.64,1),box-shadow .2s ease;cursor:pointer}
+.recom-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(16,185,129,.12),0 2px 8px rgba(0,0,0,.05)}
+.recom-card:active{transform:scale(.97)}
+
 /* UPLOAD BAR */
 .upload-bar{transition:width .3s ease}
 
@@ -185,11 +194,15 @@ tailwind.config={theme:{extend:{colors:{
 .profile-card-premium{
   background:#fff;
   border-radius:28px;
-  overflow:hidden;
+  overflow:visible;
   box-shadow:0 4px 32px rgba(0,0,0,.07),0 1px 4px rgba(0,0,0,.04);
   border:1px solid rgba(16,185,129,.08);
   margin-bottom:16px;
   position:relative;
+}
+.profile-card-premium > :first-child{
+  border-radius:28px 28px 0 0;
+  overflow:hidden;
 }
 
 /* Avatar positioning — floats over cover */
@@ -263,35 +276,37 @@ tailwind.config={theme:{extend:{colors:{
   display:flex;gap:10px;margin-top:14px;
 }
 .btn-follow-prem{
-  flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
-  background:linear-gradient(135deg,#10B981,#059669);
-  color:#fff;font-size:12px;font-weight:700;
-  padding:10px 16px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  background:rgba(255,255,255,.15);
+  backdrop-filter:blur(8px);
+  color:#fff;font-size:11px;font-weight:700;
+  padding:7px 14px;border-radius:20px;
   transition:all .22s;letter-spacing:.2px;
-  box-shadow:0 3px 14px rgba(16,185,129,.35);
-  border:none;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.8);cursor:pointer;
+  white-space:nowrap;
 }
-.btn-follow-prem:hover{background:linear-gradient(135deg,#059669,#047857);transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,.4)}
+.btn-follow-prem:hover{background:rgba(255,255,255,.28)}
 .btn-follow-prem.following{
-  background:linear-gradient(135deg,#f3f4f6,#e5e7eb);
-  color:#374151;
-  box-shadow:0 2px 8px rgba(0,0,0,.06);
+  background:rgba(255,255,255,.25);
+  color:#fff;
+  border-color:rgba(255,255,255,.6);
 }
 
 .btn-chat-prem{
-  display:flex;align-items:center;justify-content:center;gap:7px;
-  background:#fff;
-  color:#10B981;font-size:12px;font-weight:700;
-  padding:10px 20px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  background:rgba(255,255,255,.15);
+  backdrop-filter:blur(8px);
+  color:#fff;font-size:11px;font-weight:700;
+  padding:7px 14px;border-radius:20px;
   transition:all .22s;letter-spacing:.2px;
-  box-shadow:0 2px 10px rgba(0,0,0,.06);
-  border:1.5px solid #10B981;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.8);cursor:pointer;
+  white-space:nowrap;
 }
-.btn-chat-prem:hover{background:#f0fdf4;transform:translateY(-1px);box-shadow:0 4px 16px rgba(16,185,129,.2)}
+.btn-chat-prem:hover{background:rgba(255,255,255,.28)}
 
-/* Etalase cover — taller, luxury */
+/* Etalase cover — full width */
 .etalase-cover{
-  height:200px;
+  height:160px;
   position:relative;overflow:hidden;
 }
 .etalase-cover-bg{
@@ -310,32 +325,55 @@ tailwind.config={theme:{extend:{colors:{
 }
 .back-btn-glass:hover{background:rgba(0,0,0,.4)}
 
-/* Info block below cover */
-.store-info-block{
-  padding:60px 24px 20px;
-  position:relative;
+/* Store profile row — sits at BOTTOM of cover as overlay (like Shopee) */
+.store-profile-overlay{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 14px 12px;
+  background:linear-gradient(to top,rgba(0,0,0,.65) 0%,rgba(0,0,0,0) 100%);
+  z-index:4;
+}
+.store-avatar-circle{
+  flex-shrink:0;
+  width:54px;height:54px;border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.9);
+  overflow:hidden;
+  background:#10B981;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:20px;font-weight:900;
+  box-shadow:0 2px 10px rgba(0,0,0,.35);
+}
+.store-name-block-overlay{
+  flex:1;min-width:0;
+}
+.store-action-col{
+  display:flex;flex-direction:column;gap:6px;flex-shrink:0;
 }
 
-/* Etalase avatar */
-.etalase-avatar-wrap{
-  position:absolute;
-  top:-44px;left:20px;
+/* Store name & subtitle in overlay */
+.store-name-row{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px;
+}
+.store-name-text{
+  font-size:15px;font-weight:700;color:#fff;letter-spacing:-.2px;line-height:1.2;
+  text-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+.store-subtitle{
+  font-size:10px;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:4px;
+}
+
+/* Info block (stats only, no padding for avatar) */
+.store-info-block{
+  padding:0;
+  position:relative;
 }
 
 /* Cover photo upload for etalase */
 .etalase-cover-upload{
   position:absolute;bottom:12px;right:12px;
-}
-
-/* Store verified row */
-.store-name-row{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;
-}
-.store-name-text{
-  font-size:20px;font-weight:800;color:#111827;letter-spacing:-.4px;line-height:1.1;
-}
-.store-subtitle{
-  font-size:11px;color:#6b7280;display:flex;align-items:center;gap:5px;margin-bottom:12px;
 }
 
 /* Profile page — cover photo */
@@ -344,23 +382,46 @@ tailwind.config={theme:{extend:{colors:{
   height:160px;overflow:hidden;
   background:linear-gradient(135deg,#022c22 0%,#064E3B 40%,#10B981 100%);
   border-radius:0;
+  margin:0;
 }
 .profile-cover-img{width:100%;height:100%;object-fit:cover}
-.profile-cover-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(to bottom,rgba(0,0,0,0) 30%,rgba(0,0,0,.5) 100%);
-}
-.profile-avatar-wrap{
+
+/* Profile overlay row — inside cover like Shopee */
+.profile-overlay-row{
   position:absolute;
-  bottom:-40px;left:20px;
+  bottom:0;left:0;right:0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 14px 12px;
+  background:linear-gradient(to top,rgba(0,0,0,.65) 0%,rgba(0,0,0,0) 100%);
+  z-index:4;
+}
+.profile-avatar-circle{
+  flex-shrink:0;
+  width:54px;height:54px;border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.9);
+  overflow:hidden;
+  background:#10B981;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:22px;font-weight:900;
+  box-shadow:0 2px 10px rgba(0,0,0,.3);
+  cursor:pointer;
+}
+.profile-name-block-overlay{
+  flex:1;min-width:0;
+}
+.profile-action-col-overlay{
+  display:flex;flex-direction:column;gap:6px;flex-shrink:0;
 }
 
-/* Profile info section */
+/* Profile info section — just email/phone/stats, no avatar padding needed */
 .profile-info-section{
-  padding:48px 20px 20px;
+  padding:14px 20px 20px;
 }
-.profile-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap}
-.profile-name-text{font-size:18px;font-weight:800;color:#111827;letter-spacing:-.3px}
+
+.profile-name-row{display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap}
+.profile-name-text{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.2px;text-shadow:0 1px 4px rgba(0,0,0,.4)}
 
 /* Profile stat strip */
 .profile-stat-strip{
@@ -393,7 +454,125 @@ tailwind.config={theme:{extend:{colors:{
 /* Responsive cover heights */
 @media(max-width:480px){
   .cover-photo-wrap,.etalase-cover{height:150px}
-  .profile-cover-wrap{height:130px}
+  .profile-cover-wrap{height:160px}
+}
+
+/* ═══════════════════════════════════════════════
+   MOBILE ONLY — max-width: 768px
+   Header top bar & Bottom Navigation
+═══════════════════════════════════════════════ */
+@media(max-width:768px){
+
+  /* ── Header: sembunyikan elemen non-mobile ── */
+  #mobileHide-notif,
+  #mobileHide-guestBtns,
+  #mobileHide-userMenu,
+  #mobileHide-pasang,
+  #mobileHide-billboard{
+    display:none !important;
+  }
+
+  /* ── Header inner layout ── */
+  .mob-header-inner{
+    display:flex !important;
+    align-items:center;
+    gap:10px;
+    padding:8px 12px;
+  }
+
+  /* Logo tetap, search flex-1, chat+cart di kanan */
+  .mob-search-wrap{
+    flex:1;
+    position:relative;
+  }
+  .mob-search-wrap input{
+    width:100%;
+    padding:8px 14px 8px 36px;
+    font-size:13px;
+    border-radius:14px;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    outline:none;
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .mob-search-wrap input:focus{
+    border-color:#10B981;
+    box-shadow:0 0 0 3px rgba(16,185,129,.1);
+    background:#fff;
+  }
+  .mob-search-wrap .mob-search-icon{
+    position:absolute;
+    left:11px;top:50%;
+    transform:translateY(-50%);
+    color:#9ca3af;
+    font-size:13px;
+    pointer-events:none;
+  }
+  .mob-right-icons{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    flex-shrink:0;
+  }
+  .mob-icon-btn{
+    position:relative;
+    width:36px;height:36px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:12px;
+    color:#6b7280;
+    transition:background .15s,color .15s;
+  }
+  .mob-icon-btn:hover{background:#f3f4f6;color:#10B981}
+  .mob-icon-btn i{font-size:17px}
+
+  /* ── Bottom Nav ── */
+  .mob-bottom-nav{
+    display:flex !important;
+  }
+  .mob-nav-btn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    padding:6px 0 8px;
+    color:#9ca3af;
+    transition:color .18s;
+    position:relative;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mob-nav-btn.active-tab{color:#10B981}
+  .mob-nav-btn i{font-size:18px;line-height:1}
+  .mob-nav-btn span{
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:.1px;
+    line-height:1;
+  }
+  /* Active indicator dot */
+  .mob-nav-btn.active-tab::after{
+    content:'';
+    position:absolute;
+    top:4px;
+    width:4px;height:4px;
+    background:#10B981;
+    border-radius:50%;
+  }
+  /* Badge merah notif */
+  .mob-nav-badge{
+    position:absolute;
+    top:4px;right:calc(50% - 16px);
+    background:#ef4444;
+    color:#fff;
+    font-size:8px;font-weight:900;
+    min-width:14px;height:14px;
+    border-radius:7px;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 3px;
+    border:1.5px solid #fff;
+    pointer-events:none;
+  }
 }
 </style>
 </head>
@@ -406,14 +585,44 @@ tailwind.config={theme:{extend:{colors:{
      HEADER
 ═══════════════════════════════════════════════ -->
 <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
-  <div class="max-w-7xl mx-auto px-3 md:px-6 py-2.5 flex items-center gap-3">
+
+  <!-- ── MOBILE TOP BAR (≤768px) ── -->
+  <div class="mob-header-inner" style="display:none">
+    <!-- Logo -->
+    <button onclick="showPage('home');setMobTab('home')" class="flex-shrink-0 flex items-center gap-2">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-pd flex items-center justify-center shadow-[0_3px_10px_rgba(16,185,129,.4)]">
+        <i class="fa-solid fa-store text-white text-xs"></i>
+      </div>
+      <span class="font-black text-gray-900 text-base tracking-tight leading-none">Yalla<span class="text-primary">Mart</span></span>
+    </button>
+    <!-- Search Bar -->
+    <div class="mob-search-wrap">
+      <i class="fa-solid fa-magnifying-glass mob-search-icon"></i>
+      <input id="searchInputMob" type="text" placeholder="Cari produk atau penjual..."
+        oninput="handleSearch(this.value);document.getElementById('searchInput').value=this.value"/>
+    </div>
+    <!-- Right: Chat + Cart -->
+    <div class="mob-right-icons">
+      <button onclick="openChatList()" class="mob-icon-btn">
+        <i class="fa-solid fa-comment-dots"></i>
+        <span id="chatBadgeMobTop" style="display:none" class="mob-nav-badge">0</span>
+      </button>
+      <button onclick="toggleCart()" class="mob-icon-btn">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span id="cartBadgeMobTop" style="display:none" class="mob-nav-badge">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── DESKTOP TOP BAR (>768px) ── -->
+  <div class="max-w-7xl mx-auto px-3 md:px-6 py-2.5 flex items-center gap-3 hidden md:flex">
 
     <!-- Logo -->
     <button onclick="showPage('home')" class="flex-shrink-0 flex items-center gap-2.5">
       <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary to-pd flex items-center justify-center shadow-[0_4px_12px_rgba(16,185,129,.4)]">
         <i class="fa-solid fa-store text-white text-sm"></i>
       </div>
-      <div class="hidden sm:block">
+      <div>
         <p class="font-black text-gray-900 text-lg tracking-tight leading-none">Yalla<span class="text-primary">Mart</span></p>
         <p class="text-[9px] text-gray-400 font-medium leading-none mt-0.5">Premium Marketplace</p>
       </div>
@@ -430,16 +639,16 @@ tailwind.config={theme:{extend:{colors:{
     <!-- Right actions -->
     <div class="flex items-center gap-1.5 flex-shrink-0">
       <!-- Pasang Iklan -->
-      <button onclick="guardedPost()" class="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-[0_2px_10px_rgba(245,158,11,.35)]">
+      <button onclick="guardedPost()" class="flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-[0_2px_10px_rgba(245,158,11,.35)]">
         <i class="fa-solid fa-plus text-xs"></i>
         Pasang Iklan
       </button>
       <!-- Admin Billboard -->
-      <button id="adminBillBtn" onclick="openBillboardManager()" style="display:none" class="hidden sm:flex items-center gap-1.5 adm-badge text-xs font-bold px-3 py-2 rounded-xl border">
+      <button id="adminBillBtn" onclick="openBillboardManager()" style="display:none" class="flex items-center gap-1.5 adm-badge text-xs font-bold px-3 py-2 rounded-xl border">
         <i class="fa-solid fa-image text-xs"></i>
         Billboard
       </button>
-      <!-- Bell Notification Button -->
+      <!-- Bell Notification -->
       <div class="relative">
         <button onclick="toggleNotifPanel()" id="bellBtn" class="relative p-2 text-gray-500 hover:text-primary transition-colors rounded-xl hover:bg-gray-50">
           <i class="fa-solid fa-bell text-lg"></i>
@@ -478,10 +687,10 @@ tailwind.config={theme:{extend:{colors:{
       </button>
       <!-- Guest buttons -->
       <div id="guestBtns" class="flex items-center gap-1.5">
-        <button onclick="openAuth('login')" class="hidden md:flex items-center gap-1.5 border-2 border-primary text-primary hover:bg-pl text-xs font-bold px-3 py-2 rounded-xl transition-colors">
+        <button onclick="openAuth('login')" class="flex items-center gap-1.5 border-2 border-primary text-primary hover:bg-pl text-xs font-bold px-3 py-2 rounded-xl transition-colors">
           <i class="fa-solid fa-right-to-bracket text-xs"></i> Masuk
         </button>
-        <button onclick="openAuth('register')" class="hidden md:flex items-center gap-1.5 bg-primary hover:bg-pd text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors shadow-[0_2px_10px_rgba(16,185,129,.35)]">
+        <button onclick="openAuth('register')" class="flex items-center gap-1.5 bg-primary hover:bg-pd text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors shadow-[0_2px_10px_rgba(16,185,129,.35)]">
           <i class="fa-solid fa-user-plus text-xs"></i> Daftar
         </button>
       </div>
@@ -491,7 +700,7 @@ tailwind.config={theme:{extend:{colors:{
           <div id="hAvatarWrap" class="profile-photo-ring flex-shrink-0">
             <div id="hAvatar" class="w-7 h-7 rounded-full bg-primary text-white text-xs font-black flex items-center justify-center overflow-hidden">U</div>
           </div>
-          <span id="hName" class="hidden md:block text-xs font-semibold text-gray-700 max-w-[70px] truncate"></span>
+          <span id="hName" class="text-xs font-semibold text-gray-700 max-w-[70px] truncate"></span>
           <span id="hGoldBadge" style="display:none" class="gold-badge text-sm"><i class="fa-solid fa-circle-check"></i></span>
         </button>
       </div>
@@ -503,7 +712,7 @@ tailwind.config={theme:{extend:{colors:{
     </div>
   </div>
 
-  <!-- Sub-nav -->
+  <!-- Sub-nav (desktop only) -->
   <div class="hidden md:block border-t border-gray-100">
     <div class="max-w-7xl mx-auto px-6 flex items-center gap-0 py-0 overflow-x-auto">
       <button onclick="filterCat('semua')" data-nav="semua" class="ntab active text-xs px-3 py-2.5 text-primary">Semua</button>
@@ -680,7 +889,8 @@ tailwind.config={theme:{extend:{colors:{
     <!-- Cover Photo -->
     <div class="profile-cover-wrap" id="profileCoverWrap">
       <img id="profileCoverImg" class="profile-cover-img cover-img-loaded" src="" alt="" style="display:none" onerror="this.style.display='none'"/>
-      <div class="profile-cover-overlay"></div>
+      <!-- Gradient overlay -->
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,rgba(0,0,0,.6) 100%)"></div>
 
       <!-- Upload cover button -->
       <label for="profileCoverInput" class="cover-upload-btn" style="z-index:5">
@@ -689,36 +899,48 @@ tailwind.config={theme:{extend:{colors:{
       <input id="profileCoverInput" type="file" accept="image/*" class="hidden" onchange="uploadProfileCover(this)"/>
 
       <!-- Admin badge on cover -->
-      <div id="adminBadgeProfile" style="display:none" class="absolute top-3 right-3 adm-badge text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10">
+      <div id="adminBadgeProfile" style="display:none" class="absolute top-3 left-1/2 -translate-x-1/2 adm-badge text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10">
         <i class="fa-solid fa-crown text-xs"></i> Developer
       </div>
 
-      <!-- Avatar — overlaps cover bottom -->
-      <div class="profile-avatar-wrap" style="z-index:5">
-        <label for="profilePhotoInput" class="cursor-pointer group relative inline-block">
-          <div class="avatar-ring-premium">
-            <div id="profileAvatar" class="w-16 h-16 rounded-full bg-primary text-white font-black text-2xl flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">U</div>
-          </div>
-          <div class="absolute bottom-0.5 right-0.5 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-            <i class="fa-solid fa-camera text-primary text-[9px]"></i>
+      <!-- Profile overlay row: Avatar + Name + Buttons inside cover -->
+      <div class="profile-overlay-row">
+        <!-- Avatar -->
+        <label for="profilePhotoInput" class="cursor-pointer group relative flex-shrink-0">
+          <div class="profile-avatar-circle" id="profileAvatar">U</div>
+          <div class="absolute bottom-0 right-0 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-camera text-primary" style="font-size:8px"></i>
           </div>
         </label>
         <input id="profilePhotoInput" type="file" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)"/>
+
+        <!-- Name block -->
+        <div class="profile-name-block-overlay">
+          <div class="profile-name-row">
+            <h2 id="profileName" class="profile-name-text"></h2>
+            <span id="profileGoldBadge" style="display:none" class="text-amber-300 text-base verified-ring flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+          </div>
+          <p id="profileEmail" class="text-[10px] flex items-center gap-1 leading-relaxed" style="color:rgba(255,255,255,.75)">
+            <i class="fa-solid fa-envelope" style="font-size:9px"></i> <span></span>
+          </p>
+        </div>
+
+        <!-- Action col: Follow (top) + Chat (bottom) -->
+        <div class="profile-action-col-overlay">
+          <button onclick="guardedPost()" class="btn-follow-prem">
+            <i class="fa-solid fa-plus" style="font-size:10px"></i> Follow
+          </button>
+          <button onclick="openChatList()" class="btn-chat-prem">
+            <i class="fa-regular fa-comment-dots" style="font-size:12px"></i> Chat
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Info section (padded top for avatar overlap) -->
+    <!-- Info section -->
     <div class="profile-info-section">
-      <!-- Name & badges -->
-      <div class="profile-name-row">
-        <h2 id="profileName" class="profile-name-text"></h2>
-        <span id="profileGoldBadge" style="display:none" class="gold-badge text-xl verified-ring"><i class="fa-solid fa-circle-check"></i></span>
-      </div>
-      <!-- Email & Phone -->
-      <p id="profileEmail" class="text-xs text-gray-500 flex items-center gap-1.5 leading-relaxed">
-        <i class="fa-solid fa-envelope text-gray-300 text-[10px]"></i> <span></span>
-      </p>
-      <p id="profilePhone" class="text-xs text-gray-400 flex items-center gap-1.5 leading-relaxed">
+      <!-- Phone -->
+      <p id="profilePhone" class="text-xs text-gray-400 flex items-center gap-1.5 leading-relaxed mb-2">
         <i class="fa-solid fa-phone text-gray-300 text-[10px]"></i> <span></span>
       </p>
 
@@ -811,49 +1033,47 @@ tailwind.config={theme:{extend:{colors:{
       <!-- Dynamic cover image -->
       <div id="etalaseCoverBg" class="etalase-cover-bg" style="position:absolute;inset:0;background:linear-gradient(135deg,#022c22 0%,#064E3B 50%,#10B981 100%)"></div>
       <img id="etalaseCoverImg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none" alt="Cover" onerror="this.style.display='none'"/>
-      <!-- Gradient overlay for readability -->
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1) 30%,rgba(0,0,0,.55) 100%)"></div>
-
-      <!-- Decorative subtle pattern -->
-      <div style="position:absolute;inset:0;opacity:.06;background-image:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);background-size:16px 16px"></div>
+      <!-- Gradient overlay -->
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,rgba(0,0,0,.55) 100%)"></div>
 
       <!-- Back button -->
       <button onclick="showPage('home')" class="back-btn-glass">
         <i class="fa-solid fa-arrow-left text-sm"></i>
       </button>
 
-      <!-- Avatar overlapping cover -->
-      <div class="etalase-avatar-wrap">
-        <div class="avatar-ring-premium">
-          <div id="etalaseAvatar" class="w-16 h-16 rounded-full bg-primary text-white font-black text-xl flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">P</div>
+      <!-- Profile row: Avatar + Name + Buttons — all inside cover -->
+      <div class="store-profile-overlay">
+        <!-- Avatar -->
+        <div class="store-avatar-circle" id="etalaseAvatar">P</div>
+
+        <!-- Name & subtitle -->
+        <div class="store-name-block-overlay">
+          <div class="store-name-row">
+            <h2 id="etalaseName" class="store-name-text"></h2>
+            <span id="etalaseGold" style="display:none" class="text-amber-300 text-base flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+          </div>
+          <p id="etalaseSubtitle" class="store-subtitle">
+            <i class="fa-solid fa-store" style="font-size:9px"></i> Etalase Penjual
+          </p>
+        </div>
+
+        <!-- Action col: Follow (top) + Chat (bottom) -->
+        <div class="store-action-col">
+          <button id="followBtn" onclick="toggleFollow()" class="btn-follow-prem">
+            <i class="fa-solid fa-plus" style="font-size:10px"></i> Follow
+          </button>
+          <button onclick="openChatWithSeller()" class="btn-chat-prem">
+            <i class="fa-regular fa-comment-dots" style="font-size:12px"></i> Chat
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Store Info block -->
+    <!-- Store Info block — stats only -->
     <div class="store-info-block">
-      <!-- Store name & verified -->
-      <div class="store-name-row">
-        <h2 id="etalaseName" class="store-name-text"></h2>
-        <span id="etalaseGold" style="display:none" class="gold-badge text-xl"><i class="fa-solid fa-circle-check"></i></span>
-      </div>
-      <!-- Subtitle -->
-      <p id="etalaseSubtitle" class="store-subtitle">
-        <i class="fa-solid fa-store text-primary" style="font-size:10px"></i> Etalase Penjual
-      </p>
-
-      <!-- Action buttons: Follow + Chat -->
-      <div class="action-btn-group">
-        <button id="followBtn" onclick="toggleFollow()" class="btn-follow-prem">
-          <i class="fa-solid fa-plus" style="font-size:11px"></i> Follow
-        </button>
-        <button onclick="openChatWithSeller()" class="btn-chat-prem">
-          <i class="fa-regular fa-comment-dots" style="font-size:13px"></i> Chat
-        </button>
-      </div>
 
       <!-- Stats strip — light numbers -->
-      <div class="stat-strip" style="margin:16px -24px -20px;border-radius:0 0 28px 28px">
+      <div class="stat-strip" style="border-radius:0 0 28px 28px">
         <div class="stat-item">
           <p id="etalaseCount" class="stat-num colored">0</p>
           <p class="stat-label">Produk</p>
@@ -1168,55 +1388,109 @@ tailwind.config={theme:{extend:{colors:{
       <p id="detailDesc" class="text-sm text-gray-600 leading-relaxed"></p>
     </div>
 
-    <!-- ── Seller / Toko Section ── -->
-    <div class="bg-white mt-2 px-4 py-4">
-      <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Informasi Toko</h4>
+    <!-- ── Seller / Toko Section — Premium Redesign ── -->
+    <div class="bg-white mt-2 px-4 pt-4 pb-5">
+      <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-store text-primary text-[10px]"></i> Informasi Penjual
+      </h4>
 
-      <!-- Store row: avatar + name + follow btn -->
-      <div class="flex items-center gap-3 mb-3">
-        <!-- Clickable store avatar -->
-        <button id="detailStoreLink" onclick="openDetailStore()" class="flex-shrink-0 hover:opacity-80 transition-opacity">
-          <div class="profile-photo-ring">
-            <div id="detailAvatar" class="w-12 h-12 rounded-full bg-primary text-white text-base font-black flex items-center justify-center overflow-hidden">P</div>
+      <!-- Row: Foto Profil + Nama + Follow -->
+      <div class="flex items-center gap-4 mb-4">
+        <!-- Avatar besar -->
+        <button onclick="openDetailStore()" class="flex-shrink-0 hover:opacity-80 transition-opacity">
+          <div class="profile-photo-ring" style="padding:2.5px">
+            <div id="detailAvatar" class="w-16 h-16 rounded-full bg-primary text-white text-xl font-black flex items-center justify-center overflow-hidden shadow-md">P</div>
           </div>
         </button>
-        <!-- Store name + gold badge -->
+        <!-- Nama + badge + link etalase -->
         <div class="flex-1 min-w-0">
-          <button onclick="openDetailStore()" class="text-left hover:opacity-75 transition-opacity">
-            <div class="flex items-center gap-1.5">
-              <p id="detailSeller" class="text-sm font-black text-gray-900 truncate"></p>
+          <button onclick="openDetailStore()" class="text-left hover:opacity-75 transition-opacity w-full">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <p id="detailSeller" class="text-base font-black text-gray-900 truncate"></p>
               <span id="detailGoldBadge" style="display:none" class="gold-badge text-base flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
             </div>
-            <p class="text-[10px] text-primary flex items-center gap-1 mt-0.5 font-medium">
-              <i class="fa-solid fa-store text-[9px]"></i> Lihat Etalase
+            <p class="text-[10px] text-primary flex items-center gap-1 mt-0.5 font-semibold">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Lihat Etalase Lengkap
             </p>
           </button>
+          <!-- Star rating inline -->
+          <div class="flex items-center gap-1.5 mt-1.5">
+            <div class="flex items-center gap-0.5" id="detailStoreStars"></div>
+            <span class="text-[11px] font-bold text-gray-700" id="detailStoreRatingVal">5.0</span>
+            <span class="text-[10px] text-gray-400">Rating Toko</span>
+          </div>
         </div>
         <!-- Follow button -->
-        <button id="detailFollowBtn" onclick="toggleDetailFollow()" class="flex items-center gap-1.5 bg-primary hover:bg-pd text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-[0_2px_10px_rgba(16,185,129,.3)] flex-shrink-0">
+        <button id="detailFollowBtn" onclick="toggleDetailFollow()" class="flex items-center gap-1.5 bg-primary hover:bg-pd text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-[0_2px_10px_rgba(16,185,129,.3)] flex-shrink-0">
           <i class="fa-solid fa-plus text-[10px]"></i> Follow
         </button>
       </div>
 
-      <!-- Star rating display -->
-      <div class="flex items-center gap-2 mb-2">
-        <div class="flex items-center gap-0.5" id="detailStoreStars"></div>
-        <span class="text-xs font-bold text-gray-700" id="detailStoreRatingVal">5.0</span>
-        <span class="text-[10px] text-gray-400">Rating Toko</span>
-      </div>
-
-      <!-- Total produk toko -->
-      <div class="flex items-center gap-2 text-xs text-gray-500">
-        <i class="fa-solid fa-box text-primary text-[10px]"></i>
-        <span>Total Produk: <strong id="detailStoreTotalProduct" class="text-gray-800">0</strong> item</span>
-        <span class="text-gray-300">·</span>
-        <span>Follower: <strong id="detailStoreFollowers" class="text-gray-800">0</strong></span>
+      <!-- Statistik strip: Total Produk | Total Ulasan / Followers -->
+      <div class="grid grid-cols-2 gap-3 bg-gradient-to-r from-gray-50 to-emerald-50/40 rounded-2xl p-3 border border-gray-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-box text-primary text-sm"></i>
+          </div>
+          <div>
+            <p id="detailStoreTotalProduct" class="text-base font-black text-gray-900 leading-none">0</p>
+            <p class="text-[10px] text-gray-400 font-medium mt-0.5">Total Produk</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-users text-amber-500 text-sm"></i>
+          </div>
+          <div>
+            <p id="detailStoreFollowers" class="text-base font-black text-gray-900 leading-none">0</p>
+            <p class="text-[10px] text-gray-400 font-medium mt-0.5">Follower</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- ── More from seller ── -->
-    <div class="mt-2 px-4 py-3">
-      <p class="text-xs text-gray-400 text-center">Geser ke atas untuk info lebih lanjut</p>
+    <!-- ── Postingan Lain dari Penjual ── -->
+    <div class="bg-white mt-2 px-4 pt-4 pb-5">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-black text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-shop text-primary text-xs"></i> Postingan Lain dari Penjual
+        </h4>
+        <button onclick="openDetailStore()" class="text-[11px] text-primary font-bold hover:underline flex items-center gap-1">
+          Lihat Semua <i class="fa-solid fa-chevron-right text-[9px]"></i>
+        </button>
+      </div>
+      <!-- Grid 2 kolom produk penjual yang sama -->
+      <div id="sellerOtherPosts" class="grid grid-cols-2 gap-2.5">
+        <!-- Skeleton sementara -->
+        <div class="skel rounded-2xl" style="height:140px"></div>
+        <div class="skel rounded-2xl" style="height:140px"></div>
+        <div class="skel rounded-2xl" style="height:140px"></div>
+        <div class="skel rounded-2xl" style="height:140px"></div>
+      </div>
+      <p id="sellerOtherEmpty" style="display:none" class="text-xs text-gray-400 text-center py-4">
+        <i class="fa-solid fa-box-open text-2xl text-gray-200 mb-2 block"></i> Tidak ada produk lain dari penjual ini
+      </p>
+    </div>
+
+    <!-- ── Rekomendasi Serupa (Smart) ── -->
+    <div class="bg-white mt-2 px-4 pt-4 pb-6">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-black text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-400 text-xs"></i> Kamu Mungkin Juga Suka
+        </h4>
+        <span id="recomCatLabel" class="text-[10px] bg-amber-50 text-amber-600 font-bold px-2.5 py-1 rounded-full border border-amber-100"></span>
+      </div>
+      <!-- Grid 2 kolom rekomendasi serupa -->
+      <div id="similarRecomGrid" class="grid grid-cols-2 gap-2.5">
+        <!-- Skeleton sementara -->
+        <div class="skel rounded-2xl" style="height:140px"></div>
+        <div class="skel rounded-2xl" style="height:140px"></div>
+        <div class="skel rounded-2xl" style="height:140px"></div>
+        <div class="skel rounded-2xl" style="height:140px"></div>
+      </div>
+      <p id="similarRecomEmpty" style="display:none" class="text-xs text-gray-400 text-center py-4">
+        <i class="fa-solid fa-magnifying-glass text-2xl text-gray-200 mb-2 block"></i> Belum ada rekomendasi serupa
+      </p>
     </div>
 
   </div><!-- /scrollable body -->
@@ -1399,35 +1673,42 @@ tailwind.config={theme:{extend:{colors:{
   </div>
 </div>
 
-<!-- BOTTOM NAV -->
-<nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 z-30 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-  <div class="grid grid-cols-5 h-14">
-    <button onclick="showPage('home')" class="flex flex-col items-center justify-center gap-0.5 text-primary">
-      <i class="fa-solid fa-house text-lg"></i>
-      <span class="text-[9px] font-bold">Beranda</span>
-    </button>
-    <button onclick="document.getElementById('searchInput').focus()" class="flex flex-col items-center justify-center gap-0.5 text-gray-400 hover:text-primary transition-colors">
-      <i class="fa-solid fa-magnifying-glass text-lg"></i>
-      <span class="text-[9px] font-medium">Cari</span>
-    </button>
-    <button onclick="guardedPost()" class="flex flex-col items-center justify-center gap-0.5 text-gray-400">
-      <div class="w-12 h-12 -mt-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center shadow-[0_4px_16px_rgba(245,158,11,.5)]">
-        <i class="fa-solid fa-plus text-white text-xl"></i>
-      </div>
-      <span class="text-[9px] font-medium -mt-0.5">Jual</span>
-    </button>
-    <button onclick="openChatList()" class="flex flex-col items-center justify-center gap-0.5 text-gray-400 hover:text-primary transition-colors relative">
-      <div class="relative">
-        <i class="fa-solid fa-comment-dots text-lg"></i>
-        <span id="chatBadgeMob" style="display:none" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-black min-w-[14px] h-[14px] rounded-full flex items-center justify-center">0</span>
-      </div>
-      <span class="text-[9px] font-medium">Chat</span>
-    </button>
-    <button onclick="showProfileOrAuth()" class="flex flex-col items-center justify-center gap-0.5 text-gray-400 hover:text-primary transition-colors">
-      <i class="fa-solid fa-circle-user text-lg"></i>
-      <span class="text-[9px] font-medium">Akun</span>
-    </button>
-  </div>
+<!-- BOTTOM NAV — Mobile Only -->
+<nav id="mobileBottomNav" class="mob-bottom-nav fixed bottom-0 left-0 right-0 bg-white/97 backdrop-blur-md border-t border-gray-100 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]" style="display:none">
+
+  <!-- 1. Beranda -->
+  <button id="mnav-home" onclick="showPage('home');setMobTab('home')" class="mob-nav-btn active-tab">
+    <i class="fa-solid fa-house"></i>
+    <span>Beranda</span>
+  </button>
+
+  <!-- 2. Yalla Taushil (filter siap-taushil) -->
+  <button id="mnav-taushil" onclick="filterCat('gratis-ongkir');setMobTab('taushil')" class="mob-nav-btn">
+    <i class="fa-solid fa-truck-fast"></i>
+    <span>Yalla Taushil</span>
+  </button>
+
+  <!-- 3. Official -->
+  <button id="mnav-official" onclick="filterCat('official');setMobTab('official')" class="mob-nav-btn">
+    <i class="fa-solid fa-medal"></i>
+    <span>Official</span>
+  </button>
+
+  <!-- 4. Notifikasi -->
+  <button id="mnav-notif" onclick="toggleNotifPanel();setMobTab('notif')" class="mob-nav-btn" style="position:relative">
+    <div style="position:relative;display:inline-block">
+      <i class="fa-solid fa-bell"></i>
+      <span id="notifBadgeMob" style="display:none" class="mob-nav-badge">0</span>
+    </div>
+    <span>Notifikasi</span>
+  </button>
+
+  <!-- 5. Akun -->
+  <button id="mnav-akun" onclick="showProfileOrAuth();setMobTab('akun')" class="mob-nav-btn">
+    <i class="fa-solid fa-circle-user"></i>
+    <span>Akun</span>
+  </button>
+
 </nav>
 
 <!-- ═══════════════════════════════════════════════
@@ -2504,6 +2785,36 @@ window.openDetail = id => {
   // Load store stats async
   loadDetailStoreStats(p.sellerUid, p.sellerEmail);
 
+  // ── Render Postingan Lain & Rekomendasi Serupa ─────────────────
+  // Reset dulu ke skeleton
+  const sop = document.getElementById('sellerOtherPosts');
+  const srg = document.getElementById('similarRecomGrid');
+  const skelHtml = '<div class="skel rounded-2xl" style="height:140px"></div>'.repeat(4);
+  if(sop){ sop.style.display='grid'; sop.innerHTML=skelHtml; }
+  if(srg){ srg.style.display='grid'; srg.innerHTML=skelHtml; }
+  const soEmpty = document.getElementById('sellerOtherEmpty');
+  const srEmpty = document.getElementById('similarRecomEmpty');
+  if(soEmpty) soEmpty.style.display='none';
+  if(srEmpty) srEmpty.style.display='none';
+
+  // Render setelah sedikit delay agar data fbAds sudah terload
+  function _doRenderSections() {
+    const allAds = getAllAds();
+    if(allAds.length === 0) {
+      // Data belum siap, coba lagi sebentar
+      setTimeout(_doRenderSections, 400);
+      return;
+    }
+    if(p.sellerUid) {
+      renderSellerOtherPosts(p.sellerUid, id);
+    } else {
+      if(sop) sop.style.display='none';
+      if(soEmpty) soEmpty.style.display='block';
+    }
+    renderSimilarRecom(p);
+  }
+  setTimeout(_doRenderSections, 300);
+
   // Reset scroll
   const scrollBody=document.getElementById('detailScrollBody');
   if(scrollBody) scrollBody.scrollTop=0;
@@ -2549,6 +2860,109 @@ window.loadDetailStoreStats = async function(sellerUid, sellerEmail) {
     const already=snap.docs.some(d=>d.data().followerUid===u.uid);
     _applyDetailFollowBtn(already);
   } catch(e) { if(followerEl) followerEl.textContent='0'; }
+};
+
+// ── Render mini card helper (reusable untuk seller posts & recom) ──────────
+function _miniAdCard(p, highlightSeller) {
+  const img = p.imgUrl || p.img || 'https://picsum.photos/seed/'+p.id+'/200/200';
+  const name = p.title || p.name || 'Produk';
+  const price = fmtLE(p.price);
+  const admin = isAdmin(p.sellerEmail||'');
+  return `
+    <div class="recom-card" onclick="closeDetailDirect();setTimeout(()=>openDetail('${p.id||''}'),120)">
+      <div class="relative bg-gray-100 overflow-hidden" style="aspect-ratio:1/1">
+        <img src="${img}" alt="${name}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-400" loading="lazy"
+          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22 fill=%22%23f3f4f6%22%3E%3Crect width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23d1d5db%22 font-size=%2240%22%3E🛍%3C/text%3E%3C/svg%3E'"/>
+        ${p.badge?`<span class="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400 text-white shadow-sm">${p.badge}</span>`:''}
+        ${p.siapTaushil?`<span class="absolute bottom-1.5 left-1.5 bg-primary/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 backdrop-blur-sm"><i class="fa-solid fa-truck-fast text-[7px]"></i>Taushil</span>`:''}
+      </div>
+      <div class="p-2 flex flex-col gap-0.5">
+        <p class="text-[11px] font-semibold text-gray-800 lc2 leading-snug">${name}</p>
+        <p class="text-xs font-black text-primary">${price}</p>
+        ${highlightSeller ? `<p class="text-[10px] text-gray-400 lc1 flex items-center gap-1"><i class="fa-solid fa-store text-[8px] text-primary/50"></i>${p.sellerName||''}</p>` : ''}
+        <div class="flex items-center gap-1 mt-0.5">
+          <i class="fa-solid fa-star text-amber-400 text-[9px]"></i>
+          <span class="text-[10px] font-semibold text-gray-600">${p.rating||'5.0'}</span>
+          ${admin?`<i class="fa-solid fa-circle-check text-[9px] text-amber-400 ml-auto"></i>`:''}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Render Postingan Lain dari Penjual ─────────────────────────
+window.renderSellerOtherPosts = function(sellerUid, currentAdId) {
+  const grid = document.getElementById('sellerOtherPosts');
+  const empty = document.getElementById('sellerOtherEmpty');
+  if(!grid) return;
+
+  // Cari produk dari penjual yang sama (termasuk static)
+  let others = getAllAds().filter(a =>
+    a.sellerUid === sellerUid &&
+    (a.id||'') !== currentAdId
+  ).slice(0, 6);
+
+  // Kalau penjual hanya punya 1 produk, tampilkan produk dari penjual lain sebagai fallback
+  if(!others.length) {
+    others = getAllAds().filter(a => (a.id||'') !== currentAdId).slice(0, 6);
+  }
+
+  if(!others.length) {
+    grid.style.display = 'none';
+    if(empty) empty.style.display = 'block';
+    return;
+  }
+  grid.style.display = 'grid';
+  if(empty) empty.style.display = 'none';
+  grid.innerHTML = others.map(p => _miniAdCard(p, false)).join('');
+};
+
+// ── Render Rekomendasi Serupa (Smart Algorithm) ────────────────
+window.renderSimilarRecom = function(currentAd) {
+  const grid = document.getElementById('similarRecomGrid');
+  const empty = document.getElementById('similarRecomEmpty');
+  const catLabel = document.getElementById('recomCatLabel');
+  if(!grid) return;
+
+  const cat = currentAd.cat || currentAd.category || '';
+  const title = (currentAd.title || currentAd.name || '').toLowerCase();
+  const currentId = currentAd.id || '';
+  const sellerUid = currentAd.sellerUid || '';
+
+  // Pool: semua produk kecuali produk ini sendiri
+  // Kalau sellerUid bukan 'static', juga kecualikan produk dari penjual yang sama
+  let pool = getAllAds().filter(a => {
+    if((a.id||'') === currentId) return false;
+    if(sellerUid && sellerUid !== 'static' && a.sellerUid === sellerUid) return false;
+    return true;
+  });
+
+  // Scoring: kategori sama = prioritas tinggi, keyword cocok = bonus
+  const keywords = title.split(' ').filter(w => w.length > 3);
+  pool = pool.map(a => {
+    let score = 0;
+    const aCat = a.cat || a.category || '';
+    const aTitle = (a.title || a.name || '').toLowerCase();
+    if(cat && aCat === cat) score += 10;
+    keywords.forEach(kw => { if(aTitle.includes(kw)) score += 3; });
+    if(a.siapTaushil) score += 1;
+    return { ...a, _score: score };
+  }).sort((a, b) => b._score - a._score);
+
+  // Ambil top 6
+  const topRecom = pool.slice(0, 6);
+
+  // Update label kategori
+  const catMap = {elektronik:'Elektronik',fashion:'Fashion',kecantikan:'Kecantikan',makanan:'Makanan',olahraga:'Olahraga',buku:'Buku',gaming:'Gaming',rumah:'Rumah',promo:'Promo'};
+  if(catLabel) catLabel.textContent = (cat && catMap[cat]) ? catMap[cat] : 'Serupa';
+
+  if(!topRecom.length) {
+    grid.style.display = 'none';
+    if(empty) empty.style.display = 'block';
+    return;
+  }
+  grid.style.display = 'grid';
+  if(empty) empty.style.display = 'none';
+  grid.innerHTML = topRecom.map(p => _miniAdCard(p, true)).join('');
 };
 
 function _applyDetailFollowBtn(following) {
@@ -3326,6 +3740,82 @@ async function loadBillboardImages(){
     // We use the already-initialized db via _FB context — just call applyBillboardImage if needed
     // Billboard images are applied on upload via applyBillboardImage()
   } catch(e){}
+}
+
+// ── Mobile Layout Init ─────────────────────────────────────────
+(function initMobileLayout() {
+  function applyLayout() {
+    const isMob = window.innerWidth <= 768;
+    const mobHeader = document.querySelector('.mob-header-inner');
+    const deskHeader = document.querySelector('.max-w-7xl.mx-auto.px-3.md\\:px-6');
+    const bottomNav = document.getElementById('mobileBottomNav');
+    if(isMob) {
+      if(mobHeader) mobHeader.style.display = 'flex';
+      if(deskHeader) deskHeader.style.display = 'none';
+      if(bottomNav) bottomNav.style.display = 'flex';
+    } else {
+      if(mobHeader) mobHeader.style.display = 'none';
+      if(deskHeader) deskHeader.style.display = 'flex';
+      if(bottomNav) bottomNav.style.display = 'none';
+    }
+  }
+  applyLayout();
+  window.addEventListener('resize', applyLayout);
+})();
+
+// ── Active tab highlight for bottom nav ───────────────────────
+window.setMobTab = function(tab) {
+  ['home','taushil','official','notif','akun'].forEach(t => {
+    const el = document.getElementById('mnav-' + t);
+    if(el) el.classList.toggle('active-tab', t === tab);
+  });
+};
+
+// ── Sync notif badge ke mobile nav ────────────────────────────
+const _origSetNotifBadge = window._setNotifBadge;
+function _syncMobNotifBadge(count) {
+  const mob = document.getElementById('notifBadgeMob');
+  if(!mob) return;
+  if(count > 0) { mob.textContent = count > 99 ? '99+' : count; mob.style.display = 'flex'; }
+  else { mob.style.display = 'none'; }
+}
+// Intercept notifBadge updates via MutationObserver
+const notifBadgeEl = document.getElementById('notifBadge');
+if(notifBadgeEl) {
+  new MutationObserver(() => {
+    const mob = document.getElementById('notifBadgeMob');
+    if(!mob) return;
+    const txt = notifBadgeEl.textContent;
+    const vis = notifBadgeEl.style.display !== 'none';
+    if(vis && txt) { mob.textContent = txt; mob.style.display = 'flex'; }
+    else { mob.style.display = 'none'; }
+  }).observe(notifBadgeEl, { childList:true, attributes:true, attributeFilter:['style'] });
+}
+// Sync chat badge ke header mobile top
+const chatBadgeEl = document.getElementById('chatBadge');
+if(chatBadgeEl) {
+  new MutationObserver(() => {
+    ['chatBadgeMobTop'].forEach(id => {
+      const mob = document.getElementById(id);
+      if(!mob) return;
+      const txt = chatBadgeEl.textContent;
+      const vis = chatBadgeEl.style.display !== 'none';
+      if(vis && txt) { mob.textContent = txt; mob.style.display = 'flex'; }
+      else { mob.style.display = 'none'; }
+    });
+  }).observe(chatBadgeEl, { childList:true, attributes:true, attributeFilter:['style'] });
+}
+// Sync cart badge ke header mobile top
+const cartBadgeEl = document.getElementById('cartBadge');
+if(cartBadgeEl) {
+  new MutationObserver(() => {
+    const mob = document.getElementById('cartBadgeMobTop');
+    if(!mob) return;
+    const txt = cartBadgeEl.textContent;
+    const vis = cartBadgeEl.style.display !== 'none';
+    if(vis && txt) { mob.textContent = txt; mob.style.display = 'flex'; }
+    else { mob.style.display = 'none'; }
+  }).observe(cartBadgeEl, { childList:true, attributes:true, attributeFilter:['style'] });
 }
 
 // ── Init ───────────────────────────────────────────────────────
