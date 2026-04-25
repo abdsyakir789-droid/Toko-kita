@@ -4855,22 +4855,27 @@ window.sendChatPhoto = async function(input) {
   el.scrollTop = el.scrollHeight;
 
   try {
-    // Upload ke Cloudinary — sama seperti foto produk/profil
-    const imgUrl = await window.uploadToCloudinary(file);
+    // Upload ke Cloudinary — ambil secure_url dari hasil objek
+    const result  = await window.uploadToCloudinary(file);
+    const imgUrl  = typeof result === 'object' ? result.secure_url : result;
+    if(!imgUrl) throw new Error('URL foto kosong dari Cloudinary');
 
     // Hapus loading bubble
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
 
-    // Kirim sebagai pesan dengan type='image' (bukan lagi prefix __PHOTO__)
+    // Kirim sebagai pesan dengan type='image'
     await window._FB.sendChatMessage(window._S.activeChatId, imgUrl, 'image');
+
+    // Push notif ke penerima
+    if(window._S.activeChatOther && window._S.user) {
+      sendPushToReceiver(window._S.activeChatOther, window._S.user.name || 'Seseorang', '📷 Foto');
+    }
 
   } catch(e) {
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
-    console.error('sendChatPhoto error:', e);
-
-    // Tampilkan pesan error yang lebih informatif
+    console.error('[sendChatPhoto] error:', e);
     const errMsg = e.message || 'Upload gagal';
     if(errMsg.includes('Upload gagal') || errMsg.includes('preset')) {
       showToast('Gagal upload foto — periksa konfigurasi Cloudinary','red');
