@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Yalla Mart — Premium Marketplace</title>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#10B981"/>
@@ -19,18 +19,6 @@
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window._osReady = false;
   window._osInstance = null;
-
-  // Simpan subscription ID ke Firestore
-  window._osSaveSubId = async function(uid, subId) {
-    if(!uid || !subId) return;
-    try {
-      const { getFirestore, doc, setDoc } =
-        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      await setDoc(doc(getFirestore(), 'users', uid), { osSubId: subId }, { merge: true });
-      console.log('[OneSignal] osSubId tersimpan:', subId);
-    } catch(e){ console.warn('[OneSignal] gagal simpan osSubId:', e.message); }
-  };
-
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "47d30bbf-d028-44e0-a42f-cc701a8e3519",
@@ -42,28 +30,10 @@
     window._osInstance = OneSignal;
     window._osReady = true;
     try { await OneSignal.Notifications.requestPermission(); } catch(e){}
-
-    // Listener: setiap subId berubah/tersedia
-    try {
-      OneSignal.User.PushSubscription.addEventListener('change', async (event) => {
-        const subId = event.current?.id;
-        if(subId) {
-          const uid = window._S?.user?.uid;
-          if(uid) await _osSaveSubId(uid, subId);
-        }
-      });
-    } catch(e){}
-
-    // Login jika user sudah ada
+    // Coba login jika user sudah ada
     try {
       const uid = window._S?.user?.uid;
-      if(uid) {
-        await OneSignal.login(uid);
-        setTimeout(async () => {
-          const subId = OneSignal.User?.PushSubscription?.id;
-          if(subId && uid) await _osSaveSubId(uid, subId);
-        }, 2000);
-      }
+      if(uid) await OneSignal.login(uid);
     } catch(e){}
   });
 
@@ -75,16 +45,13 @@
         if(window._osInstance) {
           await window._osInstance.login(uid);
           console.log('[OneSignal] login OK:', uid);
-          setTimeout(async () => {
-            const subId = window._osInstance.User?.PushSubscription?.id;
-            if(subId) await _osSaveSubId(uid, subId);
-          }, 2000);
         }
       } catch(e){ console.warn('[OneSignal] login error:', e.message); }
     };
     if(window._osReady) {
       await tryLogin();
     } else {
+      // Tunggu sampai OneSignal siap, max 10 detik
       let attempts = 0;
       const interval = setInterval(async () => {
         attempts++;
@@ -4240,22 +4207,27 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
 // ── OneSignal: Kirim push notif ke penerima pesan ─────────────
 async function sendPushToReceiver(receiverUid, senderName, msgText) {
   try {
-    const isPhoto = msgText === 'image' || msgText.startsWith('__PHOTO__');
+    const isPhoto = msgText.startsWith('__PHOTO__');
     const body = isPhoto ? '📷 Mengirim foto' : (msgText.length > 80 ? msgText.substring(0,80)+'...' : msgText);
-    const title = '💬 ' + senderName;
-    const OS_KEY = 'os_v2_app_i7jqxp6qfbcobjbpzrybvdrvdhkxcmlrbsceud5xtizyiblokjptqvk4u7tfghxrfj6sbre76sra2gtsnqkglkfeavpkib3xva4cqpa';
-    const OS_APP = '47d30bbf-d028-44e0-a42f-cc701a8e3519';
-    const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const userSnap = await getDoc(doc(getFirestore(), 'users', receiverUid));
-    const osSubId = userSnap.exists() ? userSnap.data().osSubId : null;
-    console.log('[OneSignal Push] osSubId penerima:', osSubId);
-    const payload = { app_id: OS_APP, headings: { en: title, id: title }, contents: { en: body, id: body }, data: { chatId: window._S.activeChatId }, priority: 10 };
-    if (osSubId) { payload.include_subscription_ids = [osSubId]; }
-    else { payload.include_aliases = { external_id: [receiverUid] }; payload.target_channel = 'push'; }
-    const res = await fetch('https://onesignal.com/api/v1/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Key ' + OS_KEY }, body: JSON.stringify(payload) });
-    const json = await res.json();
-    console.log('[OneSignal Push] response:', JSON.stringify(json));
-  } catch(e) { console.warn('[OneSignal Push] gagal:', e.message); }
+    await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Key os_v2_app_i7jqxp6qfbcobjbpzrybvdrvdfw6abe3vwbeq2nqfwpbzpqtdajkvosyk6etd3exn7duhe525znrjsio7wnidtwklrcefuyfz2h7wuq'
+      },
+      body: JSON.stringify({
+        app_id: '47d30bbf-d028-44e0-a42f-cc701a8e3519',
+        include_aliases: { external_id: [receiverUid] },
+        target_channel: 'push',
+        headings: { en: '💬 ' + senderName, id: '💬 ' + senderName },
+        contents: { en: body, id: body },
+        data: { chatId: window._S.activeChatId },
+        priority: 10
+      })
+    });
+  } catch(e) {
+    console.warn('[OneSignal Push] gagal:', e.message);
+  }
 }
 
 window.sendChatMsg=async()=>{
