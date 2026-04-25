@@ -33,9 +33,28 @@
     // Coba login jika user sudah ada
     try {
       const uid = window._S?.user?.uid;
-      if(uid) await OneSignal.login(uid);
+      if(uid) {
+        await OneSignal.login(uid);
+        await _osSaveSubscriptionId(uid);
+      }
     } catch(e){}
   });
+
+  // Simpan OneSignal Subscription ID ke Firestore agar bisa dipakai kirim notif
+  window._osSaveSubscriptionId = async function(uid) {
+    try {
+      if(!uid || !window._osInstance) return;
+      const subId = window._osInstance.User?.PushSubscription?.id;
+      if(!subId) return;
+      const { getFirestore, doc, setDoc } =
+        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const db2 = getFirestore();
+      await setDoc(doc(db2, 'users', uid), { osSubId: subId }, { merge: true });
+      console.log('[OneSignal] Subscription ID tersimpan:', subId);
+    } catch(e) {
+      console.warn('[OneSignal] Gagal simpan subId:', e.message);
+    }
+  };
 
   // Helper global untuk login OneSignal kapanpun
   window._osLogin = async function(uid) {
@@ -44,6 +63,7 @@
       try {
         if(window._osInstance) {
           await window._osInstance.login(uid);
+          await _osSaveSubscriptionId(uid);
           console.log('[OneSignal] login OK:', uid);
         }
       } catch(e){ console.warn('[OneSignal] login error:', e.message); }
@@ -51,7 +71,6 @@
     if(window._osReady) {
       await tryLogin();
     } else {
-      // Tunggu sampai OneSignal siap, max 10 detik
       let attempts = 0;
       const interval = setInterval(async () => {
         attempts++;
@@ -4207,24 +4226,41 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
 // ── OneSignal: Kirim push notif ke penerima pesan ─────────────
 async function sendPushToReceiver(receiverUid, senderName, msgText) {
   try {
-    const isPhoto = msgText.startsWith('__PHOTO__');
+    const isPhoto = msgText === 'image' || msgText.startsWith('__PHOTO__');
     const body = isPhoto ? '📷 Mengirim foto' : (msgText.length > 80 ? msgText.substring(0,80)+'...' : msgText);
-    await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Key os_v2_app_i7jqxp6qfbcobjbpzrybvdrvdhkxcmlrbsceud5xtizyiblokjptqvk4u7tfghxrfj6sbre76sra2gtsnqkglkfeavpkib3xva4cqpa'
-      },
-      body: JSON.stringify({
-        app_id: '47d30bbf-d028-44e0-a42f-cc701a8e3519',
-        include_aliases: { external_id: [receiverUid] },
-        target_channel: 'push',
-        headings: { en: '💬 ' + senderName, id: '💬 ' + senderName },
-        contents: { en: body, id: body },
-        data: { chatId: window._S.activeChatId },
-        priority: 10
-      })
+    const title = '💬 ' + senderName;
+    const OS_KEY = 'os_v2_app_i7jqxp6qfbcobjbpzrybvdrvdhkxcmlrbsceud5xtizyiblokjptqvk4u7tfghxrfj6sbre76sra2gtsnqkglkfeavpkib3xva4cqpa';
+    const OS_APP = '47d30bbf-d028-44e0-a42f-cc701a8e3519';
+
+    // Ambil osSubId dari Firestore
+    const { getFirestore, doc, getDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = getFirestore();
+    const userSnap = await getDoc(doc(db2, 'users', receiverUid));
+    const osSubId = userSnap.exists() ? userSnap.data().osSubId : null;
+
+    // Buat payload — pakai subscription_ids jika ada, fallback ke external_id
+    const payload = {
+      app_id  : OS_APP,
+      headings: { en: title, id: title },
+      contents: { en: body,  id: body  },
+      data    : { chatId: window._S.activeChatId },
+      priority: 10
+    };
+    if (osSubId) {
+      payload.include_subscription_ids = [osSubId];
+    } else {
+      payload.include_aliases  = { external_id: [receiverUid] };
+      payload.target_channel   = 'push';
+    }
+
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Key ' + OS_KEY },
+      body   : JSON.stringify(payload)
     });
+    const json = await res.json();
+    console.log('[OneSignal Push]', json);
   } catch(e) {
     console.warn('[OneSignal Push] gagal:', e.message);
   }
@@ -5343,27 +5379,6 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
       .then(reg => console.log('[PWA] Service Worker terdaftar:', reg.scope))
       .catch(err => console.error('[PWA] Service Worker gagal:', err));
-  });
-
-  // Terima pesan dari service-worker → buka chat room yang dimaksud
-  navigator.serviceWorker.addEventListener('message', async event => {
-    if (event.data?.type === 'OPEN_CHAT' && event.data.chatId) {
-      const chatId = event.data.chatId;
-      const chatData = window._S?._chatList?.find(
-        c => (c.id || c.chatId) === chatId
-      );
-      if (chatData && window._S?.user) {
-        const isMe = chatData.buyerId === window._S.user.uid;
-        await openChatRoom(
-          chatData.adId || '',
-          isMe ? chatData.sellerId    : chatData.buyerId,
-          isMe ? chatData.sellerName  : chatData.buyerName,
-          isMe ? chatData.sellerPhoto : chatData.buyerPhoto,
-          chatData.adTitle || '', chatData.adImg || '',
-          Number(chatData.adPrice || 0)
-        );
-      }
-    }
   });
 }
 </script>
