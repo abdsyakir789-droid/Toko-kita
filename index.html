@@ -2163,11 +2163,23 @@ onAuthStateChanged(auth, async user => {
     else setTimeout(()=>{ if(window.startNotifListener) startNotifListener(); }, 600);
     // Set presence online — ditunda agar _FB sudah siap
     setTimeout(()=>{ try { window._FB?.setPresence(true); } catch(e){} }, 1000);
+    // ── OneSignal: hubungkan UID Firebase agar bisa terima push notif ──
+    setTimeout(()=>{
+      try {
+        if(window.OneSignal) {
+          OneSignal.login(user.uid).catch(e=>console.warn('[OneSignal] login error:',e));
+        } else if(window.OneSignalDeferred) {
+          OneSignalDeferred.push(async function(OS){ await OS.login(user.uid).catch(()=>{}); });
+        }
+      } catch(e){ console.warn('[OneSignal] login gagal:',e); }
+    }, 1500);
   } else {
     // Stop profile real-time listener on logout
     if (_profileUnsub) { _profileUnsub(); _profileUnsub = null; }
     // Set presence offline — ditunda agar _FB sudah siap
     setTimeout(()=>{ try { if(window._S.user) window._FB?.setPresence(false); } catch(e){} }, 300);
+    // ── OneSignal: logout agar notif tidak nyasar ke user lain ──
+    try { if(window.OneSignal) OneSignal.logout().catch(()=>{}); } catch(e){}
     window._S.user = null;
     renderUserState();
     if(window.stopUnreadListener) stopUnreadListener();
