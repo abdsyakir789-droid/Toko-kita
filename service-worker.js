@@ -1,3 +1,6 @@
+// ── OneSignal Service Worker ──────────────────────────────────
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+
 const CACHE_NAME = 'yallamart-v1';
 const ASSETS = [
   '/',
@@ -34,7 +37,8 @@ self.addEventListener('fetch', e => {
     url.hostname.includes('firebaseio.com') ||
     url.hostname.includes('googleapis.com') ||
     url.hostname.includes('cloudinary.com') ||
-    url.hostname.includes('firestore.googleapis.com')
+    url.hostname.includes('firestore.googleapis.com') ||
+    url.hostname.includes('onesignal.com')
   ) {
     return e.respondWith(fetch(e.request));
   }
