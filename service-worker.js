@@ -1,60 +1,60 @@
-// ── OneSignal Service Worker ──────────────────────────────────
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+// ═══════════════════════════════════════════
+//  YallaMart Service Worker
+//  Notifikasi muncul meski app ditutup
+// ═══════════════════════════════════════════
 
-const CACHE_NAME = 'yallamart-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css',
-  'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap'
-];
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(clients.claim()));
 
-// Install: cache semua asset penting
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
-  self.skipWaiting();
-});
-
-// Activate: hapus cache lama
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
-
-// Fetch: cache first untuk asset, network first untuk API
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
-
-  // Jangan cache request ke Firebase, Cloudinary, atau API eksternal
-  if (
-    url.hostname.includes('firebaseio.com') ||
-    url.hostname.includes('googleapis.com') ||
-    url.hostname.includes('cloudinary.com') ||
-    url.hostname.includes('firestore.googleapis.com') ||
-    url.hostname.includes('onesignal.com')
-  ) {
-    return e.respondWith(fetch(e.request));
+// ── Terima push dari OneSignal ──────────────
+self.addEventListener('push', event => {
+  let payload = {};
+  if (event.data) {
+    try { payload = event.data.json(); }
+    catch(e) { payload = { contents: { id: event.data.text() } }; }
   }
 
-  // Cache first untuk asset statis
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(response => {
-        if (!response || response.status !== 200 || response.type === 'opaque') {
-          return response;
+  const title  = payload.headings?.id || payload.headings?.en || 'YallaMart';
+  const body   = payload.contents?.id || payload.contents?.en || 'Kamu mendapat pesan baru.';
+  const chatId = payload.data?.chatId || '';
+
+  const options = {
+    body,
+    icon    : 'https://res.cloudinary.com/dsy4hjc7a/image/upload/w_192,h_192,c_fill,f_png/v1777071286/file_00000000061071f4a2bf027d7ff5df98_gaknb3.png',
+    badge   : 'https://res.cloudinary.com/dsy4hjc7a/image/upload/w_72,h_72,c_fill,f_png/v1777071286/file_00000000061071f4a2bf027d7ff5df98_gaknb3.png',
+    vibrate : [200, 100, 200],
+    tag     : chatId ? 'chat-' + chatId : 'yallamart',
+    renotify: true,
+    data    : { chatId, url: chatId ? '/?chatId=' + chatId : '/' },
+    actions : [
+      { action: 'open',    title: '💬 Buka Chat' },
+      { action: 'dismiss', title: '✕ Tutup' }
+    ]
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// ── Klik notif → buka/fokus app ─────────────
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  if (event.action === 'dismiss') return;
+
+  const chatId = event.notification.data?.chatId || '';
+  const url    = event.notification.data?.url    || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(list => {
+        for (const c of list) {
+          try {
+            if (new URL(c.url).origin === self.location.origin) {
+              if (chatId) c.postMessage({ type: 'OPEN_CHAT', chatId });
+              return c.focus();
+            }
+          } catch(e) {}
         }
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-        return response;
-      }).catch(() => caches.match('/index.html'));
-    })
+        return clients.openWindow(self.location.origin + url);
+      })
   );
 });
