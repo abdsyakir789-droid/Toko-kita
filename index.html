@@ -2640,20 +2640,29 @@ window._FB = {
   },
 
   listenChatMessages(chatId, callback) {
-    const q = query(collection(db,'chats',chatId,'messages'), orderBy('createdAt','asc'));
+    // Tanpa orderBy — hindari kebutuhan composite index di Firestore
+    // Sorting dilakukan di sisi client setelah data diterima
+    const q = collection(db, 'chats', chatId, 'messages');
     return onSnapshot(q,
       snap => {
-        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        console.info('[Chat] Pesan diterima:', msgs.length, 'chatId:', chatId);
+        const msgs = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const aT = a.createdAt?.seconds ?? a.createdAt?.toMillis?.() / 1000 ?? 0;
+            const bT = b.createdAt?.seconds ?? b.createdAt?.toMillis?.() / 1000 ?? 0;
+            return aT - bT;
+          });
         callback(msgs);
       },
       err => {
-        console.error('[Chat] ERROR baca pesan:', err.code, err.message);
+        console.error('[Chat] Gagal baca pesan:', err.code, err.message);
         const el = document.getElementById('chatMessages');
-        if(el) el.innerHTML = `<p class="text-xs text-red-400 text-center py-8 px-4">
-          ❌ Gagal memuat pesan<br>
-          <span class="text-[10px] text-gray-400 break-all">${err.code}: ${err.message}</span>
-        </p>`;
+        if(el) el.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-10 gap-2 px-4">
+            <i class="fa-solid fa-triangle-exclamation text-2xl text-red-400"></i>
+            <p class="text-xs text-red-400 font-semibold text-center">Gagal memuat pesan</p>
+            <p class="text-[10px] text-gray-400 text-center break-all">${err.code}: ${err.message}</p>
+          </div>`;
       }
     );
   },
@@ -4824,20 +4833,22 @@ async function sendPushToReceiver(receiverUid, senderName, msgText) {
   }
 }
 
-window.sendChatMsg=async()=>{
-  const txt=document.getElementById('chatInput').value.trim();
-  if(!txt||!window._S.activeChatId) return;
-  document.getElementById('chatInput').value='';
-  // Kirim push notif ke penerima
-  if(window._S.activeChatOther && window._S.user) {
-    sendPushToReceiver(window._S.activeChatOther, window._S.user.name || 'Seseorang', txt);
-  }
-  if(window._FB) await window._FB.sendChatMessage(window._S.activeChatId, txt);
-  else{
-    const el=document.getElementById('chatMessages');
-    const div=document.createElement('div');div.className='flex justify-end chat-msg';
-    div.innerHTML=`<div class="chat-bubble-me px-3.5 py-2 max-w-[75%] text-xs">${txt}</div>`;
-    el.appendChild(div); el.scrollTop=el.scrollHeight;
+window.sendChatMsg = async () => {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim();
+  if(!txt || !window._S.activeChatId) return;
+  if(!window._FB || !window._S.user) { showToast('Login dulu untuk chat','red'); return; }
+
+  inp.value = '';
+  try {
+    await window._FB.sendChatMessage(window._S.activeChatId, txt);
+    if(window._S.activeChatOther) {
+      sendPushToReceiver(window._S.activeChatOther, window._S.user.name || 'Seseorang', txt);
+    }
+  } catch(e) {
+    console.error('[sendChatMsg]', e.code, e.message);
+    showToast('Gagal kirim: ' + (e.message || e.code || 'Error'), 'red');
+    inp.value = txt; // kembalikan teks agar tidak hilang
   }
 };
 
@@ -4866,19 +4877,16 @@ window.sendChatPhoto = async function(input) {
   el.scrollTop = el.scrollHeight;
 
   try {
-    // Upload ke Cloudinary — ambil secure_url dari hasil objek
-    const result = await window.uploadToCloudinary(file);
-    const imgUrl = typeof result === 'object' ? result.secure_url : result;
-    if(!imgUrl) throw new Error('URL foto kosong dari Cloudinary');
+    // uploadToCloudinary() return OBJEK {secure_url, public_id} — bukan string langsung
+    const result  = await window.uploadToCloudinary(file);
+    const imgUrl  = (result && typeof result === 'object') ? result.secure_url : result;
+    if(!imgUrl || !imgUrl.startsWith('http')) throw new Error('URL foto tidak valid');
 
-    // Hapus loading bubble
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
 
-    // Kirim sebagai pesan dengan type='image'
     await window._FB.sendChatMessage(window._S.activeChatId, imgUrl, 'image');
 
-    // Push notif ke penerima
     if(window._S.activeChatOther && window._S.user) {
       sendPushToReceiver(window._S.activeChatOther, window._S.user.name || 'Seseorang', '📷 Foto');
     }
@@ -4886,14 +4894,13 @@ window.sendChatPhoto = async function(input) {
   } catch(e) {
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
-    console.error('[sendChatPhoto] error:', e);
-    const errMsg = e.message || 'Upload gagal';
-    if(errMsg.includes('Upload gagal') || errMsg.includes('preset')) {
-      showToast('Gagal upload foto — periksa konfigurasi Cloudinary','red');
-    } else if(errMsg.includes('Koneksi') || errMsg.includes('network')) {
-      showToast('Gagal: koneksi internet bermasalah','red');
+    console.error('[sendChatPhoto]', e.code, e.message);
+    if(e.code === 'permission-denied') {
+      showToast('Gagal kirim foto — periksa Firestore Rules', 'red');
+    } else if(e.message?.includes('preset') || e.message?.includes('Upload gagal')) {
+      showToast('Gagal upload — periksa konfigurasi Cloudinary', 'red');
     } else {
-      showToast('Gagal mengirim foto: ' + errMsg, 'red');
+      showToast('Gagal kirim foto: ' + (e.message || 'Error tidak diketahui'), 'red');
     }
   }
 };
