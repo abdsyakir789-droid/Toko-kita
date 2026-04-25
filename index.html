@@ -4213,7 +4213,7 @@ async function sendPushToReceiver(receiverUid, senderName, msgText) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Key os_v2_app_i7jqxp6qfbcobjbpzrybvdrvdfw6abe3vwbeq2nqfwpbzpqtdajkvosyk6etd3exn7duhe525znrjsio7wnidtwklrcefuyfz2h7wuq'
+        'Authorization': 'Key os_v2_app_i7jqxp6qfbcobjbpzrybvdrvdhkxcmlrbsceud5xtizyiblokjptqvk4u7tfghxrfj6sbre76sra2gtsnqkglkfeavpkib3xva4cqpa'
       },
       body: JSON.stringify({
         app_id: '47d30bbf-d028-44e0-a42f-cc701a8e3519',
@@ -5343,6 +5343,27 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
       .then(reg => console.log('[PWA] Service Worker terdaftar:', reg.scope))
       .catch(err => console.error('[PWA] Service Worker gagal:', err));
+  });
+
+  // Terima pesan dari service-worker → buka chat room yang dimaksud
+  navigator.serviceWorker.addEventListener('message', async event => {
+    if (event.data?.type === 'OPEN_CHAT' && event.data.chatId) {
+      const chatId = event.data.chatId;
+      const chatData = window._S?._chatList?.find(
+        c => (c.id || c.chatId) === chatId
+      );
+      if (chatData && window._S?.user) {
+        const isMe = chatData.buyerId === window._S.user.uid;
+        await openChatRoom(
+          chatData.adId || '',
+          isMe ? chatData.sellerId    : chatData.buyerId,
+          isMe ? chatData.sellerName  : chatData.buyerName,
+          isMe ? chatData.sellerPhoto : chatData.buyerPhoto,
+          chatData.adTitle || '', chatData.adImg || '',
+          Number(chatData.adPrice || 0)
+        );
+      }
+    }
   });
 }
 </script>
