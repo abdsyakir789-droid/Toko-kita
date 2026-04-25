@@ -3454,7 +3454,8 @@ window.renderNotifFull = function(notifs) {
   const bcSection = document.getElementById('notifBroadcastSection');
   const bcList = document.getElementById('notifBroadcastList');
   const divider = document.getElementById('notifDivider');
-  if(broadcasts.length) {
+  // Broadcast TIDAK ditampilkan di halaman notifikasi (lonceng) — hanya di Toa
+  if(false && broadcasts.length) {
     bcSection.style.display = 'block';
     if(divider) divider.style.display = activities.length ? 'block' : 'none';
     // Simpan referensi broadcast ke state agar onclick bisa akses tanpa embed JSON di HTML
@@ -3467,7 +3468,7 @@ window.renderNotifFull = function(notifs) {
         : '';
       // Ambil ID dokumen asli (buang prefix 'sub_' jika ada)
       const rawDocId = (n.id||'').startsWith('sub_') ? n.id.slice(4) : n.id;
-      return `<div class="notif-broadcast-card ${isUnread?'':'read-bc'}" onclick="openBroadcastModal(${bcIdx})">
+      return `<div class="notif-broadcast-card ${isUnread?'':'read-bc'}" id="fs-bc-card-${bcIdx}">
         <div class="flex items-start gap-3">
           <div class="notif-bc-icon">
             <i class="fa-solid fa-satellite-dish text-white text-xs"></i>
@@ -3478,8 +3479,8 @@ window.renderNotifFull = function(notifs) {
               <span class="text-[10px] text-emerald-500 flex items-center gap-1"><i class="fa-solid fa-clock" style="font-size:8px"></i>${timeStr}</span>
             </div>
             ${n.title?`<p class="text-xs font-black text-emerald-900 mb-0.5">${n.title}</p>`:''}
-            <p class="notif-bc-msg">${n.message||''}</p>
-            <p class="text-[10px] text-emerald-600 font-semibold mt-1">Baca selengkapnya →</p>
+            <p class="text-xs text-emerald-800 leading-relaxed" id="fs-bc-msg-${bcIdx}" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.message||''}</p>
+            <button onclick="toggleFsBcExpand(${bcIdx})" id="fs-bc-btn-${bcIdx}" class="text-[10px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">Baca selengkapnya <i class='fa-solid fa-chevron-down text-[8px]'></i></button>
           </div>
           ${isAdminUser ? `
           <button onclick="event.stopPropagation();deleteBroadcastMessage('${rawDocId}','${encodeURIComponent(n.title||n.message||'')}')"
@@ -3692,12 +3693,15 @@ window.renderToaPanel = function(notifs) {
     return;
   }
   window._S._toaBcNotifs = broadcasts;
+  const isAdminToa = window._S.user && isAdmin(window._S.user.email);
   body.innerHTML = broadcasts.map((n, idx) => {
     const ts = n.createdAt?.seconds || n.timestamp?.seconds;
     const timeStr = ts ? new Date(ts*1000).toLocaleString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
     const title = n.title || 'Pesan Siaran';
     const msg = n.message || '';
-    return `<div class="notif-broadcast-card mb-3" onclick="openToaBcDetail(${idx})" style="cursor:pointer">
+    const rawDocId = (n.id||'').startsWith('sub_') ? n.id.slice(4) : n.id;
+    const bcId = n.broadcastId || '';
+    return `<div class="notif-broadcast-card mb-3" id="toa-bc-card-${idx}">
       <div class="flex items-start gap-3">
         <div class="notif-bc-icon flex-shrink-0">
           <i class="fa-solid fa-bullhorn text-white text-xs"></i>
@@ -3705,11 +3709,16 @@ window.renderToaPanel = function(notifs) {
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between mb-1">
             <span class="text-[10px] font-bold text-emerald-700">Admin Yalla Mart</span>
-            ${timeStr ? `<span class="text-[10px] text-emerald-500 flex items-center gap-1"><i class="fa-solid fa-clock text-[9px]"></i> ${timeStr}</span>` : ''}
+            <div class="flex items-center gap-2">
+              ${timeStr ? `<span class="text-[10px] text-emerald-500 flex items-center gap-1"><i class="fa-solid fa-clock text-[9px]"></i> ${timeStr}</span>` : ''}
+              ${isAdminToa ? `<button onclick="event.stopPropagation();deleteBroadcastMessage('${rawDocId}','${encodeURIComponent(title)}')" class="w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center transition-colors" title="Hapus pesan siaran dari semua user"><i class="fa-solid fa-trash-can text-red-500" style="font-size:9px"></i></button>` : ''}
+            </div>
           </div>
           <p class="text-xs font-black text-emerald-900 mb-1">${title}</p>
-          <p class="notif-bc-msg text-xs text-emerald-800">${msg}</p>
-          <p class="text-[10px] text-emerald-600 font-semibold mt-1">Baca selengkapnya →</p>
+          <p class="text-xs text-emerald-800 leading-relaxed" id="toa-bc-msg-${idx}" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${msg}</p>
+          <button onclick="toggleToaBcExpand(${idx})" id="toa-bc-btn-${idx}" class="text-[10px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+            Baca selengkapnya <i class="fa-solid fa-chevron-down text-[8px]"></i>
+          </button>
         </div>
       </div>
     </div>`;
@@ -3729,6 +3738,36 @@ window.openToaBcDetail = function(idx) {
     timeEl.textContent = ts ? new Date(ts*1000).toLocaleString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
   }
   if(modal) modal.classList.add('open');
+};
+
+// Toggle expand/collapse pesan siaran di Notif full-screen (inline)
+window.toggleFsBcExpand = function(idx) {
+  const msgEl = document.getElementById('fs-bc-msg-' + idx);
+  const btn = document.getElementById('fs-bc-btn-' + idx);
+  if(!msgEl) return;
+  const isExpanded = msgEl.style.overflow === 'visible';
+  if(isExpanded) {
+    msgEl.style.cssText = 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden';
+    if(btn) btn.innerHTML = 'Baca selengkapnya <i class="fa-solid fa-chevron-down text-[8px]"></i>';
+  } else {
+    msgEl.style.cssText = 'display:block;overflow:visible';
+    if(btn) btn.innerHTML = 'Tutup <i class="fa-solid fa-chevron-up text-[8px]"></i>';
+  }
+};
+
+// Toggle expand/collapse pesan siaran di Toa panel (inline, bukan modal)
+window.toggleToaBcExpand = function(idx) {
+  const msgEl = document.getElementById('toa-bc-msg-' + idx);
+  const btn = document.getElementById('toa-bc-btn-' + idx);
+  if(!msgEl) return;
+  const isExpanded = msgEl.style.overflow === 'visible';
+  if(isExpanded) {
+    msgEl.style.cssText = 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden';
+    if(btn) btn.innerHTML = 'Baca selengkapnya <i class="fa-solid fa-chevron-down text-[8px]"></i>';
+  } else {
+    msgEl.style.cssText = 'display:block;overflow:visible';
+    if(btn) btn.innerHTML = 'Tutup <i class="fa-solid fa-chevron-up text-[8px]"></i>';
+  }
 };
 
 // Buka Toa Panel
