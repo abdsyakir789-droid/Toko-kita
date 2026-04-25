@@ -2408,7 +2408,7 @@ window._FB = {
         txt.textContent=`Mengunggah ke Cloudinary ${p}%...`;
       });
       bar.style.width='95%'; pct.textContent='95%'; txt.textContent='Menyimpan ke database...';
-      await addDoc(collection(db,'ads'), {
+      const newAdRef = await addDoc(collection(db,'ads'), {
         title, price:Number(price), cat, desc, siapTaushil:!!siapTaushil, imgUrl,
         location: location||'',
         likes:0, dislikes:0, likedBy:[], dislikedBy:[],
@@ -2416,6 +2416,7 @@ window._FB = {
         sellerEmail:window._S.user.email, sellerPhoto:window._S.user.photoUrl||'',
         createdAt:serverTimestamp()
       });
+      const newAdId = newAdRef.id;
       bar.style.width='100%'; pct.textContent='100%'; txt.textContent='Berhasil!';
       setTimeout(()=>{wrap.style.display='none'; bar.style.width='0%';}, 1500);
       showToast('Iklan berhasil dipasang!', 'green');
@@ -2434,7 +2435,9 @@ window._FB = {
             toUid: fUid, type: 'new_ad',
             message: `${sellerName} baru saja memposting produk baru: "${title}"`,
             senderName: sellerName, senderUid: sellerUid,
-            adTitle: title, read: false, isRead: false,
+            senderPhoto: window._S.user.photoURL || window._S.user.photo || '',
+            adTitle: title, adId: newAdId || '',
+            read: false, isRead: false,
             createdAt: serverTimestamp()
           };
           // Sub-koleksi (muncul di tab lonceng follower)
@@ -3509,6 +3512,31 @@ window.renderNotifFull = function(notifs) {
     if(actLabel) actLabel.style.display = 'flex';
     // Sort terbaru dulu
     const sorted = [...activities].sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+
+    // Cache foto profil sender — ambil dari Firestore jika belum ada di notif (untuk notif lama)
+    const _photoCache = window._S._senderPhotoCache || (window._S._senderPhotoCache = {});
+    const uidsToFetch = [...new Set(
+      sorted.filter(n => n.senderUid && !n.senderPhoto && !_photoCache[n.senderUid]).map(n => n.senderUid)
+    )];
+    if(uidsToFetch.length) {
+      // Fetch secara background, lalu re-render saat selesai
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js').then(async ({ getDoc, doc }) => {
+        await Promise.all(uidsToFetch.map(async uid => {
+          try {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if(snap.exists()) {
+              const d = snap.data();
+              _photoCache[uid] = d.photoURL || d.photoUrl || d.photo || '';
+            } else { _photoCache[uid] = ''; }
+          } catch(e) { _photoCache[uid] = ''; }
+        }));
+        // Re-render setelah foto berhasil diambil
+        if(document.getElementById('notifFullScreen')?.classList.contains('active')) {
+          renderNotifFull(window._S.notifs || []);
+        }
+      });
+    }
+
     actList.innerHTML = sorted.slice(0,30).map(n => {
       const isUnread = !n.read;
       const icon = n.type==='follow'    ? 'fa-user-plus'
@@ -3522,9 +3550,28 @@ window.renderNotifFull = function(notifs) {
       const timeStr = n.createdAt?.seconds
         ? new Date(n.createdAt.seconds*1000).toLocaleString('id-ID',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
         : '';
-      return `<div class="notif-act-item ${isUnread?'unread-act':''}" onclick="markNotifRead('${n.id}',false);this.classList.remove('unread-act')">
-        <div class="notif-act-icon ${iconBg}">
-          <i class="fa-solid ${icon} text-sm"></i>
+      // Foto: dari notif langsung, atau dari cache Firestore, atau fallback icon
+      const photo = n.senderPhoto || (n.senderUid ? (_photoCache[n.senderUid] || '') : '');
+      const avatarHtml = photo
+        ? `<img src="${photo}" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+        : '';
+      const iconFallbackStyle = photo ? 'display:none' : '';
+      // Klik: jika ada adId navigasi ke produk
+      // Untuk notif lama (tanpa adId), cari produk dari cache ads berdasarkan senderUid+adTitle
+      let resolvedAdId = n.adId || '';
+      if(!resolvedAdId && n.type === 'new_ad' && n.senderUid && n.adTitle) {
+        const found = (window._S.fbAds || []).find(a => a.sellerUid === n.senderUid && a.title === n.adTitle);
+        if(found) resolvedAdId = found.id;
+      }
+      const clickAction = resolvedAdId
+        ? `markNotifRead('${n.id}',false);this.classList.remove('unread-act');closeNotifFullScreen();setTimeout(()=>openDetail('${resolvedAdId}'),100);`
+        : `markNotifRead('${n.id}',false);this.classList.remove('unread-act');`;
+      return `<div class="notif-act-item ${isUnread?'unread-act':''}" onclick="${clickAction}">
+        <div class="notif-act-icon ${iconBg} overflow-hidden relative p-0" style="width:36px;height:36px;border-radius:50%;flex-shrink:0">
+          ${avatarHtml}
+          <div class="w-full h-full flex items-center justify-center" style="${iconFallbackStyle}">
+            <i class="fa-solid ${icon} text-sm"></i>
+          </div>
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-xs ${isUnread?'font-semibold text-gray-800':'font-medium text-gray-600'} leading-snug">${n.message||''}</p>
