@@ -1792,16 +1792,24 @@ html{scroll-behavior:smooth}
       <button onclick="closeDetailDirect()" class="absolute top-4 left-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-colors shadow-lg">
         <i class="fa-solid fa-arrow-left text-base"></i>
       </button>
-      <!-- Share button -->
-      <button class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-colors shadow-lg">
-        <i class="fa-solid fa-share-nodes text-base"></i>
+
+      <!-- Share button — panah melengkung, tanpa background bulatan -->
+      <button onclick="detailShareProduct()" class="absolute top-4 right-4 text-white transition-transform hover:scale-110" style="filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))">
+        <i class="bi bi-reply" style="font-size:26px"></i>
       </button>
-      <!-- Hapus iklan — hanya muncul untuk owner, diisi via openDetail() -->
-      <button id="detailDeleteBtn" style="display:none" onclick="deleteAd(window._S.activeAdId)"
-        class="absolute top-4 right-16 w-10 h-10 flex items-center justify-center rounded-full bg-red-500/80 hover:bg-red-600 text-white backdrop-blur-sm transition-colors shadow-lg">
-        <i class="fa-solid fa-trash text-base"></i>
+      <!-- Titik tiga — hanya pemilik, pojok kanan bawah foto -->
+      <button id="detailDotsBtn" style="display:none" onclick="detailToggleDropdown()" class="absolute bottom-4 right-4 text-white transition-transform hover:scale-110" style="filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))">
+        <i class="bi bi-three-dots-vertical" style="font-size:22px"></i>
       </button>
-      <!-- Badge -->
+      <!-- Dropdown menu titik tiga -->
+      <div id="detailDotsDropdown" class="pc-dropdown" style="bottom:52px;right:12px">
+        <div class="pc-dropdown-item" onclick="detailEditProduct()">
+          <i class="bi bi-pencil" style="font-size:13px;color:#10B981"></i> Edit Produk
+        </div>
+        <div class="pc-dropdown-item danger" onclick="detailDeleteProduct()">
+          <i class="bi bi-trash" style="font-size:13px"></i> Hapus Produk
+        </div>
+      </div>
       <span id="detailBadgeImg" class="absolute bottom-4 left-4 text-[10px] font-bold px-3 py-1 rounded-full shadow-md"></span>
     </div>
 
@@ -4210,44 +4218,15 @@ window.renderProducts = () => {
     const d=document.createElement('div');
     d.className='pc bg-white overflow-hidden cursor-pointer';
     d.style=`animation:fadeUp .3s ease ${i*.03}s both;border-radius:14px;border:0.5px solid #e5e7eb`;
-    // Cek apakah current user adalah pemilik produk
-    const currentUid = window._S.user?.uid || '';
-    const isOwner = currentUid && (p.sellerUid === currentUid || p.uid === currentUid);
-    const cardId = 'pc-' + (p.id || i);
-
-    d.onclick = (e) => {
-      // Jangan buka detail jika klik pada ikon overlay
-      if(e.target.closest('.pc-share-btn') || e.target.closest('.pc-dots-btn') || e.target.closest('.pc-dropdown')) return;
-      openDetail(p.id||'');
-    };
-
+    d.onclick = () => openDetail(p.id||'');
     d.innerHTML=`
-      <div class="relative" style="aspect-ratio:1/1;overflow:hidden;background:#f9fafb">
+      <div class="relative overflow-hidden bg-gray-50" style="aspect-ratio:1/1">
         <img src="${img}" alt="${name}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-400" loading="lazy"
           onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22 fill=%22%23f3f4f6%22%3E%3Crect width=%22300%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23d1d5db%22 font-size=%2240%22%3E🛍%3C/text%3E%3C/svg%3E'"/>
-        ${p.badge?`<span class="absolute top-2 left-2 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm ${badgeCls}" style="z-index:2">${p.badge}</span>`:''}
-        ${p.siapTaushil?`<span class="absolute bottom-2 left-2 bg-primary/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm" style="z-index:2"><i class="fa-solid fa-truck-fast text-[8px]"></i>Ready Taushil</span>`:''}
-        <div class="absolute inset-0 bg-gradient-to-t from-black/15 to-transparent pointer-events-none" style="z-index:1"></div>
-
-        <!-- Share Icon — pojok kanan atas, untuk semua -->
-        <button class="pc-share-btn" onclick="event.stopPropagation();pcShareProduct('${p.id||''}','${encodeURIComponent(name)}')" title="Bagikan produk">
-          <i class="bi bi-reply"></i>
-        </button>
-
-        ${isOwner ? `
-        <!-- Three-dots Icon — pojok kanan bawah, hanya pemilik -->
-        <button class="pc-dots-btn" onclick="event.stopPropagation();pcToggleDropdown('${cardId}')" title="Opsi">
-          <i class="bi bi-three-dots-vertical"></i>
-        </button>
-        <!-- Dropdown menu -->
-        <div class="pc-dropdown" id="dd-${cardId}">
-          <div class="pc-dropdown-item" onclick="event.stopPropagation();pcEditProduct('${p.id||''}')">
-            <i class="bi bi-pencil" style="font-size:13px;color:#10B981"></i> Edit Produk
-          </div>
-          <div class="pc-dropdown-item danger" onclick="event.stopPropagation();pcDeleteProduct('${p.id||''}','${encodeURIComponent(name)}')">
-            <i class="bi bi-trash" style="font-size:13px"></i> Hapus Produk
-          </div>
-        </div>` : ''}
+        ${p.badge?`<span class="absolute top-2 left-2 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm ${badgeCls}">${p.badge}</span>`:''}
+        ${p.disc>0?`<span class="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">${p.disc}%</span>`:''}
+        ${p.siapTaushil?`<span class="absolute bottom-2 left-2 bg-primary/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm"><i class="fa-solid fa-truck-fast text-[8px]"></i>Ready Taushil</span>`:''}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/8 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div>
       </div>
       <div class="p-3 flex flex-col gap-1">
         <p class="text-[11px] font-semibold text-gray-800 lc2 leading-snug">${name}</p>
@@ -4426,17 +4405,70 @@ window.openDetail = id => {
   const scrollBody=document.getElementById('detailScrollBody');
   if(scrollBody) scrollBody.scrollTop=0;
 
-  // Tampilkan tombol hapus hanya jika iklan milik sendiri atau admin
-  const deleteBtn = document.getElementById('detailDeleteBtn');
-  if(deleteBtn) {
-    const isOwner = window._S.user && (p.sellerUid === window._S.user.uid || isAdmin(window._S.user.email));
-    deleteBtn.style.display = isOwner ? 'flex' : 'none';
-  }
 
-  // Show full screen
-  const ov=document.getElementById('detailOverlay');
+
+  // Tampilkan titik tiga hanya jika iklan milik sendiri
+  const dotsBtn = document.getElementById('detailDotsBtn');
+  if(dotsBtn) {
+    const isOwner = window._S.user && (p.sellerUid === window._S.user.uid || isAdmin(window._S.user.email));
+    dotsBtn.style.display = isOwner ? 'block' : 'none';
+  }
+  // Tutup dropdown kalau masih terbuka dari produk sebelumnya
+  const ddEl = document.getElementById('detailDotsDropdown');
+  if(ddEl) ddEl.classList.remove('open');
   ov.style.display='flex';
   document.body.style.overflow='hidden';
+};
+
+// ── Detail Page Overlay Helpers ────────────────────────────────
+
+window.detailShareProduct = function() {
+  const p = window._S.activeAdData;
+  if(!p) return;
+  const name = p.title || p.name || '';
+  const url = window.location.href.split('?')[0] + '?p=' + (p.id||'');
+  if(navigator.share) {
+    navigator.share({ title: name, text: 'Lihat produk ini di Yalla Mart: ' + name, url }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(url).then(()=>{ showToast('Link produk disalin!','green'); }).catch(()=>{ showToast('Link: '+url,'green'); });
+  }
+};
+
+window.detailToggleDropdown = function() {
+  const dd = document.getElementById('detailDotsDropdown');
+  if(!dd) return;
+  dd.classList.toggle('open');
+};
+
+// Tutup dropdown detail jika klik di luar
+document.addEventListener('click', function(e) {
+  if(!e.target.closest('#detailDotsBtn') && !e.target.closest('#detailDotsDropdown')) {
+    const dd = document.getElementById('detailDotsDropdown');
+    if(dd) dd.classList.remove('open');
+  }
+});
+
+window.detailEditProduct = function() {
+  const dd = document.getElementById('detailDotsDropdown');
+  if(dd) dd.classList.remove('open');
+  const pid = window._S.activeAdId;
+  if(!pid) return;
+  if(window.openEditAd) openEditAd(pid);
+  else if(window.editAd) editAd(pid);
+  else showToast('Fitur edit produk tidak tersedia','red');
+};
+
+window.detailDeleteProduct = function() {
+  const dd = document.getElementById('detailDotsDropdown');
+  if(dd) dd.classList.remove('open');
+  const pid = window._S.activeAdId;
+  const p = window._S.activeAdData;
+  if(!pid || !p) return;
+  const name = p.title || p.name || '';
+  if(!confirm(`Yakin ingin menghapus produk?\n\n"${name}"\n\nTindakan ini tidak dapat dibatalkan.`)) return;
+  if(window.deleteAd) deleteAd(pid);
+  else if(window.removeAd) removeAd(pid);
+  else showToast('Fitur hapus produk tidak tersedia','red');
 };
 
 window.closeDetailDirect=()=>{
