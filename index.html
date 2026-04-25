@@ -205,109 +205,6 @@ html{scroll-behavior:smooth}
 .qb:hover{background:var(--primary);color:#fff}
 .qb{transition:all .15s}
 
-/* ─── PRODUCT CARD OVERLAY ICONS ─── */
-.pc-share-btn{
-  position:absolute;top:8px;right:8px;
-  width:30px;height:30px;border-radius:50%;
-  background:rgba(255,255,255,.22);
-  backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.4);
-  display:flex;align-items:center;justify-content:center;
-  color:#fff;font-size:14px;
-  cursor:pointer;z-index:3;
-  transition:transform .18s cubic-bezier(.34,1.4,.64,1),background .18s;
-  text-shadow:0 1px 3px rgba(0,0,0,.3);
-  box-shadow:0 2px 8px rgba(0,0,0,.15);
-}
-.pc-share-btn:hover{transform:scale(1.15);background:rgba(255,255,255,.38)}
-.pc-dots-btn{
-  position:absolute;bottom:8px;right:8px;
-  width:30px;height:30px;border-radius:50%;
-  background:rgba(255,255,255,.22);
-  backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.4);
-  display:flex;align-items:center;justify-content:center;
-  color:#fff;font-size:14px;
-  cursor:pointer;z-index:4;
-  transition:transform .18s cubic-bezier(.34,1.4,.64,1),background .18s;
-  box-shadow:0 2px 8px rgba(0,0,0,.15);
-}
-.pc-dots-btn:hover{transform:scale(1.15);background:rgba(255,255,255,.38)}
-.pc-dropdown{
-  position:absolute;bottom:44px;right:8px;
-  background:#fff;
-  border-radius:14px;
-  box-shadow:0 8px 28px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.08);
-  border:1px solid rgba(0,0,0,.06);
-  min-width:148px;
-  overflow:hidden;
-  z-index:10;
-  opacity:0;pointer-events:none;
-  transform:scale(.92) translateY(6px);
-  transform-origin:bottom right;
-  transition:opacity .18s ease,transform .18s cubic-bezier(.34,1.2,.64,1);
-}
-.pc-dropdown.open{opacity:1;pointer-events:auto;transform:scale(1) translateY(0)}
-.pc-dropdown-item{
-  display:flex;align-items:center;gap:9px;
-  padding:11px 14px;
-  font-size:12px;font-weight:600;color:#374151;
-  cursor:pointer;transition:background .12s;
-  white-space:nowrap;
-}
-.pc-dropdown-item:hover{background:#f9fafb}
-.pc-dropdown-item.danger{color:#ef4444}
-.pc-dropdown-item.danger:hover{background:#fef2f2}
-
-/* ═══════════════════════════════════════════
-   TOA PANEL — Pesan Siaran untuk semua user
-═══════════════════════════════════════════ */
-#toaPanelOverlay{
-  position:fixed;inset:0;z-index:600;
-  background:rgba(0,0,0,.5);
-  display:none;align-items:flex-start;justify-content:center;
-  backdrop-filter:blur(4px);
-}
-#toaPanelOverlay.open{display:flex}
-#toaPanel{
-  background:#fff;
-  border-radius:0 0 24px 24px;
-  width:100%;max-width:540px;
-  max-height:80vh;
-  display:flex;flex-direction:column;
-  animation:slideDownToa .28s cubic-bezier(.34,1.2,.64,1);
-}
-@keyframes slideDownToa{from{transform:translateY(-60px);opacity:0}to{transform:translateY(0);opacity:1}}
-#toaPanel .toa-handle{
-  width:36px;height:4px;background:#e5e7eb;border-radius:2px;
-  margin:0 auto 10px;flex-shrink:0;
-}
-#toaPanel .toa-header{
-  padding:14px 18px 12px;
-  border-bottom:1px solid #f1f5f9;
-  display:flex;align-items:center;gap:10px;
-  flex-shrink:0;
-}
-#toaPanel .toa-body{
-  overflow-y:auto;flex:1;
-  padding:12px 14px 28px;
-}
-#toaPanel .toa-body::-webkit-scrollbar{width:3px}
-#toaPanel .toa-body::-webkit-scrollbar-thumb{background:#F59E0B;border-radius:4px}
-/* toa badge di header ikon */
-.toa-icon-badge{
-  position:absolute;
-  top:-3px;right:-3px;
-  background:#ef4444;color:#fff;
-  font-size:8px;font-weight:900;
-  min-width:16px;height:16px;
-  border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  padding:0 3px;
-  border:1.5px solid #fff;
-  pointer-events:none;
-}
-
 /* NOTIF PANEL — dropdown legacy (desktop fallback) */
 #notifPanel{animation:mIn .22s cubic-bezier(.34,1.2,.64,1)}
 .notif-item{transition:background .15s}
@@ -375,8 +272,8 @@ html{scroll-behavior:smooth}
   color:#92400E;margin-bottom:8px;
 }
 .notif-broadcast-card{
-  background:linear-gradient(135deg,#ECFDF5 0%,#D1FAE5 60%,#A7F3D0 100%);
-  border:1.5px solid #6EE7B7;
+  background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 60%,#FDE68A 100%);
+  border:1.5px solid #FCD34D;
   border-radius:16px;
   padding:12px 14px;
   margin-bottom:8px;
@@ -387,11 +284,11 @@ html{scroll-behavior:smooth}
 .notif-broadcast-card::before{
   content:'';
   position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,#10B981,#34D399,#10B981);
+  background:linear-gradient(90deg,#F59E0B,#FBBF24,#F59E0B);
 }
 .notif-broadcast-card:hover{
   transform:translateY(-2px);
-  box-shadow:0 8px 24px rgba(16,185,129,.2);
+  box-shadow:0 8px 24px rgba(245,158,11,.2);
 }
 .notif-broadcast-card.read-bc{
   opacity:.7;
@@ -401,12 +298,12 @@ html{scroll-behavior:smooth}
 .notif-broadcast-card.read-bc::before{background:#e5e7eb}
 .notif-bc-icon{
   width:32px;height:32px;border-radius:50%;
-  background:linear-gradient(135deg,#10B981,#059669);
+  background:linear-gradient(135deg,#F59E0B,#D97706);
   display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;box-shadow:0 2px 8px rgba(16,185,129,.35);
+  flex-shrink:0;box-shadow:0 2px 8px rgba(245,158,11,.35);
 }
 .notif-bc-msg{
-  font-size:12px;font-weight:600;color:#065F46;
+  font-size:12px;font-weight:600;color:#78350F;
   line-height:1.4;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
@@ -908,33 +805,6 @@ html{scroll-behavior:smooth}
 <div id="toastWrap" class="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[999] flex flex-col gap-2 items-center pointer-events-none"></div>
 
 <!-- ═══════════════════════════════════════════════
-     TOA PANEL — Pesan Siaran (semua user)
-═══════════════════════════════════════════════ -->
-<div id="toaPanelOverlay" onclick="if(event.target===this)closeToaPanel()">
-  <div id="toaPanel">
-    <div class="toa-handle"></div>
-    <div class="toa-header">
-      <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-md">
-        <i class="fa-solid fa-bullhorn text-white text-base"></i>
-      </div>
-      <div class="flex-1 min-w-0">
-        <p class="text-sm font-black text-gray-800">Pesan Siaran</p>
-        <p class="text-[10px] text-gray-400 font-medium">Info resmi dari Admin YallaMart</p>
-      </div>
-      <button onclick="closeToaPanel()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
-        <i class="fa-solid fa-xmark text-gray-500 text-sm"></i>
-      </button>
-    </div>
-    <div class="toa-body" id="toaPanelBody">
-      <div class="text-center py-12 text-gray-300">
-        <i class="fa-solid fa-bullhorn text-4xl mb-3"></i>
-        <p class="text-sm font-semibold text-gray-400">Belum ada pesan siaran</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════
      NOTIF FULL-SCREEN OVERLAY
 ═══════════════════════════════════════════════ -->
 <div id="notifFullScreen">
@@ -954,9 +824,15 @@ html{scroll-behavior:smooth}
   <!-- Body -->
   <div class="notif-fs-body" id="notifFsBody">
 
-    <!-- Broadcast Form (Developer Only) — dipindahkan ke header atas -->
-    <div id="broadcastFormFs" style="display:none">
-      <textarea id="broadcastMsgFs" style="display:none"></textarea>
+    <!-- Broadcast Form (Developer Only) -->
+    <div id="broadcastFormFs" style="display:none" class="mx-3 mt-3 mb-1 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-100">
+      <p class="text-[10px] font-black text-amber-700 mb-2 flex items-center gap-1.5">
+        <i class="fa-solid fa-crown text-xs"></i> Broadcast ke Semua User
+      </p>
+      <textarea id="broadcastMsgFs" rows="2" placeholder="Tulis pesan broadcast..." class="inp w-full px-3 py-2 text-xs border border-amber-200 rounded-xl bg-white resize-none mb-2"></textarea>
+      <button onclick="sendBroadcastFs()" class="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-2 rounded-xl text-xs transition-all">
+        <i class="fa-solid fa-bullhorn mr-1"></i> Kirim Broadcast
+      </button>
     </div>
 
     <!-- ── PESAN SIARAN (Sticky Top) ── -->
@@ -1034,9 +910,8 @@ html{scroll-behavior:smooth}
     </div>
     <!-- Right: Toa (Pesan Siaran) + Chat + Cart -->
     <div class="mob-right-icons">
-      <button id="broadcastMobBtn" onclick="openToaPanel()" class="mob-icon-btn" style="display:flex">
+      <button id="broadcastMobBtn" onclick="openBroadcastSendModal()" style="display:none" class="mob-icon-btn">
         <i class="fa-solid fa-bullhorn"></i>
-        <span id="toaBadgeMob" style="display:none" class="toa-icon-badge">0</span>
       </button>
       <button onclick="openChatList()" class="mob-icon-btn">
         <i class="fa-solid fa-comment-dots"></i>
@@ -1083,11 +958,6 @@ html{scroll-behavior:smooth}
         <i class="fa-solid fa-image text-xs"></i>
         Billboard
       </button>
-      <!-- Toa / Pesan Siaran (semua user) -->
-      <button id="broadcastDesktopBtn" onclick="openToaPanel()" class="relative p-2 text-amber-500 hover:text-amber-600 transition-colors rounded-xl hover:bg-amber-50" title="Pesan Siaran">
-        <i class="fa-solid fa-bullhorn text-lg"></i>
-        <span id="toaBadgeDesktop" style="display:none" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[8px] font-black min-w-[16px] h-[16px] rounded-full flex items-center justify-center">0</span>
-      </button>
       <!-- Bell Notification -->
       <div class="relative">
         <button onclick="openNotifFullScreen()" id="bellBtn" class="relative p-2 text-gray-500 hover:text-primary transition-colors rounded-xl hover:bg-gray-50">
@@ -1103,9 +973,13 @@ html{scroll-behavior:smooth}
             </div>
             <button onclick="markAllNotifsRead()" class="text-white/80 hover:text-white text-[10px] font-semibold">Tandai semua dibaca</button>
           </div>
-          <!-- Broadcast Form (Developer Only) — dipindahkan ke header atas -->
-          <div id="broadcastForm" style="display:none">
-            <textarea id="broadcastMsg" style="display:none"></textarea>
+          <!-- Broadcast Form (Developer Only) -->
+          <div id="broadcastForm" style="display:none" class="px-4 py-3 bg-amber-50 border-b border-amber-100">
+            <p class="text-[10px] font-black text-amber-700 mb-2 flex items-center gap-1"><i class="fa-solid fa-crown text-xs"></i> Broadcast ke Semua User</p>
+            <textarea id="broadcastMsg" rows="2" placeholder="Tulis pesan broadcast..." class="inp w-full px-3 py-2 text-xs border border-amber-200 rounded-xl bg-white resize-none mb-2"></textarea>
+            <button onclick="sendBroadcast()" class="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-2 rounded-xl text-xs transition-all">
+              <i class="fa-solid fa-bullhorn mr-1"></i> Kirim Broadcast
+            </button>
           </div>
           <!-- Notif List -->
           <div id="notifList" class="max-h-72 overflow-y-auto divide-y divide-gray-50">
@@ -1792,24 +1666,24 @@ html{scroll-behavior:smooth}
       <button onclick="closeDetailDirect()" class="absolute top-4 left-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-colors shadow-lg">
         <i class="fa-solid fa-arrow-left text-base"></i>
       </button>
-
-      <!-- Share button — panah melengkung, tanpa background bulatan -->
-      <button onclick="detailShareProduct()" class="absolute top-4 right-4 text-white transition-transform hover:scale-110" style="filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))">
-        <i class="bi bi-reply" style="font-size:26px"></i>
+      <!-- Share button — panah tanpa bulatan -->
+      <button onclick="detailShareProduct()" class="absolute top-4 right-4 text-white hover:scale-110 transition-transform" style="filter:drop-shadow(0 1px 4px rgba(0,0,0,.6));background:none;border:none;padding:4px">
+        <i class="bi bi-reply" style="font-size:28px"></i>
       </button>
-      <!-- Titik tiga — hanya pemilik, pojok kanan bawah foto -->
-      <button id="detailDotsBtn" style="display:none" onclick="detailToggleDropdown()" class="absolute bottom-4 right-4 text-white transition-transform hover:scale-110" style="filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))">
+      <!-- Titik tiga — hanya pemilik, pojok kanan bawah -->
+      <button id="detailDotsBtn" style="display:none" onclick="detailToggleDropdown()" class="absolute bottom-4 right-4 text-white hover:scale-110 transition-transform" style="filter:drop-shadow(0 1px 4px rgba(0,0,0,.6));background:none;border:none;padding:4px">
         <i class="bi bi-three-dots-vertical" style="font-size:22px"></i>
       </button>
-      <!-- Dropdown menu titik tiga -->
-      <div id="detailDotsDropdown" class="pc-dropdown" style="bottom:52px;right:12px">
-        <div class="pc-dropdown-item" onclick="detailEditProduct()">
+      <!-- Dropdown titik tiga -->
+      <div id="detailDotsDropdown" style="display:none;position:absolute;bottom:52px;right:12px;background:#fff;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.14);border:1px solid rgba(0,0,0,.06);min-width:148px;overflow:hidden;z-index:10">
+        <div onclick="detailEditProduct()" style="display:flex;align-items:center;gap:9px;padding:11px 14px;font-size:12px;font-weight:600;color:#374151;cursor:pointer" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#fff'">
           <i class="bi bi-pencil" style="font-size:13px;color:#10B981"></i> Edit Produk
         </div>
-        <div class="pc-dropdown-item danger" onclick="detailDeleteProduct()">
+        <div onclick="detailDeleteProduct()" style="display:flex;align-items:center;gap:9px;padding:11px 14px;font-size:12px;font-weight:600;color:#ef4444;cursor:pointer" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#fff'">
           <i class="bi bi-trash" style="font-size:13px"></i> Hapus Produk
         </div>
       </div>
+      <!-- Badge -->
       <span id="detailBadgeImg" class="absolute bottom-4 left-4 text-[10px] font-bold px-3 py-1 rounded-full shadow-md"></span>
     </div>
 
@@ -2246,7 +2120,7 @@ async function uploadToCloudinary(file, onProgress) {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`);
     xhr.upload.onprogress = e => { if(e.lengthComputable && onProgress) onProgress(Math.round(e.loaded/e.total*100)); };
-    xhr.onload = () => { const r=JSON.parse(xhr.responseText); if(xhr.status===200) resolve({ secure_url: r.secure_url, public_id: r.public_id }); else reject(new Error(r.error?.message||'Upload gagal')); };
+    xhr.onload = () => { const r=JSON.parse(xhr.responseText); if(xhr.status===200) resolve(r.secure_url); else reject(new Error(r.error?.message||'Upload gagal')); };
     xhr.onerror = () => reject(new Error('Koneksi gagal'));
     xhr.send(fd);
   });
@@ -2315,42 +2189,6 @@ async function deleteCoverFromCloudinary(publicId) {
 window.uploadToCloudinary      = uploadToCloudinary;
 window.uploadCoverToCloudinary = uploadCoverToCloudinary;
 window.compressImage           = compressImage;
-
-// ── Hapus Iklan (owner only) ─────────────────────────────────────
-window.deleteAd = async function(adId) {
-  const u = window._S.user;
-  if(!u) { showToast('Login dulu', 'red'); return; }
-  const ad = getAllAds().find(a => a.id === adId);
-  if(!ad) { showToast('Iklan tidak ditemukan', 'red'); return; }
-  if(ad.sellerUid !== u.uid && !isAdmin(u.email)) { showToast('Bukan iklan kamu', 'red'); return; }
-  if(!confirm('Hapus iklan "' + (ad.title||'ini') + '"?\n\nFoto iklan juga akan dihapus permanen.')) return;
-
-  try {
-    const { deleteDoc, doc: fsDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    // 1. Hapus dari Firestore
-    await deleteDoc(fsDoc(db, 'ads', adId));
-    // 2. Hapus foto dari Cloudinary
-    const publicId = ad.imgPublicId || extractCloudinaryPublicId(ad.imgUrl || ad.img || '');
-    if(publicId) await deleteFromCloudinary(publicId, 'AdPhoto');
-    // 3. Tutup detail & update state lokal
-    closeDetailDirect();
-    if(window._S.fbAds) window._S.fbAds = window._S.fbAds.filter(a => a.id !== adId);
-    showToast('✅ Iklan berhasil dihapus!', 'green');
-  } catch(e) {
-    console.error('[deleteAd]', e);
-    showToast('Gagal hapus iklan: ' + (e.message||e), 'red');
-  }
-};
-
-// Ekstrak public_id dari URL Cloudinary
-function extractCloudinaryPublicId(url) {
-  if(!url || !url.includes('cloudinary.com')) return '';
-  try {
-    // Format: https://res.cloudinary.com/{cloud}/image/upload/v{ver}/{public_id}.{ext}
-    const match = url.match(/\/image\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-z]+)?$/i);
-    return match ? match[1] : '';
-  } catch(e) { return ''; }
-}
 
 // ── Auth observer ───────────────────────────────────────────────
 onAuthStateChanged(auth, async user => {
@@ -2460,8 +2298,7 @@ window._FB = {
   // ── Upload profile photo — FIX 3: permanent storage ──────────
   async uploadProfilePhoto(file) {
     showToast('Mengunggah foto profil...', 'green');
-    const _uploadRes = await uploadToCloudinary(file);
-    const imgUrl = typeof _uploadRes === 'object' ? _uploadRes.secure_url : _uploadRes;
+    const imgUrl = await uploadToCloudinary(file);
     const uid = window._S.user.uid;
 
     // ── 1. Cari docId user — selalu query ulang jika belum ada ────
@@ -2508,51 +2345,23 @@ window._FB = {
     wrap.style.display='block'; btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mengupload...';
     try {
       txt.textContent='Mengompres foto...'; bar.style.width='10%'; pct.textContent='10%';
-      const uploadResult = await uploadToCloudinary(file, p => {
+      const imgUrl = await uploadToCloudinary(file, p => {
         const v=10+Math.round(p*.8); bar.style.width=v+'%'; pct.textContent=v+'%';
         txt.textContent=`Mengunggah ke Cloudinary ${p}%...`;
       });
-      const imgUrl = uploadResult.secure_url;
-      const imgPublicId = uploadResult.public_id || '';
       bar.style.width='95%'; pct.textContent='95%'; txt.textContent='Menyimpan ke database...';
-      const newAdRef = await addDoc(collection(db,'ads'), {
-        title, price:Number(price), cat, desc, siapTaushil:!!siapTaushil, imgUrl, imgPublicId,
+      await addDoc(collection(db,'ads'), {
+        title, price:Number(price), cat, desc, siapTaushil:!!siapTaushil, imgUrl,
         location: location||'',
         likes:0, dislikes:0, likedBy:[], dislikedBy:[],
         sellerName:window._S.user.name, sellerUid:window._S.user.uid,
         sellerEmail:window._S.user.email, sellerPhoto:window._S.user.photoUrl||'',
         createdAt:serverTimestamp()
       });
-      const newAdId = newAdRef.id;
       bar.style.width='100%'; pct.textContent='100%'; txt.textContent='Berhasil!';
       setTimeout(()=>{wrap.style.display='none'; bar.style.width='0%';}, 1500);
       showToast('Iklan berhasil dipasang!', 'green');
       closePostModal();
-      // Kirim notifikasi ke semua follower
-      try {
-        const sellerUid = window._S.user.uid;
-        const sellerName = window._S.user.name;
-        const { getDocs, query, where, collection: col, addDoc: aDoc } =
-          await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-        const followsSnap = await getDocs(query(col(db,'follows'), where('sellerUid','==',sellerUid)));
-        for(const fd of followsSnap.docs) {
-          const fUid = fd.data().followerUid;
-          if(!fUid || fUid === sellerUid) continue;
-          const notifData = {
-            toUid: fUid, type: 'new_ad',
-            message: `${sellerName} baru saja memposting produk baru: "${title}"`,
-            senderName: sellerName, senderUid: sellerUid,
-            senderPhoto: window._S.user.photoUrl || '',
-            adTitle: title, adId: newAdId || '',
-            read: false, isRead: false,
-            createdAt: serverTimestamp()
-          };
-          // Sub-koleksi (muncul di tab lonceng follower)
-          await aDoc(col(db,'users',fUid,'notifications'), notifData).catch(()=>{});
-          // Koleksi global
-          await aDoc(col(db,'notifications'), notifData).catch(()=>{});
-        }
-      } catch(e){ console.warn('[NewAd notif]', e.message); }
       // onSnapshot real-time akan otomatis menampilkan iklan baru — tidak perlu loadAds() manual
     } catch(e) { wrap.style.display='none'; throw e; }
     finally { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-rocket mr-1"></i> Pasang Iklan Sekarang'; }
@@ -2721,8 +2530,7 @@ window._FB = {
   // ── Billboard ─────────────────────────────────────────────────
   async uploadBillboard(slideIndex, file, customText) {
     showToast('Mengupload gambar billboard...', 'green');
-    const _bbRes=await uploadToCloudinary(file);
-    const imgUrl=typeof _bbRes==='object'?_bbRes.secure_url:_bbRes;
+    const imgUrl=await uploadToCloudinary(file);
     await addDoc(collection(db,'billboards'), { slideIndex, imgUrl, customText:customText||'', updatedAt:serverTimestamp() });
     applyBillboardImage(slideIndex, imgUrl, customText);
     showToast('Billboard berhasil diperbarui!', 'green');
@@ -3139,18 +2947,12 @@ window.startNotifListener = function() {
       return bT - aT;
     });
     window._S.notifs = all;
-    // Badge lonceng HANYA untuk notif activity (bukan broadcast/siaran)
     const unread = all.filter(n => {
-      const isBc = n.toUid === 'broadcast' || n.type === 'broadcast' || n.type === 'official_broadcast' || n.isSticky || n.pinned;
-      if(isBc) return false; // broadcast hanya masuk badge Toa, bukan lonceng
+      const isBc = n.toUid === 'broadcast' || n.type === 'broadcast' || n.type === 'official_broadcast';
+      if(isBc) return !(n.readBy||[]).includes(uid) && !n.isRead;
       return !n.read && !n.isRead;
     }).length;
     updateNotifBadge(unread);
-    // Update badge Toa dari broadcast unread
-    if(window._updateToaBadgeFromNotifs) window._updateToaBadgeFromNotifs(all);
-    // Jika Toa panel sedang terbuka, update isinya juga
-    const _toaOv = document.getElementById('toaPanelOverlay');
-    if(_toaOv && _toaOv.classList.contains('open')) renderToaPanel(all);
     const _fs = document.getElementById('notifFullScreen');
     if(_fs && _fs.classList.contains('active')) {
       renderNotifFull(all);
@@ -3393,9 +3195,7 @@ window.renderUserState = () => {
   document.getElementById('adminBillAction').style.display   = admin ? 'flex' : 'none';
   document.getElementById('adminBadgeProfile').style.display = admin ? 'flex' : 'none';
   const broadcastMobBtn = document.getElementById('broadcastMobBtn');
-  if(broadcastMobBtn) broadcastMobBtn.style.display = 'flex'; // selalu tampil untuk semua user
-  const broadcastDesktopBtn = document.getElementById('broadcastDesktopBtn');
-  if(broadcastDesktopBtn) broadcastDesktopBtn.style.display = 'flex'; // selalu tampil untuk semua user
+  if(broadcastMobBtn) broadcastMobBtn.style.display = admin ? 'flex' : 'none';
   const bcastAction = document.getElementById('adminBroadcastAction');
   if(bcastAction) bcastAction.style.display = admin ? 'flex' : 'none';
   // Show broadcast form for admin
@@ -3565,8 +3365,7 @@ window.renderNotifFull = function(notifs) {
   const bcSection = document.getElementById('notifBroadcastSection');
   const bcList = document.getElementById('notifBroadcastList');
   const divider = document.getElementById('notifDivider');
-  // Broadcast TIDAK ditampilkan di halaman notifikasi (lonceng) — hanya di Toa
-  if(false && broadcasts.length) {
+  if(broadcasts.length) {
     bcSection.style.display = 'block';
     if(divider) divider.style.display = activities.length ? 'block' : 'none';
     // Simpan referensi broadcast ke state agar onclick bisa akses tanpa embed JSON di HTML
@@ -3579,19 +3378,23 @@ window.renderNotifFull = function(notifs) {
         : '';
       // Ambil ID dokumen asli (buang prefix 'sub_' jika ada)
       const rawDocId = (n.id||'').startsWith('sub_') ? n.id.slice(4) : n.id;
-      return `<div class="notif-broadcast-card ${isUnread?'':'read-bc'}" id="fs-bc-card-${bcIdx}">
+      return `<div class="notif-broadcast-card ${isUnread?'':'read-bc'}" onclick="openBroadcastModal(${bcIdx})">
         <div class="flex items-start gap-3">
           <div class="notif-bc-icon">
             <i class="fa-solid fa-satellite-dish text-white text-xs"></i>
           </div>
           <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-black text-emerald-700">Admin Yalla Mart</span>
-              <span class="text-[10px] text-emerald-500 flex items-center gap-1"><i class="fa-solid fa-clock" style="font-size:8px"></i>${timeStr}</span>
+            <div class="flex items-center gap-2 mb-1">
+              ${n.isSticky||n.pinned?`<span class="text-[9px] font-black bg-amber-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1"><i class="fa-solid fa-bullhorn" style="font-size:7px"></i>PINNED</span>`:''}
+              <span class="text-[10px] font-black text-amber-700">Admin Yalla Mart</span>
+              ${isUnread?`<span class="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0"></span>`:''}
             </div>
-            ${n.title?`<p class="text-xs font-black text-emerald-900 mb-0.5">${n.title}</p>`:''}
-            <p class="text-xs text-emerald-800 leading-relaxed" id="fs-bc-msg-${bcIdx}" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.message||''}</p>
-            <button onclick="toggleFsBcExpand(${bcIdx})" id="fs-bc-btn-${bcIdx}" class="text-[10px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">Baca selengkapnya <i class='fa-solid fa-chevron-down text-[8px]'></i></button>
+            ${n.title?`<p class="text-xs font-black text-amber-900 mb-0.5">${n.title}</p>`:''}
+            <p class="notif-bc-msg">${n.message||''}</p>
+            <p class="text-[10px] text-amber-600/70 mt-1.5 flex items-center gap-1">
+              <i class="fa-solid fa-clock" style="font-size:8px"></i>${timeStr}
+              <span class="ml-auto text-[10px] text-amber-700 font-semibold">Baca selengkapnya →</span>
+            </p>
           </div>
           ${isAdminUser ? `
           <button onclick="event.stopPropagation();deleteBroadcastMessage('${rawDocId}','${encodeURIComponent(n.title||n.message||'')}')"
@@ -3620,31 +3423,6 @@ window.renderNotifFull = function(notifs) {
     if(actLabel) actLabel.style.display = 'flex';
     // Sort terbaru dulu
     const sorted = [...activities].sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
-
-    // Cache foto profil sender — ambil dari Firestore jika belum ada di notif (untuk notif lama)
-    const _photoCache = window._S._senderPhotoCache || (window._S._senderPhotoCache = {});
-    const uidsToFetch = [...new Set(
-      sorted.filter(n => n.senderUid && !n.senderPhoto && !_photoCache[n.senderUid]).map(n => n.senderUid)
-    )];
-    if(uidsToFetch.length) {
-      // Fetch secara background, lalu re-render saat selesai
-      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js').then(async ({ getDoc, doc }) => {
-        await Promise.all(uidsToFetch.map(async uid => {
-          try {
-            const snap = await getDoc(doc(db, 'users', uid));
-            if(snap.exists()) {
-              const d = snap.data();
-              _photoCache[uid] = d.photoUrl || '';
-            } else { _photoCache[uid] = ''; }
-          } catch(e) { _photoCache[uid] = ''; }
-        }));
-        // Re-render setelah foto berhasil diambil
-        if(document.getElementById('notifFullScreen')?.classList.contains('active')) {
-          renderNotifFull(window._S.notifs || []);
-        }
-      });
-    }
-
     actList.innerHTML = sorted.slice(0,30).map(n => {
       const isUnread = !n.read;
       const icon = n.type==='follow'    ? 'fa-user-plus'
@@ -3658,28 +3436,9 @@ window.renderNotifFull = function(notifs) {
       const timeStr = n.createdAt?.seconds
         ? new Date(n.createdAt.seconds*1000).toLocaleString('id-ID',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
         : '';
-      // Foto: dari notif langsung, atau dari cache Firestore, atau fallback icon
-      const photo = n.senderPhoto || (n.senderUid ? (_photoCache[n.senderUid] || '') : '');
-      const avatarHtml = photo
-        ? `<img src="${photo}" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
-        : '';
-      const iconFallbackStyle = photo ? 'display:none' : '';
-      // Klik: jika ada adId navigasi ke produk
-      // Untuk notif lama (tanpa adId), cari produk dari cache ads berdasarkan senderUid+adTitle
-      let resolvedAdId = n.adId || '';
-      if(!resolvedAdId && n.type === 'new_ad' && n.senderUid && n.adTitle) {
-        const found = (window._S.fbAds || []).find(a => a.sellerUid === n.senderUid && a.title === n.adTitle);
-        if(found) resolvedAdId = found.id;
-      }
-      const clickAction = resolvedAdId
-        ? `markNotifRead('${n.id}',false);this.classList.remove('unread-act');closeNotifFullScreen();setTimeout(()=>openDetail('${resolvedAdId}'),100);`
-        : `markNotifRead('${n.id}',false);this.classList.remove('unread-act');`;
-      return `<div class="notif-act-item ${isUnread?'unread-act':''}" onclick="${clickAction}">
-        <div class="notif-act-icon ${iconBg} overflow-hidden relative p-0" style="width:36px;height:36px;border-radius:50%;flex-shrink:0">
-          ${avatarHtml}
-          <div class="w-full h-full flex items-center justify-center" style="${iconFallbackStyle}">
-            <i class="fa-solid ${icon} text-sm"></i>
-          </div>
+      return `<div class="notif-act-item ${isUnread?'unread-act':''}" onclick="markNotifRead('${n.id}',false);this.classList.remove('unread-act')">
+        <div class="notif-act-icon ${iconBg}">
+          <i class="fa-solid ${icon} text-sm"></i>
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-xs ${isUnread?'font-semibold text-gray-800':'font-medium text-gray-600'} leading-snug">${n.message||''}</p>
@@ -3800,12 +3559,7 @@ window.deleteBroadcastMessage = async function(docId, encodedTitle) {
         return nRawId !== docId;
       });
       renderNotifFull(window._S.notifs);
-      // Badge lonceng hanya activity, bukan broadcast
-      const unread = window._S.notifs.filter(n => {
-        const isBc = n.toUid === 'broadcast' || n.type === 'broadcast' || n.type === 'official_broadcast' || n.isSticky || n.pinned;
-        if(isBc) return false;
-        return !n.isRead && !n.read;
-      }).length;
+      const unread = window._S.notifs.filter(n => !n.isRead && !n.read).length;
       updateNotifBadge(unread);
     }
 
@@ -3816,195 +3570,7 @@ window.deleteBroadcastMessage = async function(docId, encodedTitle) {
   }
 };
 
-// ── TOA PANEL — Pesan Siaran untuk semua user ──────────────────
-
-// Update badge angka di ikon Toa
-window.updateToaBadge = function(count) {
-  ['toaBadgeMob','toaBadgeDesktop'].forEach(id => {
-    const el = document.getElementById(id);
-    if(!el) return;
-    if(count > 0) {
-      el.textContent = count > 99 ? '99+' : count;
-      el.style.display = 'flex';
-    } else {
-      el.style.display = 'none';
-    }
-  });
-};
-
-// Render isi panel Toa dari data notifs
-window.renderToaPanel = function(notifs) {
-  const body = document.getElementById('toaPanelBody');
-  if(!body) return;
-  const broadcasts = (notifs||[]).filter(n =>
-    n.toUid === 'broadcast' || n.type === 'broadcast' ||
-    n.type === 'official_broadcast' || n.isSticky || n.pinned
-  );
-  if(!broadcasts.length) {
-    body.innerHTML = `<div class="text-center py-12 text-gray-300">
-      <i class="fa-solid fa-bullhorn text-4xl mb-3"></i>
-      <p class="text-sm font-semibold text-gray-400">Belum ada pesan siaran</p>
-    </div>`;
-    return;
-  }
-  window._S._toaBcNotifs = broadcasts;
-  const isAdminToa = window._S.user && isAdmin(window._S.user.email);
-  body.innerHTML = broadcasts.map((n, idx) => {
-    const ts = n.createdAt?.seconds || n.timestamp?.seconds;
-    const timeStr = ts ? new Date(ts*1000).toLocaleString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-    const title = n.title || 'Pesan Siaran';
-    const msg = n.message || '';
-    const rawDocId = (n.id||'').startsWith('sub_') ? n.id.slice(4) : n.id;
-    const bcId = n.broadcastId || '';
-    return `<div class="notif-broadcast-card mb-3" id="toa-bc-card-${idx}">
-      <div class="flex items-start gap-3">
-        <div class="notif-bc-icon flex-shrink-0">
-          <i class="fa-solid fa-bullhorn text-white text-xs"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-bold text-emerald-700">Admin Yalla Mart</span>
-            <div class="flex items-center gap-2">
-              ${timeStr ? `<span class="text-[10px] text-emerald-500 flex items-center gap-1"><i class="fa-solid fa-clock text-[9px]"></i> ${timeStr}</span>` : ''}
-              ${isAdminToa ? `<button onclick="event.stopPropagation();deleteBroadcastMessage('${rawDocId}','${encodeURIComponent(title)}')" class="w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center transition-colors" title="Hapus pesan siaran dari semua user"><i class="fa-solid fa-trash-can text-red-500" style="font-size:9px"></i></button>` : ''}
-            </div>
-          </div>
-          <p class="text-xs font-black text-emerald-900 mb-1">${title}</p>
-          <p class="text-xs text-emerald-800 leading-relaxed" id="toa-bc-msg-${idx}" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${msg}</p>
-          <button onclick="toggleToaBcExpand(${idx})" id="toa-bc-btn-${idx}" class="text-[10px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-            Baca selengkapnya <i class="fa-solid fa-chevron-down text-[8px]"></i>
-          </button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-};
-
-// Buka detail pesan siaran (full text)
-window.openToaBcDetail = function(idx) {
-  const n = (window._S._toaBcNotifs||[])[idx];
-  if(!n) return;
-  const modal = document.getElementById('broadcastReadModal');
-  const body = document.getElementById('broadcastModalBody');
-  const timeEl = document.getElementById('broadcastModalTime');
-  if(body) body.textContent = n.message || '';
-  if(timeEl) {
-    const ts = n.createdAt?.seconds || n.timestamp?.seconds;
-    timeEl.textContent = ts ? new Date(ts*1000).toLocaleString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-  }
-  if(modal) modal.classList.add('open');
-};
-
-// Toggle expand/collapse pesan siaran di Notif full-screen (inline)
-window.toggleFsBcExpand = function(idx) {
-  const msgEl = document.getElementById('fs-bc-msg-' + idx);
-  const btn = document.getElementById('fs-bc-btn-' + idx);
-  if(!msgEl) return;
-  const isExpanded = msgEl.style.overflow === 'visible';
-  if(isExpanded) {
-    msgEl.style.cssText = 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden';
-    if(btn) btn.innerHTML = 'Baca selengkapnya <i class="fa-solid fa-chevron-down text-[8px]"></i>';
-  } else {
-    msgEl.style.cssText = 'display:block;overflow:visible';
-    if(btn) btn.innerHTML = 'Tutup <i class="fa-solid fa-chevron-up text-[8px]"></i>';
-  }
-};
-
-// Toggle expand/collapse pesan siaran di Toa panel (inline, bukan modal)
-window.toggleToaBcExpand = function(idx) {
-  const msgEl = document.getElementById('toa-bc-msg-' + idx);
-  const btn = document.getElementById('toa-bc-btn-' + idx);
-  if(!msgEl) return;
-  const isExpanded = msgEl.style.overflow === 'visible';
-  if(isExpanded) {
-    msgEl.style.cssText = 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden';
-    if(btn) btn.innerHTML = 'Baca selengkapnya <i class="fa-solid fa-chevron-down text-[8px]"></i>';
-  } else {
-    msgEl.style.cssText = 'display:block;overflow:visible';
-    if(btn) btn.innerHTML = 'Tutup <i class="fa-solid fa-chevron-up text-[8px]"></i>';
-  }
-};
-
-// Buka Toa Panel
-window.openToaPanel = function() {
-  const ov = document.getElementById('toaPanelOverlay');
-  if(!ov) return;
-  renderToaPanel(window._S.notifs || []);
-  ov.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  // Otomatis clear badge
-  updateToaBadge(0);
-  _markBroadcastsRead();
-};
-
-// Tutup Toa Panel
-window.closeToaPanel = function() {
-  const ov = document.getElementById('toaPanelOverlay');
-  if(ov) ov.classList.remove('open');
-  document.body.style.overflow = '';
-};
-
-// Tandai semua pesan siaran sebagai terbaca
-window._markBroadcastsRead = async function() {
-  if(!window._S.user || !db) return;
-  const uid = window._S.user.uid;
-  const notifs = window._S.notifs || [];
-  // Sub-koleksi: official_broadcast
-  try {
-    const { collection, getDocs, writeBatch, doc: fsDoc } =
-      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const snap = await getDocs(collection(db, 'users', uid, 'notifications'));
-    const unread = snap.docs.filter(d => {
-      const data = d.data();
-      return (data.type === 'official_broadcast' || data.isSticky) && !data.isRead;
-    });
-    if(unread.length) {
-      const LIMIT = 499;
-      let batch = writeBatch(db);
-      let count = 0;
-      for(const d of unread) {
-        batch.update(fsDoc(db, 'users', uid, 'notifications', d.id), { isRead: true });
-        count++;
-        if(count >= LIMIT) { await batch.commit(); batch = writeBatch(db); count = 0; }
-      }
-      if(count > 0) await batch.commit();
-    }
-  } catch(e) { console.warn('[markBroadcastsRead-sub]', e.message); }
-  // Koleksi global: broadcast
-  try {
-    const { updateDoc, doc: fsDoc, arrayUnion } =
-      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const globalBc = notifs.filter(n => n.toUid === 'broadcast' && !(n.readBy||[]).includes(uid));
-    for(const n of globalBc) {
-      const rawId = (n.id||'').startsWith('sub_') ? n.id.slice(4) : n.id;
-      try { await updateDoc(fsDoc(db, 'notifications', rawId), { readBy: arrayUnion(uid) }); } catch(e){}
-    }
-  } catch(e) { console.warn('[markBroadcastsRead-global]', e.message); }
-  // Update state lokal
-  if(window._S.notifs) {
-    window._S.notifs = window._S.notifs.map(n =>
-      (n.type === 'official_broadcast' || n.isSticky || n.toUid === 'broadcast')
-        ? {...n, isRead: true, readBy: [...(n.readBy||[]), uid]}
-        : n
-    );
-  }
-};
-
-// Hitung badge Toa dari notifs (dipanggil setiap kali notifs diupdate)
-window._updateToaBadgeFromNotifs = function(notifs) {
-  const uid = window._S.user?.uid || '';
-  const broadcasts = (notifs||[]).filter(n =>
-    n.toUid === 'broadcast' || n.type === 'broadcast' ||
-    n.type === 'official_broadcast' || n.isSticky || n.pinned
-  );
-  const unread = broadcasts.filter(n => {
-    if(n.toUid === 'broadcast') return !(n.readBy||[]).includes(uid);
-    return !n.isRead && !n.read;
-  }).length;
-  updateToaBadge(unread);
-};
-
-// ── Close notif panel if click outside (legacy — now no-op since full-screen)
+// Close notif panel if click outside (legacy — now no-op since full-screen)
 document.addEventListener('click', function(e) {
   const panel = document.getElementById('notifPanel');
   const btn = document.getElementById('bellBtn');
@@ -4252,58 +3818,6 @@ window.renderProducts = () => {
   });
 };
 
-// ── Product Card Overlay Helpers ───────────────────────────────
-
-// Share product
-window.pcShareProduct = function(pid, encodedName) {
-  const name = decodeURIComponent(encodedName);
-  const url = window.location.href.split('?')[0] + '?p=' + pid;
-  if (navigator.share) {
-    navigator.share({ title: name, text: 'Lihat produk ini di Yalla Mart: ' + name, url })
-      .catch(() => {});
-  } else {
-    navigator.clipboard.writeText(url).then(() => {
-      showToast('Link produk disalin!', 'green');
-    }).catch(() => {
-      showToast('Link: ' + url, 'green');
-    });
-  }
-};
-
-// Toggle dropdown menu untuk kartu produk
-window.pcToggleDropdown = function(cardId) {
-  const dd = document.getElementById('dd-' + cardId);
-  if (!dd) return;
-  const isOpen = dd.classList.contains('open');
-  // Tutup semua dropdown lain dulu
-  document.querySelectorAll('.pc-dropdown.open').forEach(el => el.classList.remove('open'));
-  if (!isOpen) dd.classList.add('open');
-};
-
-
-
-// Edit produk — buka form edit
-window.pcEditProduct = function(pid) {
-  document.querySelectorAll('.pc-dropdown.open').forEach(el => el.classList.remove('open'));
-  const p = getAllAds().find(x => (x.id||'') === pid);
-  if (!p) { showToast('Produk tidak ditemukan', 'red'); return; }
-  // Delegate ke fungsi edit yang sudah ada jika tersedia
-  if (window.openEditAd) { openEditAd(pid); }
-  else if (window.editAd) { editAd(pid); }
-  else { showToast('Fitur edit produk tidak tersedia', 'red'); }
-};
-
-// Hapus produk
-window.pcDeleteProduct = async function(pid, encodedName) {
-  document.querySelectorAll('.pc-dropdown.open').forEach(el => el.classList.remove('open'));
-  const name = decodeURIComponent(encodedName);
-  if (!confirm(`Yakin ingin menghapus produk?\n\n"${name}"\n\nTindakan ini tidak dapat dibatalkan.`)) return;
-  // Delegate ke fungsi delete yang sudah ada jika tersedia
-  if (window.deleteAd) { await deleteAd(pid); }
-  else if (window.removeAd) { await removeAd(pid); }
-  else { showToast('Fitur hapus produk tidak tersedia', 'red'); }
-};
-
 // ── Search & filter ────────────────────────────────────────────
 window.handleSearch = q => { window._S.searchQ=q.trim().toLowerCase(); renderProducts(); };
 window.filterCat = c => {
@@ -4400,69 +3914,55 @@ window.openDetail = id => {
   const scrollBody=document.getElementById('detailScrollBody');
   if(scrollBody) scrollBody.scrollTop=0;
 
-
-
-  // Tampilkan titik tiga hanya jika iklan milik sendiri
+  // Tampilkan titik tiga hanya jika produk milik user sendiri
   const dotsBtn = document.getElementById('detailDotsBtn');
+  const dotsDd = document.getElementById('detailDotsDropdown');
   if(dotsBtn) {
     const isOwner = window._S.user && (p.sellerUid === window._S.user.uid || isAdmin(window._S.user.email));
     dotsBtn.style.display = isOwner ? 'block' : 'none';
   }
-  // Tutup dropdown kalau masih terbuka dari produk sebelumnya
-  const ddEl = document.getElementById('detailDotsDropdown');
-  if(ddEl) ddEl.classList.remove('open');
+  if(dotsDd) dotsDd.style.display = 'none';
+
+  // Show full screen
+  const ov=document.getElementById('detailOverlay');
   ov.style.display='flex';
   document.body.style.overflow='hidden';
-};
-
-// ── Detail Page Overlay Helpers ────────────────────────────────
-
-window.detailShareProduct = function() {
-  const p = window._S.activeAdData;
-  if(!p) return;
-  const name = p.title || p.name || '';
-  const url = window.location.href.split('?')[0] + '?p=' + (p.id||'');
-  if(navigator.share) {
-    navigator.share({ title: name, text: 'Lihat produk ini di Yalla Mart: ' + name, url }).catch(()=>{});
-  } else {
-    navigator.clipboard.writeText(url).then(()=>{ showToast('Link produk disalin!','green'); }).catch(()=>{ showToast('Link: '+url,'green'); });
-  }
-};
-
-window.detailToggleDropdown = function() {
-  const dd = document.getElementById('detailDotsDropdown');
-  if(!dd) return;
-  dd.classList.toggle('open');
-};
-
-
-
-window.detailEditProduct = function() {
-  const dd = document.getElementById('detailDotsDropdown');
-  if(dd) dd.classList.remove('open');
-  const pid = window._S.activeAdId;
-  if(!pid) return;
-  if(window.openEditAd) openEditAd(pid);
-  else if(window.editAd) editAd(pid);
-  else showToast('Fitur edit produk tidak tersedia','red');
-};
-
-window.detailDeleteProduct = function() {
-  const dd = document.getElementById('detailDotsDropdown');
-  if(dd) dd.classList.remove('open');
-  const pid = window._S.activeAdId;
-  const p = window._S.activeAdData;
-  if(!pid || !p) return;
-  const name = p.title || p.name || '';
-  if(!confirm(`Yakin ingin menghapus produk?\n\n"${name}"\n\nTindakan ini tidak dapat dibatalkan.`)) return;
-  if(window.deleteAd) deleteAd(pid);
-  else if(window.removeAd) removeAd(pid);
-  else showToast('Fitur hapus produk tidak tersedia','red');
 };
 
 window.closeDetailDirect=()=>{
   document.getElementById('detailOverlay').style.display='none';
   document.body.style.overflow='';
+};
+
+// ── Detail share & owner menu ──────────────────────────────────
+window.detailShareProduct = function() {
+  const p = window._S.activeAdData; if(!p) return;
+  const name = p.title || p.name || '';
+  const url = window.location.href.split('?')[0] + '?p=' + (p.id||'');
+  if(navigator.share) {
+    navigator.share({ title: name, text: 'Lihat produk ini di Yalla Mart: ' + name, url }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(url).then(()=>showToast('Link disalin!','green')).catch(()=>showToast('Link: '+url,'green'));
+  }
+};
+window.detailToggleDropdown = function() {
+  const dd = document.getElementById('detailDotsDropdown'); if(!dd) return;
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+};
+window.detailEditProduct = function() {
+  document.getElementById('detailDotsDropdown').style.display='none';
+  const pid = window._S.activeAdId; if(!pid) return;
+  if(window.openEditAd) openEditAd(pid);
+  else if(window.editAd) editAd(pid);
+  else showToast('Fitur edit tidak tersedia','red');
+};
+window.detailDeleteProduct = function() {
+  document.getElementById('detailDotsDropdown').style.display='none';
+  const pid = window._S.activeAdId;
+  const p = window._S.activeAdData; if(!pid||!p) return;
+  if(!confirm('Yakin hapus produk "' + (p.title||p.name||'') + '"?')) return;
+  if(window.deleteAd) deleteAd(pid);
+  else showToast('Fitur hapus tidak tersedia','red');
 };
 
 // Load store stats: total products & followers & follow status
@@ -4633,10 +4133,7 @@ window.toggleDetailFollow = async function() {
     const snap=await getDocs(query(collection(db2,'follows'),where('sellerUid','==',sellerUid),where('followerUid','==',u.uid)));
     if(snap.empty){
       await addDoc(collection(db2,'follows'),{sellerUid,followerUid:u.uid,followerName:u.name,createdAt:serverTimestamp()});
-      // Notif global
-      await addDoc(collection(db2,'notifications'),{toUid:sellerUid,type:'follow',message:u.name+' mulai mengikuti Anda',followerUid:u.uid,followerName:u.name,read:false,isRead:false,createdAt:serverTimestamp()});
-      // Notif sub-koleksi (muncul di tab lonceng)
-      try { await addDoc(collection(db2,'users',sellerUid,'notifications'),{toUid:sellerUid,type:'follow',message:u.name+' mulai mengikuti Anda',senderName:u.name,senderUid:u.uid,read:false,isRead:false,createdAt:serverTimestamp()}); } catch(e){}
+      await addDoc(collection(db2,'notifications'),{toUid:sellerUid,type:'follow',message:u.name+' mulai mengikuti toko kamu!',followerUid:u.uid,followerName:u.name,read:false,createdAt:serverTimestamp()});
       showToast('Berhasil follow toko ini!','green');
       _applyDetailFollowBtn(true);
     } else {
@@ -5281,23 +4778,13 @@ window.toggleFollow = async function() {
       await addDoc(collection(db2,'follows'), {
         sellerUid, followerUid: u.uid, followerName: u.name, createdAt: serverTimestamp()
       });
-      // Notif global
+      // Kirim notifikasi ke penjual
       await addDoc(collection(db2,'notifications'), {
         toUid: sellerUid, type:'follow',
-        message: u.name + ' mulai mengikuti Anda',
-        senderName: u.name, senderUid: u.uid,
+        message: u.name + ' mulai mengikuti toko kamu!',
         followerUid: u.uid, followerName: u.name,
-        read: false, isRead: false, createdAt: serverTimestamp()
+        read: false, createdAt: serverTimestamp()
       });
-      // Notif sub-koleksi (muncul di tab lonceng)
-      try {
-        await addDoc(collection(db2,'users',sellerUid,'notifications'), {
-          toUid: sellerUid, type:'follow',
-          message: u.name + ' mulai mengikuti Anda',
-          senderName: u.name, senderUid: u.uid,
-          read: false, isRead: false, createdAt: serverTimestamp()
-        });
-      } catch(e){}
       showToast('Berhasil follow toko ini!', 'green');
     } else {
       // Unfollow
