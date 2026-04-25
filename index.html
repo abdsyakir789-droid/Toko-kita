@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Yalla Mart — Premium Marketplace</title>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#10B981"/>
@@ -823,15 +823,9 @@ html{scroll-behavior:smooth}
   <!-- Body -->
   <div class="notif-fs-body" id="notifFsBody">
 
-    <!-- Broadcast Form (Developer Only) -->
-    <div id="broadcastFormFs" style="display:none" class="mx-3 mt-3 mb-1 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-100">
-      <p class="text-[10px] font-black text-amber-700 mb-2 flex items-center gap-1.5">
-        <i class="fa-solid fa-crown text-xs"></i> Broadcast ke Semua User
-      </p>
-      <textarea id="broadcastMsgFs" rows="2" placeholder="Tulis pesan broadcast..." class="inp w-full px-3 py-2 text-xs border border-amber-200 rounded-xl bg-white resize-none mb-2"></textarea>
-      <button onclick="sendBroadcastFs()" class="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-2 rounded-xl text-xs transition-all">
-        <i class="fa-solid fa-bullhorn mr-1"></i> Kirim Broadcast
-      </button>
+    <!-- Broadcast Form (Developer Only) — dipindahkan ke header atas -->
+    <div id="broadcastFormFs" style="display:none">
+      <textarea id="broadcastMsgFs" style="display:none"></textarea>
     </div>
 
     <!-- ── PESAN SIARAN (Sticky Top) ── -->
@@ -907,8 +901,11 @@ html{scroll-behavior:smooth}
       <input id="searchInputMob" type="text" placeholder="Cari produk atau penjual..."
         oninput="handleSearch(this.value);document.getElementById('searchInput').value=this.value"/>
     </div>
-    <!-- Right: Chat + Cart -->
+    <!-- Right: Toa (Pesan Siaran) + Chat + Cart -->
     <div class="mob-right-icons">
+      <button id="broadcastMobBtn" onclick="openBroadcastSendModal()" style="display:none" class="mob-icon-btn">
+        <i class="fa-solid fa-bullhorn"></i>
+      </button>
       <button onclick="openChatList()" class="mob-icon-btn">
         <i class="fa-solid fa-comment-dots"></i>
         <span id="chatBadgeMobTop" style="display:none" class="mob-nav-badge">0</span>
@@ -954,6 +951,10 @@ html{scroll-behavior:smooth}
         <i class="fa-solid fa-image text-xs"></i>
         Billboard
       </button>
+      <!-- Toa / Pesan Siaran (Admin Only) -->
+      <button id="broadcastDesktopBtn" onclick="openBroadcastSendModal()" style="display:none" class="relative p-2 text-purple-500 hover:text-purple-700 transition-colors rounded-xl hover:bg-purple-50" title="Pesan Siaran">
+        <i class="fa-solid fa-bullhorn text-lg"></i>
+      </button>
       <!-- Bell Notification -->
       <div class="relative">
         <button onclick="openNotifFullScreen()" id="bellBtn" class="relative p-2 text-gray-500 hover:text-primary transition-colors rounded-xl hover:bg-gray-50">
@@ -969,13 +970,9 @@ html{scroll-behavior:smooth}
             </div>
             <button onclick="markAllNotifsRead()" class="text-white/80 hover:text-white text-[10px] font-semibold">Tandai semua dibaca</button>
           </div>
-          <!-- Broadcast Form (Developer Only) -->
-          <div id="broadcastForm" style="display:none" class="px-4 py-3 bg-amber-50 border-b border-amber-100">
-            <p class="text-[10px] font-black text-amber-700 mb-2 flex items-center gap-1"><i class="fa-solid fa-crown text-xs"></i> Broadcast ke Semua User</p>
-            <textarea id="broadcastMsg" rows="2" placeholder="Tulis pesan broadcast..." class="inp w-full px-3 py-2 text-xs border border-amber-200 rounded-xl bg-white resize-none mb-2"></textarea>
-            <button onclick="sendBroadcast()" class="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-2 rounded-xl text-xs transition-all">
-              <i class="fa-solid fa-bullhorn mr-1"></i> Kirim Broadcast
-            </button>
+          <!-- Broadcast Form (Developer Only) — dipindahkan ke header atas -->
+          <div id="broadcastForm" style="display:none">
+            <textarea id="broadcastMsg" style="display:none"></textarea>
           </div>
           <!-- Notif List -->
           <div id="notifList" class="max-h-72 overflow-y-auto divide-y divide-gray-50">
@@ -3177,6 +3174,10 @@ window.renderUserState = () => {
   document.getElementById('adminBillBtn').style.display      = admin ? 'flex' : 'none';
   document.getElementById('adminBillAction').style.display   = admin ? 'flex' : 'none';
   document.getElementById('adminBadgeProfile').style.display = admin ? 'flex' : 'none';
+  const broadcastMobBtn = document.getElementById('broadcastMobBtn');
+  if(broadcastMobBtn) broadcastMobBtn.style.display = admin ? 'flex' : 'none';
+  const broadcastDesktopBtn = document.getElementById('broadcastDesktopBtn');
+  if(broadcastDesktopBtn) broadcastDesktopBtn.style.display = admin ? 'flex' : 'none';
   const bcastAction = document.getElementById('adminBroadcastAction');
   if(bcastAction) bcastAction.style.display = admin ? 'flex' : 'none';
   // Show broadcast form for admin
