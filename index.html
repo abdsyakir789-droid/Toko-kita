@@ -4280,12 +4280,7 @@ window.pcToggleDropdown = function(cardId) {
   if (!isOpen) dd.classList.add('open');
 };
 
-// Tutup dropdown jika klik di luar kartu
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.pc-dots-btn') && !e.target.closest('.pc-dropdown')) {
-    document.querySelectorAll('.pc-dropdown.open').forEach(el => el.classList.remove('open'));
-  }
-});
+
 
 // Edit produk — buka form edit
 window.pcEditProduct = function(pid) {
@@ -4440,13 +4435,7 @@ window.detailToggleDropdown = function() {
   dd.classList.toggle('open');
 };
 
-// Tutup dropdown detail jika klik di luar
-document.addEventListener('click', function(e) {
-  if(!e.target.closest('#detailDotsBtn') && !e.target.closest('#detailDotsDropdown')) {
-    const dd = document.getElementById('detailDotsDropdown');
-    if(dd) dd.classList.remove('open');
-  }
-});
+
 
 window.detailEditProduct = function() {
   const dd = document.getElementById('detailDotsDropdown');
