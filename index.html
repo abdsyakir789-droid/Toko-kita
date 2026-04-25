@@ -19,6 +19,18 @@
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window._osReady = false;
   window._osInstance = null;
+
+  // Simpan subscription ID ke Firestore
+  window._osSaveSubId = async function(uid, subId) {
+    if(!uid || !subId) return;
+    try {
+      const { getFirestore, doc, setDoc } =
+        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await setDoc(doc(getFirestore(), 'users', uid), { osSubId: subId }, { merge: true });
+      console.log('[OneSignal] osSubId tersimpan:', subId);
+    } catch(e){ console.warn('[OneSignal] gagal simpan osSubId:', e.message); }
+  };
+
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "47d30bbf-d028-44e0-a42f-cc701a8e3519",
@@ -30,31 +42,30 @@
     window._osInstance = OneSignal;
     window._osReady = true;
     try { await OneSignal.Notifications.requestPermission(); } catch(e){}
-    // Coba login jika user sudah ada
+
+    // Listener: setiap subId berubah/tersedia
+    try {
+      OneSignal.User.PushSubscription.addEventListener('change', async (event) => {
+        const subId = event.current?.id;
+        if(subId) {
+          const uid = window._S?.user?.uid;
+          if(uid) await _osSaveSubId(uid, subId);
+        }
+      });
+    } catch(e){}
+
+    // Login jika user sudah ada
     try {
       const uid = window._S?.user?.uid;
       if(uid) {
         await OneSignal.login(uid);
-        await _osSaveSubscriptionId(uid);
+        setTimeout(async () => {
+          const subId = OneSignal.User?.PushSubscription?.id;
+          if(subId && uid) await _osSaveSubId(uid, subId);
+        }, 2000);
       }
     } catch(e){}
   });
-
-  // Simpan OneSignal Subscription ID ke Firestore agar bisa dipakai kirim notif
-  window._osSaveSubscriptionId = async function(uid) {
-    try {
-      if(!uid || !window._osInstance) return;
-      const subId = window._osInstance.User?.PushSubscription?.id;
-      if(!subId) return;
-      const { getFirestore, doc, setDoc } =
-        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      const db2 = getFirestore();
-      await setDoc(doc(db2, 'users', uid), { osSubId: subId }, { merge: true });
-      console.log('[OneSignal] Subscription ID tersimpan:', subId);
-    } catch(e) {
-      console.warn('[OneSignal] Gagal simpan subId:', e.message);
-    }
-  };
 
   // Helper global untuk login OneSignal kapanpun
   window._osLogin = async function(uid) {
@@ -63,8 +74,11 @@
       try {
         if(window._osInstance) {
           await window._osInstance.login(uid);
-          await _osSaveSubscriptionId(uid);
           console.log('[OneSignal] login OK:', uid);
+          setTimeout(async () => {
+            const subId = window._osInstance.User?.PushSubscription?.id;
+            if(subId) await _osSaveSubId(uid, subId);
+          }, 2000);
         }
       } catch(e){ console.warn('[OneSignal] login error:', e.message); }
     };
@@ -4231,39 +4245,17 @@ async function sendPushToReceiver(receiverUid, senderName, msgText) {
     const title = '💬 ' + senderName;
     const OS_KEY = 'os_v2_app_i7jqxp6qfbcobjbpzrybvdrvdhkxcmlrbsceud5xtizyiblokjptqvk4u7tfghxrfj6sbre76sra2gtsnqkglkfeavpkib3xva4cqpa';
     const OS_APP = '47d30bbf-d028-44e0-a42f-cc701a8e3519';
-
-    // Ambil osSubId dari Firestore
-    const { getFirestore, doc, getDoc } =
-      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const db2 = getFirestore();
-    const userSnap = await getDoc(doc(db2, 'users', receiverUid));
+    const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const userSnap = await getDoc(doc(getFirestore(), 'users', receiverUid));
     const osSubId = userSnap.exists() ? userSnap.data().osSubId : null;
-
-    // Buat payload — pakai subscription_ids jika ada, fallback ke external_id
-    const payload = {
-      app_id  : OS_APP,
-      headings: { en: title, id: title },
-      contents: { en: body,  id: body  },
-      data    : { chatId: window._S.activeChatId },
-      priority: 10
-    };
-    if (osSubId) {
-      payload.include_subscription_ids = [osSubId];
-    } else {
-      payload.include_aliases  = { external_id: [receiverUid] };
-      payload.target_channel   = 'push';
-    }
-
-    const res = await fetch('https://onesignal.com/api/v1/notifications', {
-      method : 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Key ' + OS_KEY },
-      body   : JSON.stringify(payload)
-    });
+    console.log('[OneSignal Push] osSubId penerima:', osSubId);
+    const payload = { app_id: OS_APP, headings: { en: title, id: title }, contents: { en: body, id: body }, data: { chatId: window._S.activeChatId }, priority: 10 };
+    if (osSubId) { payload.include_subscription_ids = [osSubId]; }
+    else { payload.include_aliases = { external_id: [receiverUid] }; payload.target_channel = 'push'; }
+    const res = await fetch('https://onesignal.com/api/v1/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Key ' + OS_KEY }, body: JSON.stringify(payload) });
     const json = await res.json();
-    console.log('[OneSignal Push]', json);
-  } catch(e) {
-    console.warn('[OneSignal Push] gagal:', e.message);
-  }
+    console.log('[OneSignal Push] response:', JSON.stringify(json));
+  } catch(e) { console.warn('[OneSignal Push] gagal:', e.message); }
 }
 
 window.sendChatMsg=async()=>{
