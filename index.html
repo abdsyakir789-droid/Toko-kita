@@ -20,7 +20,13 @@
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "47d30bbf-d028-44e0-a42f-cc701a8e3519",
+      serviceWorkerParam: { scope: "/" },
+      serviceWorkerPath: "OneSignalSDKWorker.js",
+      notifyButton: { enable: false },
+      allowLocalhostAsSecureOrigin: true,
     });
+    // Minta izin notifikasi otomatis
+    await OneSignal.Notifications.requestPermission();
   });
 </script>
 <script>
