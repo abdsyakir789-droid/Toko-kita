@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
 <title>Yalla Mart — Premium Marketplace</title>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#10B981"/>
@@ -2640,26 +2640,11 @@ window._FB = {
   },
 
   listenChatMessages(chatId, callback) {
-    // PENTING: Tanpa orderBy — orderBy butuh composite index di Firestore
-    // yang menyebabkan query return kosong tanpa error jika index belum dibuat.
-    // Sorting dilakukan di sisi client.
-    return onSnapshot(collection(db, 'chats', chatId, 'messages'),
-      snap => {
-        const msgs = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .sort((a, b) => {
-            const aT = a.createdAt?.seconds ?? 0;
-            const bT = b.createdAt?.seconds ?? 0;
-            return aT - bT;
-          });
-        callback(msgs);
-      },
-      err => {
-        console.error('[Chat] listenChatMessages error:', err.code, err.message);
-        const el = document.getElementById('chatMessages');
-        if(el) el.innerHTML = `<p class="text-xs text-red-400 text-center py-8">Gagal memuat pesan: ${err.code}</p>`;
-      }
-    );
+    const q=query(collection(db,'chats',chatId,'messages'), orderBy('createdAt','asc'));
+    return onSnapshot(q, snap => {
+      const msgs=snap.docs.map(d=>({id:d.id,...d.data()}));
+      callback(msgs);
+    });
   },
 
   async initChat(adId, sellerId, sellerName, sellerPhoto, adTitle, adImg, adPrice) {
@@ -4828,21 +4813,20 @@ async function sendPushToReceiver(receiverUid, senderName, msgText) {
   }
 }
 
-window.sendChatMsg = async () => {
-  const inp = document.getElementById('chatInput');
-  const txt = inp.value.trim();
-  if(!txt || !window._S.activeChatId) return;
-  if(!window._FB || !window._S.user) { showToast('Login dulu','red'); return; }
-  inp.value = '';
-  try {
-    await window._FB.sendChatMessage(window._S.activeChatId, txt);
-    if(window._S.activeChatOther) {
-      sendPushToReceiver(window._S.activeChatOther, window._S.user.name || 'Seseorang', txt);
-    }
-  } catch(e) {
-    console.error('[sendChatMsg]', e.code, e.message);
-    showToast('Gagal kirim: ' + (e.message || e.code), 'red');
-    inp.value = txt;
+window.sendChatMsg=async()=>{
+  const txt=document.getElementById('chatInput').value.trim();
+  if(!txt||!window._S.activeChatId) return;
+  document.getElementById('chatInput').value='';
+  // Kirim push notif ke penerima
+  if(window._S.activeChatOther && window._S.user) {
+    sendPushToReceiver(window._S.activeChatOther, window._S.user.name || 'Seseorang', txt);
+  }
+  if(window._FB) await window._FB.sendChatMessage(window._S.activeChatId, txt);
+  else{
+    const el=document.getElementById('chatMessages');
+    const div=document.createElement('div');div.className='flex justify-end chat-msg';
+    div.innerHTML=`<div class="chat-bubble-me px-3.5 py-2 max-w-[75%] text-xs">${txt}</div>`;
+    el.appendChild(div); el.scrollTop=el.scrollHeight;
   }
 };
 
@@ -4871,30 +4855,29 @@ window.sendChatPhoto = async function(input) {
   el.scrollTop = el.scrollHeight;
 
   try {
-    // uploadToCloudinary return OBJEK {secure_url, public_id} bukan string langsung
-    const result = await window.uploadToCloudinary(file);
-    const imgUrl = (result && typeof result === 'object') ? result.secure_url : result;
-    if(!imgUrl || !imgUrl.startsWith('http')) throw new Error('URL foto tidak valid');
+    // Upload ke Cloudinary — sama seperti foto produk/profil
+    const imgUrl = await window.uploadToCloudinary(file);
 
+    // Hapus loading bubble
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
 
+    // Kirim sebagai pesan dengan type='image' (bukan lagi prefix __PHOTO__)
     await window._FB.sendChatMessage(window._S.activeChatId, imgUrl, 'image');
-
-    if(window._S.activeChatOther && window._S.user) {
-      sendPushToReceiver(window._S.activeChatOther, window._S.user.name || 'Seseorang', '📷 Foto');
-    }
 
   } catch(e) {
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
-    console.error('[sendChatPhoto]', e.code, e.message);
-    if(e.code === 'permission-denied') {
-      showToast('Gagal — periksa Firestore Rules', 'red');
-    } else if(e.message?.includes('preset') || e.message?.includes('Upload gagal')) {
-      showToast('Gagal upload foto — periksa Cloudinary preset', 'red');
+    console.error('sendChatPhoto error:', e);
+
+    // Tampilkan pesan error yang lebih informatif
+    const errMsg = e.message || 'Upload gagal';
+    if(errMsg.includes('Upload gagal') || errMsg.includes('preset')) {
+      showToast('Gagal upload foto — periksa konfigurasi Cloudinary','red');
+    } else if(errMsg.includes('Koneksi') || errMsg.includes('network')) {
+      showToast('Gagal: koneksi internet bermasalah','red');
     } else {
-      showToast('Gagal kirim foto: ' + (e.message || 'Error'), 'red');
+      showToast('Gagal mengirim foto: ' + errMsg, 'red');
     }
   }
 };
@@ -5957,5 +5940,25 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
+<!-- ── Disable zoom (pinch & double-tap) untuk PWA ── -->
+<script>
+  // Blokir pinch-to-zoom (iOS Safari)
+  document.addEventListener('gesturestart', e => e.preventDefault(), { passive: false });
+  document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
+  document.addEventListener('gestureend', e => e.preventDefault(), { passive: false });
+
+  // Blokir pinch via touchmove dengan 2 jari
+  document.addEventListener('touchmove', e => {
+    if(e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+
+  // Blokir double-tap zoom
+  let _lastTap = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if(now - _lastTap < 300) e.preventDefault();
+    _lastTap = now;
+  }, { passive: false });
+</script>
 </body>
 </html>
