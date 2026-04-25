@@ -2640,11 +2640,22 @@ window._FB = {
   },
 
   listenChatMessages(chatId, callback) {
-    const q=query(collection(db,'chats',chatId,'messages'), orderBy('createdAt','asc'));
-    return onSnapshot(q, snap => {
-      const msgs=snap.docs.map(d=>({id:d.id,...d.data()}));
-      callback(msgs);
-    });
+    const q = query(collection(db,'chats',chatId,'messages'), orderBy('createdAt','asc'));
+    return onSnapshot(q,
+      snap => {
+        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        console.info('[Chat] Pesan diterima:', msgs.length, 'chatId:', chatId);
+        callback(msgs);
+      },
+      err => {
+        console.error('[Chat] ERROR baca pesan:', err.code, err.message);
+        const el = document.getElementById('chatMessages');
+        if(el) el.innerHTML = `<p class="text-xs text-red-400 text-center py-8 px-4">
+          ❌ Gagal memuat pesan<br>
+          <span class="text-[10px] text-gray-400 break-all">${err.code}: ${err.message}</span>
+        </p>`;
+      }
+    );
   },
 
   async initChat(adId, sellerId, sellerName, sellerPhoto, adTitle, adImg, adPrice) {
@@ -4856,8 +4867,8 @@ window.sendChatPhoto = async function(input) {
 
   try {
     // Upload ke Cloudinary — ambil secure_url dari hasil objek
-    const result  = await window.uploadToCloudinary(file);
-    const imgUrl  = typeof result === 'object' ? result.secure_url : result;
+    const result = await window.uploadToCloudinary(file);
+    const imgUrl = typeof result === 'object' ? result.secure_url : result;
     if(!imgUrl) throw new Error('URL foto kosong dari Cloudinary');
 
     // Hapus loading bubble
