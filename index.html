@@ -1741,6 +1741,11 @@ html{scroll-behavior:smooth}
       <button class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-colors shadow-lg">
         <i class="fa-solid fa-share-nodes text-base"></i>
       </button>
+      <!-- Hapus iklan — hanya muncul untuk owner, diisi via openDetail() -->
+      <button id="detailDeleteBtn" style="display:none" onclick="deleteAd(window._S.activeAdId)"
+        class="absolute top-4 right-16 w-10 h-10 flex items-center justify-center rounded-full bg-red-500/80 hover:bg-red-600 text-white backdrop-blur-sm transition-colors shadow-lg">
+        <i class="fa-solid fa-trash text-base"></i>
+      </button>
       <!-- Badge -->
       <span id="detailBadgeImg" class="absolute bottom-4 left-4 text-[10px] font-bold px-3 py-1 rounded-full shadow-md"></span>
     </div>
@@ -2178,7 +2183,7 @@ async function uploadToCloudinary(file, onProgress) {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`);
     xhr.upload.onprogress = e => { if(e.lengthComputable && onProgress) onProgress(Math.round(e.loaded/e.total*100)); };
-    xhr.onload = () => { const r=JSON.parse(xhr.responseText); if(xhr.status===200) resolve(r.secure_url); else reject(new Error(r.error?.message||'Upload gagal')); };
+    xhr.onload = () => { const r=JSON.parse(xhr.responseText); if(xhr.status===200) resolve({ secure_url: r.secure_url, public_id: r.public_id }); else reject(new Error(r.error?.message||'Upload gagal')); };
     xhr.onerror = () => reject(new Error('Koneksi gagal'));
     xhr.send(fd);
   });
@@ -2247,6 +2252,42 @@ async function deleteCoverFromCloudinary(publicId) {
 window.uploadToCloudinary      = uploadToCloudinary;
 window.uploadCoverToCloudinary = uploadCoverToCloudinary;
 window.compressImage           = compressImage;
+
+// ── Hapus Iklan (owner only) ─────────────────────────────────────
+window.deleteAd = async function(adId) {
+  const u = window._S.user;
+  if(!u) { showToast('Login dulu', 'red'); return; }
+  const ad = getAllAds().find(a => a.id === adId);
+  if(!ad) { showToast('Iklan tidak ditemukan', 'red'); return; }
+  if(ad.sellerUid !== u.uid && !isAdmin(u.email)) { showToast('Bukan iklan kamu', 'red'); return; }
+  if(!confirm('Hapus iklan "' + (ad.title||'ini') + '"?\n\nFoto iklan juga akan dihapus permanen.')) return;
+
+  try {
+    const { deleteDoc, doc: fsDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    // 1. Hapus dari Firestore
+    await deleteDoc(fsDoc(db, 'ads', adId));
+    // 2. Hapus foto dari Cloudinary
+    const publicId = ad.imgPublicId || extractCloudinaryPublicId(ad.imgUrl || ad.img || '');
+    if(publicId) await deleteFromCloudinary(publicId, 'AdPhoto');
+    // 3. Tutup detail & update state lokal
+    closeDetailDirect();
+    if(window._S.fbAds) window._S.fbAds = window._S.fbAds.filter(a => a.id !== adId);
+    showToast('✅ Iklan berhasil dihapus!', 'green');
+  } catch(e) {
+    console.error('[deleteAd]', e);
+    showToast('Gagal hapus iklan: ' + (e.message||e), 'red');
+  }
+};
+
+// Ekstrak public_id dari URL Cloudinary
+function extractCloudinaryPublicId(url) {
+  if(!url || !url.includes('cloudinary.com')) return '';
+  try {
+    // Format: https://res.cloudinary.com/{cloud}/image/upload/v{ver}/{public_id}.{ext}
+    const match = url.match(/\/image\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-z]+)?$/i);
+    return match ? match[1] : '';
+  } catch(e) { return ''; }
+}
 
 // ── Auth observer ───────────────────────────────────────────────
 onAuthStateChanged(auth, async user => {
@@ -2356,7 +2397,8 @@ window._FB = {
   // ── Upload profile photo — FIX 3: permanent storage ──────────
   async uploadProfilePhoto(file) {
     showToast('Mengunggah foto profil...', 'green');
-    const imgUrl = await uploadToCloudinary(file);
+    const _uploadRes = await uploadToCloudinary(file);
+    const imgUrl = typeof _uploadRes === 'object' ? _uploadRes.secure_url : _uploadRes;
     const uid = window._S.user.uid;
 
     // ── 1. Cari docId user — selalu query ulang jika belum ada ────
@@ -2403,13 +2445,15 @@ window._FB = {
     wrap.style.display='block'; btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mengupload...';
     try {
       txt.textContent='Mengompres foto...'; bar.style.width='10%'; pct.textContent='10%';
-      const imgUrl = await uploadToCloudinary(file, p => {
+      const uploadResult = await uploadToCloudinary(file, p => {
         const v=10+Math.round(p*.8); bar.style.width=v+'%'; pct.textContent=v+'%';
         txt.textContent=`Mengunggah ke Cloudinary ${p}%...`;
       });
+      const imgUrl = uploadResult.secure_url;
+      const imgPublicId = uploadResult.public_id || '';
       bar.style.width='95%'; pct.textContent='95%'; txt.textContent='Menyimpan ke database...';
       const newAdRef = await addDoc(collection(db,'ads'), {
-        title, price:Number(price), cat, desc, siapTaushil:!!siapTaushil, imgUrl,
+        title, price:Number(price), cat, desc, siapTaushil:!!siapTaushil, imgUrl, imgPublicId,
         location: location||'',
         likes:0, dislikes:0, likedBy:[], dislikedBy:[],
         sellerName:window._S.user.name, sellerUid:window._S.user.uid,
@@ -2435,7 +2479,7 @@ window._FB = {
             toUid: fUid, type: 'new_ad',
             message: `${sellerName} baru saja memposting produk baru: "${title}"`,
             senderName: sellerName, senderUid: sellerUid,
-            senderPhoto: window._S.user.photoURL || window._S.user.photo || '',
+            senderPhoto: window._S.user.photoUrl || '',
             adTitle: title, adId: newAdId || '',
             read: false, isRead: false,
             createdAt: serverTimestamp()
@@ -2614,7 +2658,8 @@ window._FB = {
   // ── Billboard ─────────────────────────────────────────────────
   async uploadBillboard(slideIndex, file, customText) {
     showToast('Mengupload gambar billboard...', 'green');
-    const imgUrl=await uploadToCloudinary(file);
+    const _bbRes=await uploadToCloudinary(file);
+    const imgUrl=typeof _bbRes==='object'?_bbRes.secure_url:_bbRes;
     await addDoc(collection(db,'billboards'), { slideIndex, imgUrl, customText:customText||'', updatedAt:serverTimestamp() });
     applyBillboardImage(slideIndex, imgUrl, customText);
     showToast('Billboard berhasil diperbarui!', 'green');
@@ -3526,7 +3571,7 @@ window.renderNotifFull = function(notifs) {
             const snap = await getDoc(doc(db, 'users', uid));
             if(snap.exists()) {
               const d = snap.data();
-              _photoCache[uid] = d.photoURL || d.photoUrl || d.photo || '';
+              _photoCache[uid] = d.photoUrl || '';
             } else { _photoCache[uid] = ''; }
           } catch(e) { _photoCache[uid] = ''; }
         }));
@@ -4239,6 +4284,13 @@ window.openDetail = id => {
   // Reset scroll
   const scrollBody=document.getElementById('detailScrollBody');
   if(scrollBody) scrollBody.scrollTop=0;
+
+  // Tampilkan tombol hapus hanya jika iklan milik sendiri atau admin
+  const deleteBtn = document.getElementById('detailDeleteBtn');
+  if(deleteBtn) {
+    const isOwner = window._S.user && (p.sellerUid === window._S.user.uid || isAdmin(window._S.user.email));
+    deleteBtn.style.display = isOwner ? 'flex' : 'none';
+  }
 
   // Show full screen
   const ov=document.getElementById('detailOverlay');
