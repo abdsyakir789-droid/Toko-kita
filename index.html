@@ -4170,10 +4170,40 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
     if(window.markChatRead) markChatRead(chatId);
   });
 }
+// ── OneSignal: Kirim push notif ke penerima pesan ─────────────
+async function sendPushToReceiver(receiverUid, senderName, msgText) {
+  try {
+    const isPhoto = msgText.startsWith('__PHOTO__');
+    const body = isPhoto ? '📷 Mengirim foto' : (msgText.length > 80 ? msgText.substring(0,80)+'...' : msgText);
+    await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Key os_v2_app_i7jqxp6qfbcobjbpzrybvdrvdfw6abe3vwbeq2nqfwpbzpqtdajkvosyk6etd3exn7duhe525znrjsio7wnidtwklrcefuyfz2h7wuq'
+      },
+      body: JSON.stringify({
+        app_id: '47d30bbf-d028-44e0-a42f-cc701a8e3519',
+        include_aliases: { external_id: [receiverUid] },
+        target_channel: 'push',
+        headings: { en: '💬 ' + senderName, id: '💬 ' + senderName },
+        contents: { en: body, id: body },
+        data: { chatId: window._S.activeChatId },
+        priority: 10
+      })
+    });
+  } catch(e) {
+    console.warn('[OneSignal Push] gagal:', e.message);
+  }
+}
+
 window.sendChatMsg=async()=>{
   const txt=document.getElementById('chatInput').value.trim();
   if(!txt||!window._S.activeChatId) return;
   document.getElementById('chatInput').value='';
+  // Kirim push notif ke penerima
+  if(window._S.activeChatOther && window._S.user) {
+    sendPushToReceiver(window._S.activeChatOther, window._S.user.name || 'Seseorang', txt);
+  }
   if(window._FB) await window._FB.sendChatMessage(window._S.activeChatId, txt);
   else{
     const el=document.getElementById('chatMessages');
