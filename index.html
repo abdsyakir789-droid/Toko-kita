@@ -2640,29 +2640,24 @@ window._FB = {
   },
 
   listenChatMessages(chatId, callback) {
-    // Tanpa orderBy — hindari kebutuhan composite index di Firestore
-    // Sorting dilakukan di sisi client setelah data diterima
-    const q = collection(db, 'chats', chatId, 'messages');
-    return onSnapshot(q,
+    // PENTING: Tanpa orderBy — orderBy butuh composite index di Firestore
+    // yang menyebabkan query return kosong tanpa error jika index belum dibuat.
+    // Sorting dilakukan di sisi client.
+    return onSnapshot(collection(db, 'chats', chatId, 'messages'),
       snap => {
         const msgs = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
           .sort((a, b) => {
-            const aT = a.createdAt?.seconds ?? a.createdAt?.toMillis?.() / 1000 ?? 0;
-            const bT = b.createdAt?.seconds ?? b.createdAt?.toMillis?.() / 1000 ?? 0;
+            const aT = a.createdAt?.seconds ?? 0;
+            const bT = b.createdAt?.seconds ?? 0;
             return aT - bT;
           });
         callback(msgs);
       },
       err => {
-        console.error('[Chat] Gagal baca pesan:', err.code, err.message);
+        console.error('[Chat] listenChatMessages error:', err.code, err.message);
         const el = document.getElementById('chatMessages');
-        if(el) el.innerHTML = `
-          <div class="flex flex-col items-center justify-center py-10 gap-2 px-4">
-            <i class="fa-solid fa-triangle-exclamation text-2xl text-red-400"></i>
-            <p class="text-xs text-red-400 font-semibold text-center">Gagal memuat pesan</p>
-            <p class="text-[10px] text-gray-400 text-center break-all">${err.code}: ${err.message}</p>
-          </div>`;
+        if(el) el.innerHTML = `<p class="text-xs text-red-400 text-center py-8">Gagal memuat pesan: ${err.code}</p>`;
       }
     );
   },
@@ -4837,8 +4832,7 @@ window.sendChatMsg = async () => {
   const inp = document.getElementById('chatInput');
   const txt = inp.value.trim();
   if(!txt || !window._S.activeChatId) return;
-  if(!window._FB || !window._S.user) { showToast('Login dulu untuk chat','red'); return; }
-
+  if(!window._FB || !window._S.user) { showToast('Login dulu','red'); return; }
   inp.value = '';
   try {
     await window._FB.sendChatMessage(window._S.activeChatId, txt);
@@ -4847,8 +4841,8 @@ window.sendChatMsg = async () => {
     }
   } catch(e) {
     console.error('[sendChatMsg]', e.code, e.message);
-    showToast('Gagal kirim: ' + (e.message || e.code || 'Error'), 'red');
-    inp.value = txt; // kembalikan teks agar tidak hilang
+    showToast('Gagal kirim: ' + (e.message || e.code), 'red');
+    inp.value = txt;
   }
 };
 
@@ -4877,9 +4871,9 @@ window.sendChatPhoto = async function(input) {
   el.scrollTop = el.scrollHeight;
 
   try {
-    // uploadToCloudinary() return OBJEK {secure_url, public_id} — bukan string langsung
-    const result  = await window.uploadToCloudinary(file);
-    const imgUrl  = (result && typeof result === 'object') ? result.secure_url : result;
+    // uploadToCloudinary return OBJEK {secure_url, public_id} bukan string langsung
+    const result = await window.uploadToCloudinary(file);
+    const imgUrl = (result && typeof result === 'object') ? result.secure_url : result;
     if(!imgUrl || !imgUrl.startsWith('http')) throw new Error('URL foto tidak valid');
 
     const ld = document.getElementById('chatPhotoLoading');
@@ -4896,11 +4890,11 @@ window.sendChatPhoto = async function(input) {
     if(ld) ld.remove();
     console.error('[sendChatPhoto]', e.code, e.message);
     if(e.code === 'permission-denied') {
-      showToast('Gagal kirim foto — periksa Firestore Rules', 'red');
+      showToast('Gagal — periksa Firestore Rules', 'red');
     } else if(e.message?.includes('preset') || e.message?.includes('Upload gagal')) {
-      showToast('Gagal upload — periksa konfigurasi Cloudinary', 'red');
+      showToast('Gagal upload foto — periksa Cloudinary preset', 'red');
     } else {
-      showToast('Gagal kirim foto: ' + (e.message || 'Error tidak diketahui'), 'red');
+      showToast('Gagal kirim foto: ' + (e.message || 'Error'), 'red');
     }
   }
 };
