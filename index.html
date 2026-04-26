@@ -147,6 +147,39 @@ tailwind.config={theme:{extend:{colors:{
 /* ADMIN BADGE */
 .adm-badge{background:linear-gradient(135deg,#FCD34D,#F59E0B);color:#78350F;border:1px solid #FCD34D}
 
+/* ── VERIFIED BADGE — Centang Biru ── */
+.vbadge-blue{
+  display:inline-flex;align-items:center;gap:3px;
+  color:#3B82F6;font-size:12px;
+  filter:drop-shadow(0 1px 2px rgba(59,130,246,.4));
+  flex-shrink:0;
+}
+/* ── PARTNER BADGE — Centang Silver ── */
+.vbadge-silver{
+  display:inline-flex;align-items:center;gap:3px;
+  color:#9CA3AF;font-size:12px;
+  filter:drop-shadow(0 1px 2px rgba(156,163,175,.5));
+  flex-shrink:0;
+}
+/* ── ADMIN PANEL MODAL ── */
+#adminPanelOverlay{
+  position:fixed;inset:0;z-index:800;
+  background:rgba(0,0,0,.6);
+  display:none;align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(5px);
+}
+#adminPanelOverlay.open{display:flex}
+#adminPanelSheet{
+  background:#fff;
+  border-radius:24px 24px 0 0;
+  width:100%;max-width:520px;
+  max-height:88vh;
+  display:flex;flex-direction:column;
+  animation:mIn .3s cubic-bezier(.34,1.2,.64,1);
+}
+.ap-tab{border-bottom:2.5px solid transparent;transition:all .2s;padding:8px 4px;font-size:12px;font-weight:600;color:#9ca3af;cursor:pointer;white-space:nowrap}
+.ap-tab.active{color:#6366F1;border-bottom-color:#6366F1}
+
 /* SPONSOR BADGE */
 .sb{background:linear-gradient(135deg,#FFFBEB,#FEF3C7);color:#92400E;border:1px solid #FDE68A}
 
@@ -3426,6 +3459,24 @@ window.renderUserState = () => {
   // Gold badge in header
   const goldH = document.getElementById('hGoldBadge');
   if (goldH) goldH.style.display = admin ? 'inline' : 'none';
+
+  // ── Tambahkan tombol Panel Admin di header (admin only) ──
+  let apBtn = document.getElementById('adminPanelHeaderBtn');
+  if (admin) {
+    if (!apBtn) {
+      apBtn = document.createElement('button');
+      apBtn.id = 'adminPanelHeaderBtn';
+      apBtn.onclick = window.openAdminPanel;
+      apBtn.title = 'Panel Admin';
+      apBtn.className = 'flex items-center gap-1 bg-indigo-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl hover:bg-indigo-700 transition-colors flex-shrink-0';
+      apBtn.innerHTML = '<i class="fa-solid fa-shield-halved text-xs"></i> Admin';
+      // Sisipkan di sebelah adminBillBtn
+      const billBtn = document.getElementById('adminBillBtn');
+      if (billBtn && billBtn.parentNode) billBtn.parentNode.insertBefore(apBtn, billBtn.nextSibling);
+    }
+  } else {
+    if (apBtn) apBtn.remove();
+  }
   if (u) {
     const init = (u.name||'U').charAt(0).toUpperCase();
     const hAv = document.getElementById('hAvatar');
@@ -4198,7 +4249,8 @@ function getFiltered(){
     const mc=window._S.curCat==='semua'||p.cat===window._S.curCat||
       (window._S.curCat==='gratis-ongkir')||
       (window._S.curCat==='promo'&&(p.disc>0||p.badge==='Promo'))||
-      (window._S.curCat==='official'&&p.badge==='Official');
+      // ── PATCH: official filter sertakan partner_silver ──
+      (window._S.curCat==='official'&&(p.badge==='Official'||p._partnerSilver===true));
     const n=(p.title||p.name||'').toLowerCase();
     const mq=window._S.searchQ===''||n.includes(window._S.searchQ)||(p.loc||'').toLowerCase().includes(window._S.searchQ)||(p.cat||'').includes(window._S.searchQ);
     return mc&&mq;
@@ -5201,6 +5253,18 @@ window.viewSellerStore = async function(sellerUid) {
   else eav.innerHTML = (sellerName||'P').charAt(0).toUpperCase();
   document.getElementById('etalaseName').textContent = sellerName;
   document.getElementById('etalaseGold').style.display = adminSeller ? 'inline' : 'none';
+  // ── Inject verification badge di nama store ──
+  setTimeout(async () => {
+    const nameEl = document.getElementById('etalaseName');
+    if (!nameEl) return;
+    nameEl.parentElement.querySelectorAll('.vbadge-blue,.vbadge-silver').forEach(el=>el.remove());
+    const vstatus = await getVerificationStatus(sellerUid);
+    if (vstatus) {
+      const badge = document.createElement('span');
+      badge.innerHTML = renderVerifyBadge(vstatus);
+      if (badge.firstElementChild) nameEl.parentElement.insertBefore(badge.firstElementChild, nameEl.nextSibling);
+    }
+  }, 300);
   document.getElementById('etalaseCount').textContent = sellerAds.length;
   // Render seller products
   const grid = document.getElementById('etalaseGrid');
@@ -5982,6 +6046,580 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.error('[PWA] Service Worker gagal:', err));
   });
 }
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     ADMIN PANEL — Manajemen Iklan & Verifikasi
+     Hanya muncul untuk email: abdsyakir160@gmail.com
+═══════════════════════════════════════════════ -->
+<div id="adminPanelOverlay" onclick="if(event.target===this)closeAdminPanel()">
+  <div id="adminPanelSheet">
+    <!-- Header -->
+    <div class="flex-shrink-0 bg-gradient-to-r from-indigo-600 to-purple-600 px-5 pt-5 pb-4 rounded-t-3xl">
+      <div class="w-10 h-1 bg-white/30 rounded-full mx-auto mb-4"></div>
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+        </div>
+        <div class="flex-1">
+          <h2 class="text-white font-black text-base">Panel Admin</h2>
+          <p class="text-indigo-200 text-[10px]">Manajemen Iklan & Verifikasi User</p>
+        </div>
+        <button onclick="closeAdminPanel()" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+      <!-- Tabs -->
+      <div class="flex gap-4 mt-4 border-b border-white/20 pb-0">
+        <button id="aptab-switch" onclick="switchApTab('switch')" class="ap-tab active" style="color:#fff;border-color:#fff">Master Switch</button>
+        <button id="aptab-ads" onclick="switchApTab('ads')" class="ap-tab">Aktivasi Iklan</button>
+        <button id="aptab-verify" onclick="switchApTab('verify')" class="ap-tab">Verifikasi User</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="overflow-y-auto flex-1 p-5 space-y-0">
+
+      <!-- ── Tab: Master Switch ── -->
+      <div id="aptab-switch-content">
+        <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <p class="text-sm font-black text-gray-800">Global Ads Toggle</p>
+              <p class="text-[11px] text-gray-500 mt-0.5">Jika aktif, semua user bebas pasang iklan tanpa syarat</p>
+            </div>
+            <button id="globalAdsToggleBtn" onclick="toggleGlobalAds()"
+              class="relative w-12 h-6 rounded-full transition-colors duration-300 bg-gray-300 flex-shrink-0"
+              style="outline:none">
+              <span id="globalAdsThumb" class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300"></span>
+            </button>
+          </div>
+          <p id="globalAdsStatus" class="text-[11px] font-semibold text-gray-400">Memuat status...</p>
+        </div>
+        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-[11px] text-amber-700 leading-relaxed">
+          <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+          <strong>Mode OFF:</strong> Hanya user yang sudah diaktifkan & masa aktifnya belum habis yang bisa pasang iklan.
+        </div>
+      </div>
+
+      <!-- ── Tab: Aktivasi Iklan ── -->
+      <div id="aptab-ads-content" style="display:none">
+        <div class="space-y-3">
+          <div>
+            <label class="text-[11px] font-bold text-gray-600 mb-1.5 block">Email User <span class="text-red-400">*</span></label>
+            <input id="adsEmailInput" type="email" placeholder="email@user.com"
+              class="inp w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-gray-50"/>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-gray-600 mb-1.5 block">Durasi Aktif (Hari) <span class="text-red-400">*</span></label>
+            <input id="adsDurationInput" type="number" min="1" max="365" placeholder="30"
+              class="inp w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-gray-50"/>
+          </div>
+          <button onclick="activateUserAds()"
+            class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-3 rounded-2xl text-sm hover:opacity-90 transition-opacity shadow-lg">
+            <i class="fa-solid fa-bolt mr-1"></i> Aktifkan Akses Iklan
+          </button>
+          <button onclick="revokeUserAds()"
+            class="w-full border border-red-200 text-red-500 font-semibold py-2.5 rounded-2xl text-xs hover:bg-red-50 transition-colors">
+            <i class="fa-solid fa-ban mr-1"></i> Cabut Akses Iklan
+          </button>
+          <!-- Info status user -->
+          <div id="adsUserStatus" class="hidden bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100"></div>
+        </div>
+      </div>
+
+      <!-- ── Tab: Verifikasi User ── -->
+      <div id="aptab-verify-content" style="display:none">
+        <div class="space-y-3">
+          <div>
+            <label class="text-[11px] font-bold text-gray-600 mb-1.5 block">Email User <span class="text-red-400">*</span></label>
+            <input id="verifyEmailInput" type="email" placeholder="email@user.com"
+              class="inp w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-gray-50"/>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-gray-600 mb-1.5 block">Status Verifikasi</label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 p-3 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors" id="vtype-blue-wrap">
+                <input type="radio" name="verifyType" value="verified_blue" id="vtype-blue" class="hidden" onchange="updateVerifyTypeUI()"/>
+                <i class="fa-solid fa-circle-check text-blue-500 text-lg"></i>
+                <div>
+                  <p class="text-xs font-bold text-gray-700">Centang Biru</p>
+                  <p class="text-[10px] text-gray-400">Verified</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-2 p-3 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors" id="vtype-silver-wrap">
+                <input type="radio" name="verifyType" value="partner_silver" id="vtype-silver" class="hidden" onchange="updateVerifyTypeUI()"/>
+                <i class="fa-solid fa-circle-check text-gray-400 text-lg"></i>
+                <div>
+                  <p class="text-xs font-bold text-gray-700">Centang Silver</p>
+                  <p class="text-[10px] text-gray-400">Official Partner</p>
+                </div>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-gray-600 mb-1.5 block">Durasi Aktif (Hari) <span class="text-red-400">*</span></label>
+            <input id="verifyDurationInput" type="number" min="1" max="3650" placeholder="365"
+              class="inp w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-gray-50"/>
+          </div>
+          <button onclick="applyVerification()"
+            class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-3 rounded-2xl text-sm hover:opacity-90 transition-opacity shadow-lg">
+            <i class="fa-solid fa-badge-check mr-1"></i> Terapkan Verifikasi
+          </button>
+          <button onclick="removeVerification()"
+            class="w-full border border-red-200 text-red-500 font-semibold py-2.5 rounded-2xl text-xs hover:bg-red-50 transition-colors">
+            <i class="fa-solid fa-trash-can mr-1"></i> Hapus Verifikasi
+          </button>
+          <!-- Info user -->
+          <div id="verifyUserStatus" class="hidden bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100"></div>
+        </div>
+      </div>
+
+    </div><!-- /body -->
+  </div><!-- /sheet -->
+</div><!-- /overlay -->
+
+<!-- Script: Semua logika baru (Ads Access, Badge, Official Filter, Admin Panel) -->
+<script>
+// ═══════════════════════════════════════════════════════════════
+// 🛡️ ADS ACCESS CONTROL
+// Cek apakah user boleh posting iklan berdasarkan:
+// 1. settings/config.isGlobalAdsOpen = true  → semua boleh
+// 2. user.isAdsEnabled = true AND adsExpiryDate > now → boleh
+// ═══════════════════════════════════════════════════════════════
+const ADMIN_ADS_EMAIL = 'abdsyakir160@gmail.com';
+
+async function checkAdsAccess(userEmail) {
+  // Admin selalu boleh
+  if ((userEmail||'').toLowerCase() === ADMIN_ADS_EMAIL) return { allowed: true, reason: 'admin' };
+  try {
+    const { getFirestore, doc, getDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || getFirestore();
+
+    // 1. Cek master switch
+    const cfgSnap = await getDoc(doc(db2, 'settings', 'config'));
+    if (cfgSnap.exists() && cfgSnap.data().isGlobalAdsOpen === true) {
+      return { allowed: true, reason: 'global_open' };
+    }
+
+    // 2. Cek per-user permission
+    const uid = window._S?.user?.uid;
+    if (!uid) return { allowed: false, reason: 'not_logged_in' };
+
+    const { collection, query, where, getDocs } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const snap = await getDocs(query(collection(db2,'users'), where('uid','==',uid)));
+    if (snap.empty) return { allowed: false, reason: 'user_not_found' };
+
+    const d = snap.docs[0].data();
+    if (!d.isAdsEnabled) return { allowed: false, reason: 'ads_disabled' };
+
+    const expiry = d.adsExpiryDate;
+    const now = Date.now();
+    // adsExpiryDate bisa berupa Firestore Timestamp atau number (ms)
+    const expiryMs = expiry?.toMillis ? expiry.toMillis() : (typeof expiry === 'number' ? expiry : 0);
+    if (expiryMs < now) return { allowed: false, reason: 'expired', expiryMs };
+
+    return { allowed: true, reason: 'user_enabled', expiryMs };
+  } catch(e) {
+    console.warn('[checkAdsAccess]', e.message);
+    return { allowed: false, reason: 'error' };
+  }
+}
+
+// Override guardedPost agar pakai logika akses baru
+window.guardedPost = async function() {
+  const u = window._S?.user;
+  if (!u) { showToast('Login dulu untuk pasang iklan', 'red'); openAuth('login'); return; }
+
+  const result = await checkAdsAccess(u.email);
+  if (result.allowed) {
+    openPostModal();
+  } else {
+    const msgs = {
+      'ads_disabled' : '❌ Akses iklan kamu belum diaktifkan oleh Admin',
+      'expired'      : '❌ Masa aktif iklan kamu sudah habis. Hubungi Admin',
+      'user_not_found': '❌ Data akun tidak ditemukan',
+      'error'        : '❌ Gagal memeriksa akses. Coba lagi',
+      'default'      : '❌ Kamu belum memiliki akses untuk pasang iklan',
+    };
+    showToast(msgs[result.reason] || msgs['default'], 'red');
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 🏅 VERIFICATION BADGE — Centang Biru & Silver
+// Dibaca dari Firestore users/{uid}.verificationStatus
+// ═══════════════════════════════════════════════════════════════
+
+// Cache verifikasi per UID agar tidak query berulang
+window._verifyCache = window._verifyCache || {};
+
+async function getVerificationStatus(uid) {
+  if (!uid) return null;
+  if (window._verifyCache[uid] !== undefined) return window._verifyCache[uid];
+  try {
+    const { getFirestore, collection, query, where, getDocs } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || getFirestore();
+    const snap = await getDocs(query(collection(db2,'users'), where('uid','==',uid)));
+    if (snap.empty) { window._verifyCache[uid] = null; return null; }
+    const d = snap.docs[0].data();
+    const status = d.verificationStatus || null;
+    // Cek expiry
+    if (status) {
+      const expiry = d.verificationExpiry;
+      const expiryMs = expiry?.toMillis ? expiry.toMillis() : (typeof expiry === 'number' ? expiry : 0);
+      if (expiryMs && expiryMs < Date.now()) {
+        window._verifyCache[uid] = null; return null;
+      }
+    }
+    window._verifyCache[uid] = status;
+    return status;
+  } catch(e) { window._verifyCache[uid] = null; return null; }
+}
+
+// Render badge HTML sesuai status
+function renderVerifyBadge(status) {
+  if (status === 'verified_blue') {
+    return `<span class="vbadge-blue" title="Verified"><i class="fa-solid fa-circle-check"></i></span>`;
+  }
+  if (status === 'partner_silver') {
+    return `<span class="vbadge-silver" title="Official Partner"><i class="fa-solid fa-circle-check"></i></span>`;
+  }
+  return '';
+}
+
+// Patch openDetail agar badge muncul di nama penjual pada halaman detail
+const _origOpenDetail = window.openDetail;
+window.openDetail = async function(id) {
+  _origOpenDetail(id);
+  // Inject badge ke nama seller di detail modal setelah render
+  setTimeout(async () => {
+    const p = window._S?.activeAdData;
+    if (!p || !p.sellerUid) return;
+    const status = await getVerificationStatus(p.sellerUid);
+    const nameEl = document.getElementById('detailSeller');
+    if (!nameEl) return;
+    // Hapus badge lama jika ada
+    nameEl.parentElement.querySelectorAll('.vbadge-blue,.vbadge-silver').forEach(el=>el.remove());
+    if (status) {
+      const badge = document.createElement('span');
+      badge.innerHTML = renderVerifyBadge(status);
+      nameEl.parentElement.insertBefore(badge.firstElementChild, nameEl.nextSibling);
+    }
+  }, 400);
+};
+
+// Patch renderProducts agar badge muncul di kartu produk (seller name area)
+// Note: badge di card product tidak dirender ulang dari scratch agar tidak ganggu performa
+// Badge ditampilkan hanya di detail modal dan etalase
+
+// ═══════════════════════════════════════════════════════════════
+// 🏪 OFFICIAL PARTNER FILTER
+// partner_silver otomatis masuk filter 'official'
+// ═══════════════════════════════════════════════════════════════
+const _origGetFiltered = window.getFiltered || null; // getFiltered adalah fungsi lokal
+
+// Patch filterCat 'official' agar sertakan partner_silver
+// Karena getFiltered() adalah inner function di module, kita patch via
+// menyimpan status partner_silver di data iklan saat load
+async function injectPartnerSilverToAds() {
+  const ads = window._S?.fbAds;
+  if (!ads || !ads.length) return;
+  const uids = [...new Set(ads.map(a => a.sellerUid).filter(Boolean))];
+  for (const uid of uids) {
+    const status = await getVerificationStatus(uid);
+    if (status === 'partner_silver') {
+      // Tandai semua iklan dari seller ini dengan badge Official
+      ads.forEach(a => {
+        if (a.sellerUid === uid && a.badge !== 'Official') {
+          a._partnerSilver = true; // flag internal
+        }
+      });
+    }
+  }
+}
+
+// Override renderProducts untuk inject filter official bagi partner_silver
+const _origRenderProducts = window.renderProducts;
+window.renderProducts = function() {
+  // Inject flag partner_silver terlebih dahulu (async, non-blocking)
+  injectPartnerSilverToAds().catch(()=>{});
+  if (_origRenderProducts) _origRenderProducts();
+};
+
+// Override getFiltered di luar module — patch via filterCat
+const _origFilterCat = window.filterCat;
+window.filterCat = function(c) {
+  if (_origFilterCat) _origFilterCat(c);
+  // Setelah render default, filter ulang jika official untuk sertakan partner_silver
+  if (c === 'official') {
+    setTimeout(() => {
+      const g = document.getElementById('productGrid');
+      if (!g) return;
+      // Cek & tambahkan iklan partner_silver yang belum ada di grid
+      const rendered = new Set([...g.querySelectorAll('[data-pid]')].map(el=>el.dataset.pid));
+      const missing = (window._S?.fbAds||[]).filter(a =>
+        a._partnerSilver && !rendered.has(a.id) && a.badge !== 'Official'
+      );
+      // Re-trigger render jika ada yang kurang (jarang terjadi, tapi safeguard)
+      if (missing.length > 0) { injectPartnerSilverToAds().then(()=>{ if(_origRenderProducts) _origRenderProducts(); }); }
+    }, 600);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 👑 ADMIN PANEL — UI Functions
+// ═══════════════════════════════════════════════════════════════
+
+window.openAdminPanel = async function() {
+  const u = window._S?.user;
+  if (!u || (u.email||'').toLowerCase() !== ADMIN_ADS_EMAIL) {
+    showToast('Akses ditolak', 'red'); return;
+  }
+  document.getElementById('adminPanelOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  switchApTab('switch');
+  loadGlobalAdsStatus();
+};
+
+window.closeAdminPanel = function() {
+  document.getElementById('adminPanelOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+window.switchApTab = function(tab) {
+  ['switch','ads','verify'].forEach(t => {
+    const btn = document.getElementById('aptab-' + t);
+    const content = document.getElementById('aptab-' + t + '-content');
+    if(btn) btn.classList.toggle('active', t === tab);
+    if(content) content.style.display = t === tab ? 'block' : 'none';
+  });
+};
+
+window.updateVerifyTypeUI = function() {
+  const blueWrap = document.getElementById('vtype-blue-wrap');
+  const silverWrap = document.getElementById('vtype-silver-wrap');
+  const isBlue = document.getElementById('vtype-blue')?.checked;
+  const isSilver = document.getElementById('vtype-silver')?.checked;
+  if(blueWrap) blueWrap.style.borderColor = isBlue ? '#3B82F6' : '';
+  if(silverWrap) silverWrap.style.borderColor = isSilver ? '#9CA3AF' : '';
+};
+
+// ── Load & Toggle Master Switch ─────────────────────────────────
+async function loadGlobalAdsStatus() {
+  const statusEl = document.getElementById('globalAdsStatus');
+  const btn = document.getElementById('globalAdsToggleBtn');
+  const thumb = document.getElementById('globalAdsThumb');
+  if(statusEl) statusEl.textContent = 'Memuat status...';
+  try {
+    const { getFirestore, doc, getDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || getFirestore();
+    const snap = await getDoc(doc(db2, 'settings', 'config'));
+    const isOn = snap.exists() ? (snap.data().isGlobalAdsOpen === true) : false;
+    applyToggleUI(isOn);
+  } catch(e) {
+    if(statusEl) statusEl.textContent = 'Gagal memuat status';
+  }
+}
+
+function applyToggleUI(isOn) {
+  const btn = document.getElementById('globalAdsToggleBtn');
+  const thumb = document.getElementById('globalAdsThumb');
+  const statusEl = document.getElementById('globalAdsStatus');
+  if(!btn || !thumb) return;
+  btn.style.backgroundColor = isOn ? '#10B981' : '#D1D5DB';
+  thumb.style.transform = isOn ? 'translateX(24px)' : 'translateX(0)';
+  btn.dataset.state = isOn ? 'on' : 'off';
+  if(statusEl) statusEl.textContent = isOn
+    ? '✅ Aktif — Semua user bebas pasang iklan'
+    : '🔒 Non-aktif — Hanya user terpilih yang bisa pasang iklan';
+  statusEl.style.color = isOn ? '#059669' : '#6B7280';
+}
+
+window.toggleGlobalAds = async function() {
+  const btn = document.getElementById('globalAdsToggleBtn');
+  const currentlyOn = btn?.dataset.state === 'on';
+  const newState = !currentlyOn;
+  applyToggleUI(newState); // optimistic
+  try {
+    const { getFirestore, doc, setDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || getFirestore();
+    await setDoc(doc(db2, 'settings', 'config'), { isGlobalAdsOpen: newState }, { merge: true });
+    showToast(newState ? '✅ Global Ads diaktifkan' : '🔒 Global Ads dinonaktifkan', 'green');
+  } catch(e) {
+    applyToggleUI(currentlyOn); // rollback
+    showToast('Gagal ubah status: ' + (e.message||e), 'red');
+  }
+};
+
+// ── Aktivasi Iklan per User ─────────────────────────────────────
+window.activateUserAds = async function() {
+  const email = document.getElementById('adsEmailInput').value.trim().toLowerCase();
+  const days = parseInt(document.getElementById('adsDurationInput').value, 10);
+  if (!email) { showToast('Masukkan email user', 'red'); return; }
+  if (!days || days < 1) { showToast('Masukkan durasi hari yang valid', 'red'); return; }
+
+  const statusEl = document.getElementById('adsUserStatus');
+  statusEl.className = 'bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100';
+  statusEl.textContent = '⏳ Mencari user...';
+
+  try {
+    const { getFirestore, collection, query, where, getDocs, doc, updateDoc, Timestamp } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || getFirestore();
+    const snap = await getDocs(query(collection(db2,'users'), where('email','==',email)));
+    if (snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+
+    const expiryMs = Date.now() + days * 24 * 60 * 60 * 1000;
+    const expiryTs = Timestamp.fromMillis(expiryMs);
+    await updateDoc(doc(db2, 'users', snap.docs[0].id), {
+      isAdsEnabled  : true,
+      adsExpiryDate : expiryTs,
+    });
+
+    const expiryStr = new Date(expiryMs).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+    statusEl.textContent = `✅ Akses iklan diaktifkan! Berlaku hingga: ${expiryStr}`;
+    statusEl.style.color = '#059669';
+    showToast('✅ Akses iklan user diaktifkan!', 'green');
+    // Reset verify cache
+    const uid = snap.docs[0].data().uid;
+    if(uid) delete window._verifyCache[uid];
+  } catch(e) {
+    statusEl.textContent = '❌ Error: ' + (e.message||e);
+    showToast('Gagal: ' + (e.message||e), 'red');
+  }
+};
+
+window.revokeUserAds = async function() {
+  const email = document.getElementById('adsEmailInput').value.trim().toLowerCase();
+  if (!email) { showToast('Masukkan email user', 'red'); return; }
+  if (!confirm('Cabut akses iklan untuk ' + email + '?')) return;
+
+  const statusEl = document.getElementById('adsUserStatus');
+  statusEl.className = 'bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100';
+  statusEl.textContent = '⏳ Memproses...';
+
+  try {
+    const { getFirestore, collection, query, where, getDocs, doc, updateDoc, Timestamp } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || getFirestore();
+    const snap = await getDocs(query(collection(db2,'users'), where('email','==',email)));
+    if (snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+    await updateDoc(doc(db2, 'users', snap.docs[0].id), {
+      isAdsEnabled  : false,
+      adsExpiryDate : Timestamp.fromMillis(0),
+    });
+    statusEl.textContent = '✅ Akses iklan dicabut.';
+    statusEl.style.color = '#EF4444';
+    showToast('Akses iklan dicabut', 'red');
+  } catch(e) {
+    statusEl.textContent = '❌ Error: ' + (e.message||e);
+    showToast('Gagal: ' + (e.message||e), 'red');
+  }
+};
+
+// ── Verifikasi User ─────────────────────────────────────────────
+window.applyVerification = async function() {
+  const email = document.getElementById('verifyEmailInput').value.trim().toLowerCase();
+  const days = parseInt(document.getElementById('verifyDurationInput').value, 10);
+  const verifyType = document.querySelector('input[name="verifyType"]:checked')?.value;
+  if (!email) { showToast('Masukkan email user', 'red'); return; }
+  if (!verifyType) { showToast('Pilih jenis verifikasi', 'red'); return; }
+  if (!days || days < 1) { showToast('Masukkan durasi hari yang valid', 'red'); return; }
+
+  const statusEl = document.getElementById('verifyUserStatus');
+  statusEl.className = 'bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100';
+  statusEl.textContent = '⏳ Mencari user...';
+
+  try {
+    const { getFirestore, collection, query, where, getDocs, doc, updateDoc, Timestamp } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || getFirestore();
+    const snap = await getDocs(query(collection(db2,'users'), where('email','==',email)));
+    if (snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+
+    const expiryMs = Date.now() + days * 24 * 60 * 60 * 1000;
+    const uid = snap.docs[0].data().uid;
+    await updateDoc(doc(db2, 'users', snap.docs[0].id), {
+      verificationStatus : verifyType,
+      verificationExpiry : Timestamp.fromMillis(expiryMs),
+    });
+
+    // Reset cache agar badge refresh
+    if(uid) delete window._verifyCache[uid];
+
+    const typeLabel = verifyType === 'verified_blue' ? '✅ Centang Biru' : '🥈 Centang Silver (Official Partner)';
+    const expiryStr = new Date(expiryMs).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+    statusEl.textContent = `${typeLabel} berhasil diterapkan! Berlaku hingga: ${expiryStr}`;
+    statusEl.style.color = '#059669';
+    showToast('Verifikasi berhasil diterapkan!', 'green');
+  } catch(e) {
+    statusEl.textContent = '❌ Error: ' + (e.message||e);
+    showToast('Gagal: ' + (e.message||e), 'red');
+  }
+};
+
+window.removeVerification = async function() {
+  const email = document.getElementById('verifyEmailInput').value.trim().toLowerCase();
+  if (!email) { showToast('Masukkan email user', 'red'); return; }
+  if (!confirm('Hapus verifikasi untuk ' + email + '?')) return;
+
+  const statusEl = document.getElementById('verifyUserStatus');
+  statusEl.className = 'bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100';
+  statusEl.textContent = '⏳ Memproses...';
+
+  try {
+    const { getFirestore, collection, query, where, getDocs, doc, updateDoc, deleteField } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || getFirestore();
+    const snap = await getDocs(query(collection(db2,'users'), where('email','==',email)));
+    if (snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+    const uid = snap.docs[0].data().uid;
+    await updateDoc(doc(db2, 'users', snap.docs[0].id), {
+      verificationStatus : deleteField(),
+      verificationExpiry : deleteField(),
+    });
+    if(uid) delete window._verifyCache[uid];
+    statusEl.textContent = '✅ Verifikasi dihapus.';
+    statusEl.style.color = '#6B7280';
+    showToast('Verifikasi dihapus', 'red');
+  } catch(e) {
+    statusEl.textContent = '❌ Error: ' + (e.message||e);
+    showToast('Gagal: ' + (e.message||e), 'red');
+  }
+};
+
+// ── Tombol buka Admin Panel (ditambah ke renderUserState) ───────
+// Inject tombol "Panel Admin" ke profil page dan header setelah page load
+(function injectAdminPanelButton() {
+  // Tambahkan ke profile action strip jika ada, setelah auth siap
+  const tryInject = (attempts) => {
+    const u = window._S?.user;
+    if (!u && attempts < 20) { setTimeout(()=>tryInject(attempts+1), 500); return; }
+    if (!u || (u.email||'').toLowerCase() !== ADMIN_ADS_EMAIL) return;
+
+    // Cek apakah tombol sudah ada
+    if (document.getElementById('adminPanelOpenBtn')) return;
+
+    // Tambahkan tombol ke mobile bottom nav sebagai akses cepat
+    // (inject ke profil page saja agar tidak ganggu layout)
+    const profileStrip = document.querySelector('.profile-edit-strip');
+    if (profileStrip) {
+      const btn = document.createElement('button');
+      btn.id = 'adminPanelOpenBtn';
+      btn.onclick = openAdminPanel;
+      btn.className = 'flex items-center gap-1.5 bg-indigo-600 text-white text-xs font-bold px-3 py-2.5 rounded-2xl hover:bg-indigo-700 transition-colors';
+      btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Panel Admin';
+      profileStrip.appendChild(btn);
+    }
+  };
+  setTimeout(()=>tryInject(0), 1500);
+})();
 </script>
 
 <!-- ── Disable zoom (pinch & double-tap) untuk PWA ── -->
