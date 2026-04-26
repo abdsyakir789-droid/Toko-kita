@@ -142,6 +142,8 @@ tailwind.config={theme:{extend:{colors:{
 
 /* GOLD VERIFIED */
 .gold-badge{color:var(--gold);filter:drop-shadow(0 1px 2px rgba(245,158,11,.5))}
+.silver-badge{color:#94a3b8;filter:drop-shadow(0 1px 2px rgba(148,163,184,.5))}
+.blue-badge{color:#3b82f6;filter:drop-shadow(0 1px 2px rgba(59,130,246,.5))}
 .verified-ring{animation:goldPulse 2.5s infinite}
 
 /* ADMIN BADGE */
@@ -1137,7 +1139,9 @@ html{scroll-behavior:smooth}
             <div id="hAvatar" class="w-7 h-7 rounded-full bg-primary text-white text-xs font-black flex items-center justify-center overflow-hidden">U</div>
           </div>
           <span id="hName" class="text-xs font-semibold text-gray-700 max-w-[70px] truncate"></span>
-          <span id="hGoldBadge" style="display:none" class="gold-badge text-sm"><i class="fa-solid fa-circle-check"></i></span>
+          <span id="hGoldBadge"   style="display:none" class="gold-badge text-sm"  title="Developer"><i class="fa-solid fa-circle-check"></i></span>
+          <span id="hSilverBadge" style="display:none" class="silver-badge text-sm" title="Partner Resmi"><i class="fa-solid fa-circle-check"></i></span>
+          <span id="hBlueBadge"   style="display:none" class="blue-badge text-sm"   title="Terverifikasi"><i class="fa-solid fa-circle-check"></i></span>
         </button>
       </div>
       <!-- Cart -->
@@ -1172,14 +1176,14 @@ html{scroll-behavior:smooth}
   <!-- CAROUSEL — pure image, no text overlay -->
   <section class="mt-3">
     <!-- Skeleton while billboard loads -->
-    <div id="billboardSkeleton" class="skel rounded-2xl" style="height:165px"></div>
+    <div id="billboardSkeleton" class="skel rounded-2xl" style="aspect-ratio:16/6;width:100%"></div>
     <!-- Actual billboard — hidden until images set -->
-    <div class="c-viewport" id="billboardWrap" style="height:165px;display:none">
+    <div class="c-viewport" id="billboardWrap" style="aspect-ratio:16/6;width:100%;display:none">
       <div class="c-track" id="ctrack" style="transform:translateX(0)">
-        <div class="c-slide" id="cslide0"><img id="cimg0" src="" alt="Billboard 1" style="width:100%;height:165px;object-fit:cover;display:block;object-position:center"/></div>
-        <div class="c-slide" id="cslide1"><img id="cimg1" src="" alt="Billboard 2" style="width:100%;height:165px;object-fit:cover;display:block;object-position:center"/></div>
-        <div class="c-slide" id="cslide2"><img id="cimg2" src="" alt="Billboard 3" style="width:100%;height:165px;object-fit:cover;display:block;object-position:center"/></div>
-        <div class="c-slide" id="cslide3"><img id="cimg3" src="" alt="Billboard 4" style="width:100%;height:165px;object-fit:cover;display:block;object-position:center"/></div>
+        <div class="c-slide" id="cslide0"><img id="cimg0" src="" alt="Billboard 1" style="width:100%;height:100%;object-fit:cover;display:block;object-position:center"/></div>
+        <div class="c-slide" id="cslide1"><img id="cimg1" src="" alt="Billboard 2" style="width:100%;height:100%;object-fit:cover;display:block;object-position:center"/></div>
+        <div class="c-slide" id="cslide2"><img id="cimg2" src="" alt="Billboard 3" style="width:100%;height:100%;object-fit:cover;display:block;object-position:center"/></div>
+        <div class="c-slide" id="cslide3"><img id="cimg3" src="" alt="Billboard 4" style="width:100%;height:100%;object-fit:cover;display:block;object-position:center"/></div>
       </div>
       <div id="cdots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 items-center z-10"></div>
       <button onclick="prevSlide()" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/20 hover:bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white z-10 transition-all">
@@ -1354,7 +1358,9 @@ html{scroll-behavior:smooth}
         <div class="profile-name-block-overlay">
           <div class="profile-name-row">
             <h2 id="profileName" class="profile-name-text"></h2>
-            <span id="profileGoldBadge" style="display:none" class="text-amber-300 text-base verified-ring flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+            <span id="profileGoldBadge"   style="display:none" class="text-amber-400 text-base verified-ring flex-shrink-0" title="Developer"><i class="fa-solid fa-circle-check"></i></span>
+            <span id="profileSilverBadge" style="display:none" class="silver-badge text-base flex-shrink-0" title="Partner Resmi"><i class="fa-solid fa-circle-check"></i></span>
+            <span id="profileBlueBadge"   style="display:none" class="blue-badge text-base flex-shrink-0"   title="Terverifikasi"><i class="fa-solid fa-circle-check"></i></span>
           </div>
           <p id="profileEmail" class="text-[10px] flex items-center gap-1 leading-relaxed" style="color:rgba(255,255,255,.75)">
             <i class="fa-solid fa-envelope" style="font-size:9px"></i> <span></span>
@@ -1423,6 +1429,12 @@ html{scroll-behavior:smooth}
         <i class="fa-solid fa-image text-amber-600"></i>
       </div>
       <div><p class="text-xs font-bold text-gray-800">Billboard Manager</p><p class="text-[10px] text-amber-600 font-semibold">Akses Developer</p></div>
+    </div>
+    <div id="adminUserAction" style="display:none" onclick="openUserManager()" class="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
+      <div class="w-10 h-10 rounded-2xl bg-blue-200 flex items-center justify-center flex-shrink-0">
+        <i class="fa-solid fa-user-shield text-blue-600"></i>
+      </div>
+      <div><p class="text-xs font-bold text-gray-800">Kelola User</p><p class="text-[10px] text-blue-600 font-semibold">Badge & Langganan Iklan</p></div>
     </div>
     <div id="adminBroadcastAction" style="display:none" onclick="openBroadcastSendModal()" class="flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer col-span-2">
       <div class="w-10 h-10 rounded-2xl bg-purple-200 flex items-center justify-center flex-shrink-0">
@@ -1862,7 +1874,9 @@ html{scroll-behavior:smooth}
           <button onclick="openDetailStore()" class="text-left hover:opacity-75 transition-opacity w-full">
             <div class="flex items-center gap-1.5 flex-wrap">
               <p id="detailSeller" class="text-base font-black text-gray-900 truncate"></p>
-              <span id="detailGoldBadge" style="display:none" class="gold-badge text-base flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+              <span id="detailGoldBadge"   style="display:none" class="gold-badge text-base flex-shrink-0"   title="Developer"><i class="fa-solid fa-circle-check"></i></span>
+              <span id="detailSilverBadge" style="display:none" class="silver-badge text-base flex-shrink-0" title="Partner Resmi"><i class="fa-solid fa-circle-check"></i></span>
+              <span id="detailBlueBadge"   style="display:none" class="blue-badge text-base flex-shrink-0"   title="Terverifikasi"><i class="fa-solid fa-circle-check"></i></span>
             </div>
             <p class="text-[10px] text-primary flex items-center gap-1 mt-0.5 font-semibold">
               <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Lihat Etalase Lengkap
@@ -2129,6 +2143,55 @@ html{scroll-behavior:smooth}
         <i class="fa-solid fa-rocket mr-1"></i> Update Billboard
       </button>
       <p class="text-[10px] text-gray-400 text-center">Gambar dikompres otomatis · Disimpan di Cloudinary</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── USER MANAGER MODAL (Admin Only) ─────────────────────── -->
+<div id="userManagerOverlay" style="display:none;opacity:0" class="fixed inset-0 bg-black/70 z-[70] ov flex items-center justify-center p-4" onclick="if(event.target===this)closeUserManager()">
+  <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-500 to-indigo-500 px-5 py-4 flex items-center justify-between">
+      <h3 class="font-black text-white text-base"><i class="fa-solid fa-user-shield mr-2"></i>Kelola User</h3>
+      <button onclick="closeUserManager()" class="w-7 h-7 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/30 text-white">
+        <i class="fa-solid fa-xmark text-xs"></i>
+      </button>
+    </div>
+    <div class="p-5 flex flex-col gap-4">
+      <!-- Email Input -->
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1.5 block">Email User</label>
+        <input id="umEmail" type="email" placeholder="email@contoh.com" class="inp w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50"/>
+      </div>
+      <!-- Langganan Iklan -->
+      <div class="bg-green-50 border border-green-200 rounded-2xl p-4 flex flex-col gap-2">
+        <p class="text-xs font-bold text-green-700"><i class="fa-solid fa-rectangle-ad mr-1"></i> Langganan Iklan</p>
+        <div class="flex gap-2 items-center">
+          <input id="umDays" type="number" min="1" max="365" placeholder="Hari (misal: 30)" class="inp flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white"/>
+          <button onclick="activateSubscription()" class="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all">Aktifkan</button>
+        </div>
+        <div id="umSubStatus" class="text-[10px] text-gray-400"></div>
+      </div>
+      <!-- Badge -->
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-col gap-2">
+        <p class="text-xs font-bold text-blue-700"><i class="fa-solid fa-circle-check mr-1"></i> Badge Verified</p>
+        <div class="flex gap-2 items-center">
+          <select id="umBadge" class="inp flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white">
+            <option value="">-- Pilih Badge --</option>
+            <option value="silver">✅ Silver (Partner Resmi)</option>
+            <option value="blue">🔵 Biru (Terverifikasi)</option>
+            <option value="none">❌ Hapus Badge</option>
+          </select>
+          <input id="umBadgeDays" type="number" min="1" max="365" placeholder="Hari" class="inp w-20 px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white"/>
+        </div>
+        <button onclick="activateBadge()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-xl text-xs transition-all">Aktifkan Badge</button>
+        <div id="umBadgeStatus" class="text-[10px] text-gray-400"></div>
+      </div>
+      <!-- Cek Status -->
+      <button onclick="checkUserStatus()" class="w-full border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl text-xs hover:bg-gray-50 transition-all">
+        <i class="fa-solid fa-magnifying-glass mr-1"></i> Cek Status User
+      </button>
+      <div id="umCheckResult" class="text-[10px] text-gray-500 bg-gray-50 rounded-xl p-3 hidden"></div>
     </div>
   </div>
 </div>
@@ -2640,11 +2703,19 @@ window._FB = {
   },
 
   listenChatMessages(chatId, callback) {
-    const q=query(collection(db,'chats',chatId,'messages'), orderBy('createdAt','asc'));
-    return onSnapshot(q, snap => {
-      const msgs=snap.docs.map(d=>({id:d.id,...d.data()}));
-      callback(msgs);
-    });
+    return onSnapshot(collection(db, 'chats', chatId, 'messages'),
+      snap => {
+        const msgs = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
+        callback(msgs);
+      },
+      err => {
+        console.error('[Chat] Gagal baca pesan:', err.code, err.message);
+        const el = document.getElementById('chatMessages');
+        if(el) el.innerHTML = `<p class="text-xs text-red-400 text-center py-8">Gagal memuat pesan: ${err.code}</p>`;
+      }
+    );
   },
 
   async initChat(adId, sellerId, sellerName, sellerPhoto, adTitle, adImg, adPrice) {
@@ -2721,9 +2792,16 @@ window._FB = {
   // ── Billboard ─────────────────────────────────────────────────
   async uploadBillboard(slideIndex, file, customText) {
     showToast('Mengupload gambar billboard...', 'green');
-    const _bbRes=await uploadToCloudinary(file);
-    const imgUrl=typeof _bbRes==='object'?_bbRes.secure_url:_bbRes;
-    await addDoc(collection(db,'billboards'), { slideIndex, imgUrl, customText:customText||'', updatedAt:serverTimestamp() });
+    const _bbRes  = await uploadToCloudinary(file);
+    const imgUrl  = typeof _bbRes === 'object' ? _bbRes.secure_url : _bbRes;
+    if(!imgUrl) throw new Error('URL gambar kosong');
+    // Pakai setDoc dengan ID tetap per slot — tidak duplikat, selalu overwrite
+    await setDoc(doc(db, 'billboards', 'slot_' + slideIndex), {
+      slideIndex,
+      imgUrl,
+      customText: customText || '',
+      updatedAt:  serverTimestamp()
+    });
     applyBillboardImage(slideIndex, imgUrl, customText);
     showToast('Billboard berhasil diperbarui!', 'green');
     closeBillModal();
@@ -3342,8 +3420,12 @@ window._S = {
 const fmtLE   = n => 'LE ' + Number(n).toLocaleString('en-EG');
 const fmtStar = r => { let s=''; for(let i=0;i<5;i++) s+=i<Math.floor(r)?'<i class="fa-solid fa-star star-filled text-[10px]"></i>':'<i class="fa-regular fa-star star-empty text-[10px]"></i>'; return s; };
 const fmtSold = n => n>=1000?(n/1000).toFixed(1)+'k+':n+'';
-const isAdmin = email => email && email.toLowerCase() === (window.ADMIN_EMAIL||'').toLowerCase();
+const isAdmin      = email => email && email.toLowerCase() === (window.ADMIN_EMAIL||'').toLowerCase();
+const isBadgeActive = u => u?.badgeExpiredAt?.toMillis?.() > Date.now();
+const isPlanActive  = u => isAdmin(u?.email) || (u?.planExpiredAt?.toMillis?.() > Date.now());
 const goldBadgeHtml = '<i class="fa-solid fa-circle-check gold-badge text-base ml-1" title="Verified Developer"></i>';
+const silverBadgeHtml = '<i class="fa-solid fa-circle-check silver-badge text-base ml-1" title="Partner Resmi"></i>';
+const blueBadgeHtml   = '<i class="fa-solid fa-circle-check blue-badge text-base ml-1" title="Terverifikasi"></i>';
 
 // ── Avatar helper ──────────────────────────────────────────────
 function avatarHtml(photoUrl, name, classes='w-8 h-8') {
@@ -3392,6 +3474,8 @@ window.renderUserState = () => {
   document.getElementById('adminBillBtn').style.display      = admin ? 'flex' : 'none';
   document.getElementById('adminBillAction').style.display   = admin ? 'flex' : 'none';
   document.getElementById('adminBadgeProfile').style.display = admin ? 'flex' : 'none';
+  const adminUserAction = document.getElementById('adminUserAction');
+  if(adminUserAction) adminUserAction.style.display = admin ? 'flex' : 'none';
   const broadcastMobBtn = document.getElementById('broadcastMobBtn');
   if(broadcastMobBtn) broadcastMobBtn.style.display = 'flex'; // selalu tampil untuk semua user
   const broadcastDesktopBtn = document.getElementById('broadcastDesktopBtn');
@@ -3405,7 +3489,12 @@ window.renderUserState = () => {
   if(bfFs) bfFs.style.display = admin ? 'block' : 'none';
   // Gold badge in header
   const goldH = document.getElementById('hGoldBadge');
-  if (goldH) goldH.style.display = admin ? 'inline' : 'none';
+  if(goldH) goldH.style.display = admin ? 'inline' : 'none';
+  // Silver & Blue badge — tampilkan berdasarkan field badge di profil user
+  const silverH = document.getElementById('hSilverBadge');
+  const blueH   = document.getElementById('hBlueBadge');
+  if(silverH) silverH.style.display = (!admin && u?.badge === 'silver' && isBadgeActive(u)) ? 'inline' : 'none';
+  if(blueH)   blueH.style.display   = (!admin && u?.badge === 'blue'   && isBadgeActive(u)) ? 'inline' : 'none';
   if (u) {
     const init = (u.name||'U').charAt(0).toUpperCase();
     const hAv = document.getElementById('hAvatar');
@@ -4087,10 +4176,14 @@ function renderProfilePage() {
   } else {
     av.innerHTML = initChar;
   }
-  // Name + gold badge
+  // Name + badges
   document.getElementById('profileName').textContent = u.name || u.email;
-  const pgb = document.getElementById('profileGoldBadge');
-  pgb.style.display = admin ? 'inline' : 'none';
+  const pgb    = document.getElementById('profileGoldBadge');
+  const psbv   = document.getElementById('profileSilverBadge');
+  const pbb    = document.getElementById('profileBlueBadge');
+  if(pgb)  pgb.style.display  = admin ? 'inline' : 'none';
+  if(psbv) psbv.style.display = (!admin && u.badge === 'silver' && isBadgeActive(u)) ? 'inline' : 'none';
+  if(pbb)  pbb.style.display  = (!admin && u.badge === 'blue'   && isBadgeActive(u)) ? 'inline' : 'none';
   // Email & phone
   document.querySelector('#profileEmail span').textContent = u.email||'';
   document.querySelector('#profilePhone span').textContent = u.phone||'Belum diisi';
@@ -4374,9 +4467,28 @@ window.openDetail = id => {
   // Description
   document.getElementById('detailDesc').textContent=p.desc||'Tidak ada deskripsi.';
 
-  // Seller name & gold badge
-  document.getElementById('detailSeller').textContent=p.sellerName||'Penjual';
-  document.getElementById('detailGoldBadge').style.display=admin?'inline':'none';
+  // Seller name & badges
+  document.getElementById('detailSeller').textContent = p.sellerName || 'Penjual';
+  document.getElementById('detailGoldBadge').style.display   = admin ? 'inline' : 'none';
+  // Silver & Blue — perlu fetch badge dari Firestore berdasarkan sellerUid
+  const dSilver = document.getElementById('detailSilverBadge');
+  const dBlue   = document.getElementById('detailBlueBadge');
+  if(dSilver) dSilver.style.display = 'none';
+  if(dBlue)   dBlue.style.display   = 'none';
+  if(!admin && p.sellerUid && p.sellerUid !== 'static' && window.db) {
+    (async () => {
+      try {
+        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+        const snap = await getDoc(doc(window.db, 'users', p.sellerUid));
+        if(snap.exists()) {
+          const sd = snap.data();
+          const badgeOk = sd.badgeExpiredAt?.toMillis?.() > Date.now();
+          if(dSilver) dSilver.style.display = (sd.badge === 'silver' && badgeOk) ? 'inline' : 'none';
+          if(dBlue)   dBlue.style.display   = (sd.badge === 'blue'   && badgeOk) ? 'inline' : 'none';
+        }
+      } catch(_) {}
+    })();
+  }
 
   // Avatar
   const dav=document.getElementById('detailAvatar');
@@ -4813,20 +4925,19 @@ async function sendPushToReceiver(receiverUid, senderName, msgText) {
   }
 }
 
-window.sendChatMsg=async()=>{
-  const txt=document.getElementById('chatInput').value.trim();
-  if(!txt||!window._S.activeChatId) return;
-  document.getElementById('chatInput').value='';
-  // Kirim push notif ke penerima
-  if(window._S.activeChatOther && window._S.user) {
-    sendPushToReceiver(window._S.activeChatOther, window._S.user.name || 'Seseorang', txt);
-  }
-  if(window._FB) await window._FB.sendChatMessage(window._S.activeChatId, txt);
-  else{
-    const el=document.getElementById('chatMessages');
-    const div=document.createElement('div');div.className='flex justify-end chat-msg';
-    div.innerHTML=`<div class="chat-bubble-me px-3.5 py-2 max-w-[75%] text-xs">${txt}</div>`;
-    el.appendChild(div); el.scrollTop=el.scrollHeight;
+window.sendChatMsg = async () => {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim();
+  if(!txt || !window._S.activeChatId) return;
+  if(!window._FB || !window._S.user) { showToast('Login dulu','red'); return; }
+  inp.value = '';
+  try {
+    await window._FB.sendChatMessage(window._S.activeChatId, txt);
+    if(window._S.activeChatOther) sendPushToReceiver(window._S.activeChatOther, window._S.user.name||'Seseorang', txt);
+  } catch(e) {
+    console.error('[sendChatMsg]', e.code, e.message);
+    showToast('Gagal kirim: '+(e.message||e.code),'red');
+    inp.value = txt;
   }
 };
 
@@ -4855,30 +4966,20 @@ window.sendChatPhoto = async function(input) {
   el.scrollTop = el.scrollHeight;
 
   try {
-    // Upload ke Cloudinary — sama seperti foto produk/profil
-    const imgUrl = await window.uploadToCloudinary(file);
-
-    // Hapus loading bubble
+    const result = await window.uploadToCloudinary(file);
+    const imgUrl = (result && typeof result === 'object') ? result.secure_url : result;
+    if(!imgUrl || !imgUrl.startsWith('http')) throw new Error('URL foto tidak valid');
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
-
-    // Kirim sebagai pesan dengan type='image' (bukan lagi prefix __PHOTO__)
     await window._FB.sendChatMessage(window._S.activeChatId, imgUrl, 'image');
-
+    if(window._S.activeChatOther && window._S.user) {
+      sendPushToReceiver(window._S.activeChatOther, window._S.user.name||'Seseorang','📷 Foto');
+    }
   } catch(e) {
     const ld = document.getElementById('chatPhotoLoading');
     if(ld) ld.remove();
-    console.error('sendChatPhoto error:', e);
-
-    // Tampilkan pesan error yang lebih informatif
-    const errMsg = e.message || 'Upload gagal';
-    if(errMsg.includes('Upload gagal') || errMsg.includes('preset')) {
-      showToast('Gagal upload foto — periksa konfigurasi Cloudinary','red');
-    } else if(errMsg.includes('Koneksi') || errMsg.includes('network')) {
-      showToast('Gagal: koneksi internet bermasalah','red');
-    } else {
-      showToast('Gagal mengirim foto: ' + errMsg, 'red');
-    }
+    console.error('[sendChatPhoto]', e.code, e.message);
+    showToast('Gagal kirim foto: '+(e.message||'Error'),'red');
   }
 };
 // ── Lihat & Save foto chat ────────────────────────────────────
@@ -5517,24 +5618,160 @@ window.previewPhoto=input=>{
   const r=new FileReader();r.onload=e=>{document.getElementById('photoPreview').innerHTML=`<img src="${e.target.result}" class="w-full h-full object-cover rounded-2xl"/>`;};
   r.readAsDataURL(f);
 };
-window.submitAd=async()=>{
-  const title=document.getElementById('adTitle').value.trim();
-  const price=document.getElementById('adPrice').value;
-  const cat=document.getElementById('adCat').value;
-  const desc=document.getElementById('adDesc').value.trim();
-  const location=document.getElementById('adLocation').value.trim();
-  const siapTaushil=document.getElementById('siapTaushil').checked;
-  const file=document.getElementById('photoInput').files[0];
-  if(!title||!price||!cat){showToast('Lengkapi kolom wajib','red');return;}
-  if(!file){showToast('Pilih foto produk dari galeri','red');return;}
-  try{await window._FB.postAd(title,price,cat,desc,siapTaushil,file,location);}
-  catch(e){showToast('Gagal: '+(e.message||e),'red');}
+window.submitAd = async () => {
+  const u = window._S.user;
+  if(!u){ showToast('Login dulu untuk posting iklan','red'); return; }
+
+  // ── Cek langganan iklan (PAID_MODE) ──────────────────────────
+  // Ubah ke true kalau sudah mulai sistem berbayar
+  const PAID_MODE = false;
+  if(PAID_MODE && !isPlanActive(u)) {
+    showToast('Langganan iklan kamu sudah habis. Hubungi admin untuk perpanjang.','red');
+    return;
+  }
+
+  const title       = document.getElementById('adTitle').value.trim();
+  const price       = document.getElementById('adPrice').value;
+  const cat         = document.getElementById('adCat').value;
+  const desc        = document.getElementById('adDesc').value.trim();
+  const location    = document.getElementById('adLocation').value.trim();
+  const siapTaushil = document.getElementById('siapTaushil').checked;
+  const file        = document.getElementById('photoInput').files[0];
+  if(!title||!price||!cat){ showToast('Lengkapi kolom wajib','red'); return; }
+  if(!file){ showToast('Pilih foto produk dari galeri','red'); return; }
+  try{ await window._FB.postAd(title,price,cat,desc,siapTaushil,file,location); }
+  catch(e){ showToast('Gagal: '+(e.message||e),'red'); }
 };
 
 // ── Billboard ──────────────────────────────────────────────────
 window.openBillboardManager=()=>{const ov=document.getElementById('billboardOverlay');ov.style.display='flex';requestAnimationFrame(()=>ov.style.opacity='1');document.body.style.overflow='hidden';};
 window.closeBillModal=()=>{const ov=document.getElementById('billboardOverlay');ov.style.opacity='0';setTimeout(()=>ov.style.display='none',300);document.body.style.overflow='';};
 window.closeBillOv=e=>{if(e.target===document.getElementById('billboardOverlay'))closeBillModal();};
+
+// ── USER MANAGER ───────────────────────────────────────────────
+window.openUserManager = () => {
+  if(!window._S.user || !isAdmin(window._S.user.email)) { showToast('Akses ditolak!','red'); return; }
+  const ov = document.getElementById('userManagerOverlay');
+  ov.style.display = 'flex';
+  requestAnimationFrame(() => ov.style.opacity = '1');
+  document.body.style.overflow = 'hidden';
+};
+window.closeUserManager = () => {
+  const ov = document.getElementById('userManagerOverlay');
+  ov.style.opacity = '0';
+  setTimeout(() => { ov.style.display = 'none'; document.body.style.overflow = ''; }, 300);
+};
+
+// Aktifkan langganan iklan
+window.activateSubscription = async () => {
+  const email = document.getElementById('umEmail').value.trim().toLowerCase();
+  const days  = parseInt(document.getElementById('umDays').value);
+  if(!email || !days || days < 1) { showToast('Isi email dan jumlah hari','red'); return; }
+
+  const statusEl = document.getElementById('umSubStatus');
+  statusEl.textContent = 'Memproses...';
+
+  try {
+    const { collection, query, where, getDocs, doc, updateDoc, Timestamp } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    // Cari user berdasarkan email
+    const snap = await getDocs(query(collection(window.db,'users'), where('email','==',email)));
+    if(snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+
+    const userDoc = snap.docs[0];
+    const expiredAt = Timestamp.fromMillis(Date.now() + days * 86400000);
+    await updateDoc(doc(window.db,'users', userDoc.id), {
+      planExpiredAt: expiredAt,
+      planActivatedAt: Timestamp.now()
+    });
+
+    const expDate = expiredAt.toDate().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+    statusEl.textContent = `✅ Aktif ${days} hari — s/d ${expDate}`;
+    showToast(`Langganan ${email} aktif ${days} hari!`, 'green');
+  } catch(e) {
+    statusEl.textContent = '❌ Gagal: ' + e.message;
+    console.error('[activateSubscription]', e);
+  }
+};
+
+// Aktifkan badge
+window.activateBadge = async () => {
+  const email    = document.getElementById('umEmail').value.trim().toLowerCase();
+  const badgeVal = document.getElementById('umBadge').value;
+  const days     = parseInt(document.getElementById('umBadgeDays').value);
+  if(!email || !badgeVal) { showToast('Isi email dan pilih badge','red'); return; }
+  if(badgeVal !== 'none' && (!days || days < 1)) { showToast('Isi jumlah hari badge','red'); return; }
+
+  const statusEl = document.getElementById('umBadgeStatus');
+  statusEl.textContent = 'Memproses...';
+
+  try {
+    const { collection, query, where, getDocs, doc, updateDoc, Timestamp } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    const snap = await getDocs(query(collection(window.db,'users'), where('email','==',email)));
+    if(snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+
+    const userDoc = snap.docs[0];
+    const badgeExpiredAt = badgeVal === 'none' ? null : Timestamp.fromMillis(Date.now() + days * 86400000);
+    await updateDoc(doc(window.db,'users', userDoc.id), {
+      badge: badgeVal === 'none' ? '' : badgeVal,
+      badgeExpiredAt
+    });
+
+    if(badgeVal === 'none') {
+      statusEl.textContent = '✅ Badge dihapus';
+      showToast('Badge ' + email + ' dihapus', 'green');
+    } else {
+      const expDate = badgeExpiredAt.toDate().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+      statusEl.textContent = `✅ Badge ${badgeVal} aktif ${days} hari — s/d ${expDate}`;
+      showToast(`Badge ${badgeVal} untuk ${email} aktif!`, 'green');
+    }
+  } catch(e) {
+    statusEl.textContent = '❌ Gagal: ' + e.message;
+    console.error('[activateBadge]', e);
+  }
+};
+
+// Cek status user
+window.checkUserStatus = async () => {
+  const email   = document.getElementById('umEmail').value.trim().toLowerCase();
+  const resultEl = document.getElementById('umCheckResult');
+  if(!email) { showToast('Isi email dulu','red'); return; }
+
+  resultEl.classList.remove('hidden');
+  resultEl.textContent = 'Mencari...';
+
+  try {
+    const { collection, query, where, getDocs } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    const snap = await getDocs(query(collection(window.db,'users'), where('email','==',email)));
+    if(snap.empty) { resultEl.textContent = '❌ User tidak ditemukan'; return; }
+
+    const d = snap.docs[0].data();
+    const now = Date.now();
+
+    // Cek langganan
+    const planMs  = d.planExpiredAt?.toMillis?.() || 0;
+    const planOk  = planMs > now;
+    const planStr = planMs ? new Date(planMs).toLocaleDateString('id-ID') : 'Belum pernah';
+
+    // Cek badge
+    const badgeMs  = d.badgeExpiredAt?.toMillis?.() || 0;
+    const badgeOk  = badgeMs > now;
+    const badgeStr = d.badge && badgeOk ? `${d.badge} (s/d ${new Date(badgeMs).toLocaleDateString('id-ID')})` : 'Tidak ada';
+
+    resultEl.innerHTML = `
+      <b>${d.name || email}</b><br>
+      📢 Iklan: ${planOk ? '✅ Aktif s/d ' + new Date(planMs).toLocaleDateString('id-ID') : '❌ Tidak aktif ('+planStr+')'}<br>
+      🏅 Badge: ${badgeStr}
+    `;
+  } catch(e) {
+    resultEl.textContent = '❌ Error: ' + e.message;
+  }
+};
 window.selectBillSlide=idx=>{
   window._S.billSlide=idx;
   document.querySelectorAll('.bslidebtn').forEach((b,i)=>{
@@ -5601,8 +5838,11 @@ function initCarousel(){
   // Show billboard, hide skeleton
   document.getElementById('billboardSkeleton').style.display='none';
   document.getElementById('billboardWrap').style.display='block';
-  // Try to load custom billboards from Firestore
-  loadBillboardImages();
+  // Try to load custom billboards from Firestore — retry sampai db siap
+  (function tryLoad(attempt) {
+    if(window.db) { loadBillboardImages(); }
+    else if(attempt < 20) { setTimeout(() => tryLoad(attempt + 1), 300); }
+  })(0);
   // Init dots
   const dd=document.getElementById('cdots');
   for(let i=0;i<CSLIDES;i++){
@@ -5615,13 +5855,25 @@ function initCarousel(){
   resetCAuto();
 }
 async function loadBillboardImages(){
-  // Load latest custom billboard per slot from Firestore (if available)
-  if(!window._FB) return;
+  if(!window.db) return;
   try {
-    const {getFirestore,collection,getDocs,query,orderBy} = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    // We use the already-initialized db via _FB context — just call applyBillboardImage if needed
-    // Billboard images are applied on upload via applyBillboardImage()
-  } catch(e){}
+    const { collection, getDocs } =
+      await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+    // Ambil semua slot billboard (dokumen dengan ID tetap slot_0 s/d slot_3)
+    const snap = await getDocs(collection(window.db, 'billboards'));
+    if(snap.empty) return;
+
+    // Terapkan ke slide berdasarkan slideIndex
+    snap.docs.forEach(d => {
+      const data = d.data();
+      const idx  = data.slideIndex ?? 0;
+      if(data.imgUrl) window.applyBillboardImage(Number(idx), data.imgUrl, data.customText || '');
+    });
+
+  } catch(e) {
+    console.warn('[Billboard] Gagal load gambar:', e.message);
+  }
 }
 
 // ── Mobile Layout Init ─────────────────────────────────────────
