@@ -2999,6 +2999,8 @@ function startAdsListener() {
         window._S.fbAds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         if(typeof renderProducts === 'function') renderProducts();
         if(typeof renderMyAds === 'function') renderMyAds();
+        // ── Reload seller status cache setiap kali data iklan berubah ──
+        if(window.loadSellerStatusCache) window.loadSellerStatusCache();
       },
       // ❌ Error: Firestore rules atau jaringan bermasalah — fallback ke getDocs
       async (err) => {
@@ -4235,13 +4237,30 @@ window.renderMyAds = () => {
   const statusLabel = { 'aktif':'Aktif','belum-bayar':'Belum Bayar','dikirim':'Dikirim','selesai':'Selesai','pembatalan':'Dibatalkan' };
   const statusColor = { 'aktif':'emerald','belum-bayar':'amber','dikirim':'blue','selesai':'emerald','pembatalan':'red' };
 
+  // Cek apakah iklan user ini sedang non-aktif (global OFF & seller expired/disabled)
+  const myUid = u?.uid;
+  const isMyAdsInactive = window._globalAdsOpen !== true &&
+    myUid && window._sellerStatusCache[myUid] === false;
+
   el.innerHTML = filtered.map(ad => {
     const rawStatus = (ad.orderStatus || ad.status || 'aktif').toLowerCase();
     const label = statusLabel[rawStatus] || 'Aktif';
     const color = statusColor[rawStatus] || 'emerald';
+
+    // Overlay NON AKTIF — hanya muncul kalau iklan sedang disembunyikan dari publik
+    const nonActiveOverlay = isMyAdsInactive ? `
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;z-index:2">
+        <i class="fa-solid fa-eye-slash" style="color:#fff;font-size:16px;opacity:.9"></i>
+        <span style="color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;opacity:.95">Non Aktif</span>
+        <span style="color:rgba(255,255,255,.7);font-size:8px;font-weight:600">Tidak tampil ke publik</span>
+      </div>` : '';
+
     return `
     <div class="flex items-center gap-3 bg-gray-50 rounded-2xl p-3 cursor-pointer hover:bg-gray-100 transition-colors relative" onclick="openDetail('${ad.id}')">
-      <img src="${ad.imgUrl||'https://picsum.photos/80/80'}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0"/>
+      <div class="relative flex-shrink-0" style="width:56px;height:56px">
+        <img src="${ad.imgUrl||'https://picsum.photos/80/80'}" class="w-14 h-14 rounded-xl object-cover" style="width:56px;height:56px;border-radius:12px"/>
+        ${nonActiveOverlay}
+      </div>
       <div class="flex-1 min-w-0">
         <p class="text-xs font-semibold text-gray-800 lc2 pr-14">${ad.title}</p>
         <p class="text-xs font-black text-primary mt-0.5">${fmtLE(ad.price)}</p>
@@ -4256,8 +4275,88 @@ window.renderMyAds = () => {
 
 // ── Products ───────────────────────────────────────────────────
 function getAllAds(){ return [...window._S.fbAds,...window._S.staticAds]; }
+
+// ── Cache status seller (isAdsEnabled + expiry) ────────────────
+// Key: sellerUid, Value: { allowed: bool, fetchedAt: ms }
+window._sellerStatusCache = window._sellerStatusCache || {};
+window._globalAdsOpen = null; // null = belum dicek
+
+// Cek apakah iklan seller boleh tampil ke publik
+// Return: true = tampilkan, false = sembunyikan
+function isAdVisible(ad) {
+  // Iklan static selalu tampil
+  if (!ad.sellerUid || ad.sellerUid === 'static') return true;
+  // Kalau global switch ON → semua tampil
+  if (window._globalAdsOpen === true) return true;
+  // Kalau pemilik iklan itu sendiri → selalu tampil (di MyAds)
+  const myUid = window._S?.user?.uid;
+  if (myUid && ad.sellerUid === myUid) return true;
+  // Cek cache seller
+  const cache = window._sellerStatusCache[ad.sellerUid];
+  if (cache !== undefined) return cache;
+  // Belum ada cache → default tampil dulu, async fetch di background
+  return true;
+}
+
+// Load status global + semua seller dari iklan yang ada, simpan ke cache
+async function loadSellerStatusCache() {
+  try {
+    const { getFirestore, doc, getDoc, collection, getDocs } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const db2 = window.db || getFirestore();
+
+    // 1. Cek master switch
+    const cfgSnap = await getDoc(doc(db2, 'settings', 'config'));
+    window._globalAdsOpen = cfgSnap.exists() ? (cfgSnap.data().isGlobalAdsOpen === true) : false;
+
+    // Kalau global ON, tidak perlu cek per-seller
+    if (window._globalAdsOpen) {
+      if (typeof renderProducts === 'function') renderProducts();
+      return;
+    }
+
+    // 2. Ambil semua UID seller dari fbAds (bukan static)
+    const uids = [...new Set(
+      (window._S.fbAds || [])
+        .map(a => a.sellerUid)
+        .filter(uid => uid && uid !== 'static')
+    )];
+    if (!uids.length) return;
+
+    // 3. Ambil semua dokumen user sekaligus
+    const allUsersSnap = await getDocs(collection(db2, 'users'));
+    const now = Date.now();
+    allUsersSnap.docs.forEach(d => {
+      const data = d.data();
+      const uid = data.uid;
+      if (!uid || !uids.includes(uid)) return;
+      const enabled = data.isAdsEnabled === true;
+      const expiry  = data.adsExpiryDate;
+      const expiryMs = expiry?.toMillis ? expiry.toMillis() : (typeof expiry === 'number' ? expiry : 0);
+      window._sellerStatusCache[uid] = enabled && expiryMs > now;
+    });
+
+    // Seller yang tidak ada di Firestore → anggap tidak diizinkan
+    uids.forEach(uid => {
+      if (window._sellerStatusCache[uid] === undefined) {
+        window._sellerStatusCache[uid] = false;
+      }
+    });
+
+    // Re-render setelah cache siap
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderMyAds === 'function') renderMyAds();
+  } catch(e) {
+    console.warn('[loadSellerStatusCache]', e.message);
+  }
+}
+window.loadSellerStatusCache = loadSellerStatusCache;
+
 function getFiltered(){
   return getAllAds().filter(p=>{
+    // ── Filter iklan non-aktif (sembunyikan dari publik) ──
+    if (!isAdVisible(p)) return false;
+
     const mc=window._S.curCat==='semua'||p.cat===window._S.curCat||
       (window._S.curCat==='gratis-ongkir')||
       (window._S.curCat==='promo'&&(p.disc>0||p.badge==='Promo'))||
