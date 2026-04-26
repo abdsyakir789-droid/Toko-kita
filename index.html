@@ -14,57 +14,64 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- OneSignal Push Notification -->
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<!-- FCM Push Notification -->
 <script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  window._osReady = false;
-  window._osInstance = null;
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "47d30bbf-d028-44e0-a42f-cc701a8e3519",
-      serviceWorkerParam: { scope: "/" },
-      serviceWorkerPath: "OneSignalSDKWorker.js",
-      notifyButton: { enable: false },
-      allowLocalhostAsSecureOrigin: true,
-    });
-    window._osInstance = OneSignal;
-    window._osReady = true;
-    try { await OneSignal.Notifications.requestPermission(); } catch(e){}
-    // Coba login jika user sudah ada
+  // FCM init setelah Firebase siap
+  window._fcmInit = async function() {
     try {
-      const uid = window._S?.user?.uid;
-      if(uid) await OneSignal.login(uid);
-    } catch(e){}
-  });
+      const { getMessaging, getToken, onMessage } =
+        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js');
+      const messaging = getMessaging(window._firebaseApp || window.app);
 
-  // Helper global untuk login OneSignal kapanpun
-  window._osLogin = async function(uid) {
-    if(!uid) return;
-    const tryLogin = async () => {
-      try {
-        if(window._osInstance) {
-          await window._osInstance.login(uid);
-          console.log('[OneSignal] login OK:', uid);
+      // Minta izin notifikasi
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.log('[FCM] Izin notifikasi ditolak');
+        return;
+      }
+
+      // Ambil FCM Token
+      const token = await getToken(messaging, {
+        vapidKey: 'BHt4_LyIka807VzVQZBjMpzIyuGqJuZRxAvK5zQyxUg_DEzOe5P7Ws_x8u8PuKB_I9UbGZJHXZiicCa7Xz-T6qg',
+        serviceWorkerRegistration: await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      });
+
+      if (token) {
+        console.log('[FCM] Token:', token);
+        window._fcmToken = token;
+        // Simpan token ke Firestore jika user sudah login
+        const uid = window._S?.user?.uid;
+        if (uid && window.db) {
+          try {
+            const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+            await setDoc(doc(window.db, 'fcm_tokens', uid), {
+              token, uid, updatedAt: new Date().toISOString()
+            }, { merge: true });
+            console.log('[FCM] Token tersimpan ke Firestore');
+          } catch(e) { console.warn('[FCM] Gagal simpan token:', e.message); }
         }
-      } catch(e){ console.warn('[OneSignal] login error:', e.message); }
-    };
-    if(window._osReady) {
-      await tryLogin();
-    } else {
-      // Tunggu sampai OneSignal siap, max 10 detik
-      let attempts = 0;
-      const interval = setInterval(async () => {
-        attempts++;
-        if(window._osReady) {
-          clearInterval(interval);
-          await tryLogin();
-        } else if(attempts > 20) {
-          clearInterval(interval);
+      }
+
+      // Tangkap notifikasi saat app terbuka (foreground)
+      onMessage(messaging, (payload) => {
+        console.log('[FCM] Pesan masuk:', payload);
+        const { title, body, image } = payload.notification || {};
+        if (title && Notification.permission === 'granted') {
+          new Notification(title, { body, icon: image || '/icon-192.png' });
         }
-      }, 500);
+      });
+
+    } catch(e) {
+      console.warn('[FCM] Init error:', e.message);
     }
   };
+
+  // Jalankan FCM setelah halaman siap
+  if (document.readyState === 'complete') {
+    setTimeout(window._fcmInit, 2000);
+  } else {
+    window.addEventListener('load', () => setTimeout(window._fcmInit, 2000));
+  }
 </script>
 <script>
 tailwind.config={theme:{extend:{colors:{
@@ -2259,6 +2266,7 @@ const db   = getFirestore(app);
 // Expose ke window agar bisa diakses dari script lain
 window.db   = db;
 window.auth = auth;
+window._firebaseApp = app;
 
 // ── Image compression ──────────────────────────────────────────
 async function compressImage(file, maxW=900, quality=0.78) {
