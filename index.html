@@ -6470,8 +6470,28 @@ window.toggleGlobalAds = async function() {
 };
 
 // ── Aktivasi Iklan per User ─────────────────────────────────────
+// ── Helper: cari dokumen user berdasarkan email (case-insensitive) ──
+async function _findUserDocByEmail(db2, emailInput) {
+  const { collection, getDocs, query, where } =
+    await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const emailLower = emailInput.trim().toLowerCase();
+
+  // Coba exact match dulu (cepat)
+  let snap = await getDocs(query(collection(db2,'users'), where('email','==',emailInput.trim())));
+  if (!snap.empty) return snap.docs[0];
+
+  // Coba lowercase
+  snap = await getDocs(query(collection(db2,'users'), where('email','==',emailLower)));
+  if (!snap.empty) return snap.docs[0];
+
+  // Fallback: scan semua user & filter manual (case-insensitive)
+  const allSnap = await getDocs(collection(db2,'users'));
+  const found = allSnap.docs.find(d => (d.data().email||'').toLowerCase() === emailLower);
+  return found || null;
+}
+
 window.activateUserAds = async function() {
-  const email = document.getElementById('adsEmailInput').value.trim().toLowerCase();
+  const email = document.getElementById('adsEmailInput').value.trim();
   const days = parseInt(document.getElementById('adsDurationInput').value, 10);
   if (!email) { showToast('Masukkan email user', 'red'); return; }
   if (!days || days < 1) { showToast('Masukkan durasi hari yang valid', 'red'); return; }
@@ -6479,27 +6499,31 @@ window.activateUserAds = async function() {
   const statusEl = document.getElementById('adsUserStatus');
   statusEl.className = 'bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100';
   statusEl.textContent = '⏳ Mencari user...';
+  statusEl.style.display = 'block';
 
   try {
-    const { getFirestore, collection, query, where, getDocs, doc, updateDoc, Timestamp } =
+    const { getFirestore, doc, updateDoc, Timestamp } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const db2 = window.db || getFirestore();
-    const snap = await getDocs(query(collection(db2,'users'), where('email','==',email)));
-    if (snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+
+    const userDoc = await _findUserDocByEmail(db2, email);
+    if (!userDoc) { statusEl.textContent = '❌ User tidak ditemukan. Pastikan user sudah pernah login.'; return; }
 
     const expiryMs = Date.now() + days * 24 * 60 * 60 * 1000;
     const expiryTs = Timestamp.fromMillis(expiryMs);
-    await updateDoc(doc(db2, 'users', snap.docs[0].id), {
+    await updateDoc(doc(db2, 'users', userDoc.id), {
       isAdsEnabled  : true,
       adsExpiryDate : expiryTs,
     });
 
     const expiryStr = new Date(expiryMs).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-    statusEl.textContent = `✅ Akses iklan diaktifkan! Berlaku hingga: ${expiryStr}`;
+    const foundEmail = userDoc.data().email || email;
+    const foundName  = userDoc.data().name  || '-';
+    statusEl.textContent = `✅ Akses iklan diaktifkan!\nUser: ${foundName} (${foundEmail})\nBerlaku hingga: ${expiryStr}`;
     statusEl.style.color = '#059669';
+    statusEl.style.whiteSpace = 'pre-line';
     showToast('✅ Akses iklan user diaktifkan!', 'green');
-    // Reset verify cache
-    const uid = snap.docs[0].data().uid;
+    const uid = userDoc.data().uid;
     if(uid) delete window._verifyCache[uid];
   } catch(e) {
     statusEl.textContent = '❌ Error: ' + (e.message||e);
@@ -6508,21 +6532,24 @@ window.activateUserAds = async function() {
 };
 
 window.revokeUserAds = async function() {
-  const email = document.getElementById('adsEmailInput').value.trim().toLowerCase();
+  const email = document.getElementById('adsEmailInput').value.trim();
   if (!email) { showToast('Masukkan email user', 'red'); return; }
   if (!confirm('Cabut akses iklan untuk ' + email + '?')) return;
 
   const statusEl = document.getElementById('adsUserStatus');
   statusEl.className = 'bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100';
   statusEl.textContent = '⏳ Memproses...';
+  statusEl.style.display = 'block';
 
   try {
-    const { getFirestore, collection, query, where, getDocs, doc, updateDoc, Timestamp } =
+    const { getFirestore, doc, updateDoc, Timestamp } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const db2 = window.db || getFirestore();
-    const snap = await getDocs(query(collection(db2,'users'), where('email','==',email)));
-    if (snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
-    await updateDoc(doc(db2, 'users', snap.docs[0].id), {
+
+    const userDoc = await _findUserDocByEmail(db2, email);
+    if (!userDoc) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+
+    await updateDoc(doc(db2, 'users', userDoc.id), {
       isAdsEnabled  : false,
       adsExpiryDate : Timestamp.fromMillis(0),
     });
@@ -6547,17 +6574,19 @@ window.applyVerification = async function() {
   const statusEl = document.getElementById('verifyUserStatus');
   statusEl.className = 'bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100';
   statusEl.textContent = '⏳ Mencari user...';
+  statusEl.style.display = 'block';
 
   try {
-    const { getFirestore, collection, query, where, getDocs, doc, updateDoc, Timestamp } =
+    const { getFirestore, doc, updateDoc, Timestamp } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const db2 = window.db || getFirestore();
-    const snap = await getDocs(query(collection(db2,'users'), where('email','==',email)));
-    if (snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+
+    const userDoc = await _findUserDocByEmail(db2, email);
+    if (!userDoc) { statusEl.textContent = '❌ User tidak ditemukan. Pastikan user sudah pernah login.'; return; }
 
     const expiryMs = Date.now() + days * 24 * 60 * 60 * 1000;
-    const uid = snap.docs[0].data().uid;
-    await updateDoc(doc(db2, 'users', snap.docs[0].id), {
+    const uid = userDoc.data().uid;
+    await updateDoc(doc(db2, 'users', userDoc.id), {
       verificationStatus : verifyType,
       verificationExpiry : Timestamp.fromMillis(expiryMs),
     });
@@ -6565,10 +6594,13 @@ window.applyVerification = async function() {
     // Reset cache agar badge refresh
     if(uid) delete window._verifyCache[uid];
 
+    const foundName  = userDoc.data().name  || '-';
+    const foundEmail = userDoc.data().email || email;
     const typeLabel = verifyType === 'verified_blue' ? '✅ Centang Biru' : '🥈 Centang Silver (Official Partner)';
     const expiryStr = new Date(expiryMs).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-    statusEl.textContent = `${typeLabel} berhasil diterapkan! Berlaku hingga: ${expiryStr}`;
+    statusEl.textContent = `${typeLabel} berhasil!\nUser: ${foundName} (${foundEmail})\nBerlaku hingga: ${expiryStr}`;
     statusEl.style.color = '#059669';
+    statusEl.style.whiteSpace = 'pre-line';
     showToast('Verifikasi berhasil diterapkan!', 'green');
   } catch(e) {
     statusEl.textContent = '❌ Error: ' + (e.message||e);
@@ -6577,22 +6609,25 @@ window.applyVerification = async function() {
 };
 
 window.removeVerification = async function() {
-  const email = document.getElementById('verifyEmailInput').value.trim().toLowerCase();
+  const email = document.getElementById('verifyEmailInput').value.trim();
   if (!email) { showToast('Masukkan email user', 'red'); return; }
   if (!confirm('Hapus verifikasi untuk ' + email + '?')) return;
 
   const statusEl = document.getElementById('verifyUserStatus');
   statusEl.className = 'bg-gray-50 rounded-xl p-3 text-[11px] text-gray-600 border border-gray-100';
   statusEl.textContent = '⏳ Memproses...';
+  statusEl.style.display = 'block';
 
   try {
-    const { getFirestore, collection, query, where, getDocs, doc, updateDoc, deleteField } =
+    const { getFirestore, doc, updateDoc, deleteField } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const db2 = window.db || getFirestore();
-    const snap = await getDocs(query(collection(db2,'users'), where('email','==',email)));
-    if (snap.empty) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
-    const uid = snap.docs[0].data().uid;
-    await updateDoc(doc(db2, 'users', snap.docs[0].id), {
+
+    const userDoc = await _findUserDocByEmail(db2, email);
+    if (!userDoc) { statusEl.textContent = '❌ User tidak ditemukan'; return; }
+
+    const uid = userDoc.data().uid;
+    await updateDoc(doc(db2, 'users', userDoc.id), {
       verificationStatus : deleteField(),
       verificationExpiry : deleteField(),
     });
