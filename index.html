@@ -1170,7 +1170,7 @@ html{scroll-behavior:smooth}
             <div id="hAvatar" class="w-7 h-7 rounded-full bg-primary text-white text-xs font-black flex items-center justify-center overflow-hidden">U</div>
           </div>
           <span id="hName" class="text-xs font-semibold text-gray-700 max-w-[70px] truncate"></span>
-          <span id="hGoldBadge" style="display:none" class="gold-badge text-sm"><i class="fa-solid fa-circle-check"></i></span>
+          <span id="hGoldBadge" style="display:none" class="vbadge-gold"></span>
         </button>
       </div>
       <!-- Cart -->
@@ -1387,7 +1387,7 @@ html{scroll-behavior:smooth}
         <div class="profile-name-block-overlay">
           <div class="profile-name-row">
             <h2 id="profileName" class="profile-name-text"></h2>
-            <span id="profileGoldBadge" style="display:none" class="text-amber-300 text-base verified-ring flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+            <span id="profileGoldBadge" style="display:none" class="vbadge-gold flex-shrink-0"></span>
           </div>
           <p id="profileEmail" class="text-[10px] flex items-center gap-1 leading-relaxed" style="color:rgba(255,255,255,.75)">
             <i class="fa-solid fa-envelope" style="font-size:9px"></i> <span></span>
@@ -1535,7 +1535,7 @@ html{scroll-behavior:smooth}
         <div class="store-name-block-overlay">
           <div class="store-name-row">
             <h2 id="etalaseName" class="store-name-text"></h2>
-            <span id="etalaseGold" style="display:none" class="text-amber-300 text-base flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+            <span id="etalaseGold" style="display:none" class="vbadge-gold flex-shrink-0"></span>
           </div>
           <p id="etalaseSubtitle" class="store-subtitle">
             <i class="fa-solid fa-store" style="font-size:9px"></i> Etalase Penjual
@@ -1905,7 +1905,7 @@ html{scroll-behavior:smooth}
           <button onclick="openDetailStore()" class="text-left hover:opacity-75 transition-opacity w-full">
             <div class="flex items-center gap-1.5 flex-wrap">
               <p id="detailSeller" class="text-base font-black text-gray-900 truncate"></p>
-              <span id="detailGoldBadge" style="display:none" class="gold-badge text-base flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+              <span id="detailGoldBadge" style="display:none" class="vbadge-gold flex-shrink-0"></span>
             </div>
             <p class="text-[10px] text-primary flex items-center gap-1 mt-0.5 font-semibold">
               <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Lihat Etalase Lengkap
@@ -2070,7 +2070,7 @@ html{scroll-behavior:smooth}
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5">
             <p id="chatRoomName" class="font-black text-gray-900 text-sm truncate"></p>
-            <span id="chatRoomGold" style="display:none" class="text-amber-400 text-sm flex-shrink-0"><i class="fa-solid fa-circle-check"></i></span>
+            <span id="chatRoomGold" style="display:none" class="vbadge-gold flex-shrink-0"></span>
           </div>
           <!-- Online status + typing indicator -->
           <div id="chatStatusRow" class="flex items-center gap-1.5 h-4">
@@ -3408,7 +3408,36 @@ const fmtLE   = n => 'LE ' + Number(n).toLocaleString('en-EG');
 const fmtStar = r => { let s=''; for(let i=0;i<5;i++) s+=i<Math.floor(r)?'<i class="fa-solid fa-star star-filled text-[10px]"></i>':'<i class="fa-regular fa-star star-empty text-[10px]"></i>'; return s; };
 const fmtSold = n => n>=1000?(n/1000).toFixed(1)+'k+':n+'';
 const isAdmin = email => email && email.toLowerCase() === (window.ADMIN_EMAIL||'').toLowerCase();
-const goldBadgeHtml = '<i class="fa-solid fa-circle-check gold-badge text-base ml-1" title="Verified Developer"></i>';
+// ── Badge Emboss — Opsi A (Gradient + Highlight Tepi) ──────────
+let _badgeSvgUid = 0;
+const BADGE_STAR = "M20,2 L22.9,5.5 L27.5,4.2 L28.5,9 L33.2,10.5 L32,15.2 L36,18.5 L33.5,22.7 L36,27 L32,30.3 L33.2,35 L28.5,36.5 L27.5,41.3 L22.9,40 L20,43.5 L17.1,40 L12.5,41.3 L11.5,36.5 L6.8,35 L8,30.3 L4,27 L6.5,22.7 L4,18.5 L8,15.2 L6.8,10.5 L11.5,9 L12.5,4.2 L17.1,5.5 Z";
+const BADGE_HL  = "M20,2 L22.9,5.5 L27.5,4.2 L28.5,9 L33.2,10.5 L32,15.2 L36,18.5 L33.5,22.7";
+const BADGE_CFG = {
+  blue:   { g:["#4DB8FF","#0095F6","#0060C0"], shadow:"#0060C0", so:"0.55", check:"#fff" },
+  gold:   { g:["#FFF0A0","#FFD700","#B8860B"], shadow:"#B8860B", so:"0.6",  check:"#7a4800" },
+  silver: { g:["#F0F0F0","#C0C0C0","#707070"], shadow:"#606060", so:"0.5",  check:"#fff" },
+};
+function _embossBadgeSVG(colorKey, size=16) {
+  const id = ++_badgeSvgUid;
+  const c = BADGE_CFG[colorKey] || BADGE_CFG.blue;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="eg${id}" x1="30%" y1="0%" x2="70%" y2="100%">
+        <stop offset="0%" stop-color="${c.g[0]}"/>
+        <stop offset="45%" stop-color="${c.g[1]}"/>
+        <stop offset="100%" stop-color="${c.g[2]}"/>
+      </linearGradient>
+      <filter id="ef${id}" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="${c.shadow}" flood-opacity="${c.so}"/>
+        <feDropShadow dx="0" dy="0.5" stdDeviation="0.5" flood-color="#000" flood-opacity="0.2"/>
+      </filter>
+    </defs>
+    <g filter="url(#ef${id})"><path d="${BADGE_STAR}" fill="url(#eg${id})"/></g>
+    <path d="${BADGE_HL}" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.2" stroke-linecap="round"/>
+    <polyline points="12,21 18,27 28,14" stroke="${c.check}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>`;
+}
+const goldBadgeHtml = `<span class="vbadge-gold" title="Verified Developer" style="display:inline-flex;align-items:center;vertical-align:middle">${_embossBadgeSVG('gold')}</span>`;
 
 // ── Avatar helper ──────────────────────────────────────────────
 function avatarHtml(photoUrl, name, classes='w-8 h-8') {
@@ -3472,6 +3501,7 @@ window.renderUserState = () => {
   if(bfFs) bfFs.style.display = admin ? 'block' : 'none';
   // Gold badge in header
   const goldH = document.getElementById('hGoldBadge');
+  if(goldH) goldH.innerHTML = _embossBadgeSVG('gold');
   if (goldH) goldH.style.display = admin ? 'inline' : 'none';
 
   // ── Tambahkan tombol Panel Admin di header (admin only) ──
@@ -4175,6 +4205,7 @@ function renderProfilePage() {
   // Name + gold badge
   document.getElementById('profileName').textContent = u.name || u.email;
   const pgb = document.getElementById('profileGoldBadge');
+  if(pgb) pgb.innerHTML = _embossBadgeSVG('gold');
   pgb.style.display = admin ? 'inline' : 'none';
   // Email & phone
   document.querySelector('#profileEmail span').textContent = u.email||'';
@@ -4559,7 +4590,7 @@ window.openDetail = id => {
 
   // Seller name & gold badge
   document.getElementById('detailSeller').textContent=p.sellerName||'Penjual';
-  document.getElementById('detailGoldBadge').style.display=admin?'inline':'none';
+  const _dgb=document.getElementById('detailGoldBadge'); if(_dgb){_dgb.style.display=admin?'inline-flex':'none'; if(admin)_dgb.innerHTML=_embossBadgeSVG('gold');}
 
   // Avatar
   const dav=document.getElementById('detailAvatar');
@@ -4889,7 +4920,7 @@ async function openChatRoom(adId, sellerId, sellerName, sellerPhoto, adTitle, ad
   if(sellerPhoto) cra.innerHTML=`<img src="${sellerPhoto}" class="w-full h-full object-cover"/>`;
   else cra.innerHTML=(sellerName||'P').charAt(0).toUpperCase();
   document.getElementById('chatRoomName').textContent=sellerName;
-  const cg=document.getElementById('chatRoomGold');
+  const cg=document.getElementById('chatRoomGold'); if(cg) cg.innerHTML=_embossBadgeSVG('gold');
   cg.style.display=isAdmin(window._S.activeAdData?.sellerEmail||'')?'inline':'none';
   // Product context
   document.getElementById('chatProductImg').src=adImg||'https://picsum.photos/80/80';
@@ -5363,7 +5394,7 @@ window.viewSellerStore = async function(sellerUid) {
   if(sellerPhoto) eav.innerHTML = `<img src="${sellerPhoto}" class="w-full h-full object-cover"/>`;
   else eav.innerHTML = (sellerName||'P').charAt(0).toUpperCase();
   document.getElementById('etalaseName').textContent = sellerName;
-  document.getElementById('etalaseGold').style.display = adminSeller ? 'inline' : 'none';
+  const _eg=document.getElementById('etalaseGold'); if(_eg){_eg.style.display=adminSeller?'inline-flex':'none'; if(adminSeller)_eg.innerHTML=_embossBadgeSVG('gold');}
   // ── Inject verification badge di nama store ──
   setTimeout(async () => {
     const nameEl = document.getElementById('etalaseName');
@@ -6291,11 +6322,11 @@ if ('serviceWorker' in navigator) {
       <div id="aptab-cleanup-content" style="display:none">
         <div class="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4">
           <p class="text-sm font-black text-gray-800 mb-1">🗑️ Hapus Iklan Tanpa Akun</p>
-          <p class="text-[11px] text-gray-500 mb-3">Scan semua iklan. Iklan yang sellerUid-nya tidak ditemukan di koleksi <code class="bg-red-100 px-1 rounded">users</code> akan dihapus.</p>
+          <p class="text-[11px] text-gray-500 mb-4">Scan semua iklan di Firestore. Iklan yang pemiliknya tidak terdaftar di koleksi <code class="bg-red-100 px-1 rounded">users</code> akan dihapus otomatis.</p>
           <button onclick="cleanupOrphanAds()" class="w-full bg-red-500 text-white text-sm font-bold py-3 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
             <i class="fa-solid fa-trash-can"></i> Scan &amp; Hapus Sekarang
           </button>
-          <div id="cleanupStatus" class="hidden mt-3 bg-white rounded-xl p-3 text-[11px] text-gray-700 border border-red-100 whitespace-pre-line leading-relaxed"></div>
+          <div id="cleanupStatus" class="hidden mt-3 bg-white rounded-xl p-3 text-[11px] text-gray-600 border border-red-100 whitespace-pre-line leading-relaxed"></div>
         </div>
       </div>
 
@@ -6406,12 +6437,9 @@ async function getVerificationStatus(uid) {
 
 // Render badge HTML sesuai status
 function renderVerifyBadge(status) {
-  if (status === 'verified_blue') {
-    return `<span class="vbadge-blue" title="Verified"><i class="fa-solid fa-circle-check"></i></span>`;
-  }
-  if (status === 'partner_silver') {
-    return `<span class="vbadge-silver" title="Official Partner"><i class="fa-solid fa-circle-check"></i></span>`;
-  }
+  if (status === 'verified_blue')  return `<span class="vbadge-blue"   title="Verified">${_embossBadgeSVG('blue')}</span>`;
+  if (status === 'verified_gold')  return `<span class="vbadge-gold"   title="Admin">${_embossBadgeSVG('gold')}</span>`;
+  if (status === 'partner_silver') return `<span class="vbadge-silver" title="Official Partner">${_embossBadgeSVG('silver')}</span>`;
   return '';
 }
 
@@ -6526,70 +6554,45 @@ window.switchApTab = function(tab) {
 window.cleanupOrphanAds = async function() {
   const statusEl = document.getElementById('cleanupStatus');
   statusEl.style.display = 'block';
-  statusEl.className = 'mt-3 bg-white rounded-xl p-3 text-[11px] text-gray-700 border border-red-100 whitespace-pre-line leading-relaxed';
+  statusEl.className = 'mt-3 bg-white rounded-xl p-3 text-[11px] text-gray-600 border border-red-100 whitespace-pre-line leading-relaxed';
   statusEl.textContent = '⏳ Mengambil semua iklan...';
-
   try {
     const { getFirestore, collection, getDocs, query, where, doc, deleteDoc } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const db2 = window.db || getFirestore();
-
-    // 1. Ambil semua iklan
     const adsSnap = await getDocs(collection(db2, 'ads'));
     const ads = [];
     adsSnap.forEach(d => ads.push({ id: d.id, ...d.data() }));
-    statusEl.textContent = `⏳ ${ads.length} iklan ditemukan. Mengecek akun pemilik...`;
-
-    // 2. Kumpulkan sellerUid unik (skip yang kosong/undefined)
+    statusEl.textContent = `⏳ Ditemukan ${ads.length} iklan. Mengecek akun pemilik...`;
     const uidSet = new Set();
-    ads.forEach(a => { if (a.sellerUid && a.sellerUid !== 'static') uidSet.add(a.sellerUid); });
+    ads.forEach(a => { if (a.sellerUid) uidSet.add(a.sellerUid); });
     const uids = [...uidSet];
-
-    // 3. Cek tiap UID — ambil semua users lalu buat set UID yang valid
-    // Lebih andal daripada where('uid','in') karena ada dokumen tanpa field uid
-    const usersSnap = await getDocs(collection(db2, 'users'));
     const validUids = new Set();
-    usersSnap.forEach(d => {
-      const u = d.data();
-      if (u.uid) validUids.add(u.uid);
-    });
-
-    // 4. Cari iklan hantu: sellerUid tidak ada di validUids
-    const orphans = ads.filter(a => {
-      if (!a.sellerUid || a.sellerUid === 'static') return false; // skip iklan statis/demo
-      return !validUids.has(a.sellerUid);
-    });
-
+    for (let i = 0; i < uids.length; i += 10) {
+      const batch = uids.slice(i, i + 10);
+      const snap = await getDocs(query(collection(db2, 'users'), where('uid', 'in', batch)));
+      snap.forEach(d => { if (d.data().uid) validUids.add(d.data().uid); });
+    }
+    const orphans = ads.filter(a => !a.sellerUid || !validUids.has(a.sellerUid));
     if (orphans.length === 0) {
-      statusEl.textContent = '✅ Semua iklan punya akun terdaftar.
-Tidak ada iklan hantu.';
+      statusEl.textContent = '✅ Semua iklan punya akun terdaftar. Tidak ada yang perlu dihapus.';
       statusEl.style.color = '#059669';
       return;
     }
-
-    statusEl.textContent = `⚠️ ${orphans.length} iklan hantu ditemukan. Menghapus...`;
-
-    // 5. Hapus satu per satu
+    statusEl.textContent = `⚠️ Ditemukan ${orphans.length} iklan hantu. Menghapus...`;
     let deleted = 0, failed = 0;
     for (const ad of orphans) {
-      try {
-        await deleteDoc(doc(db2, 'ads', ad.id));
-        deleted++;
-      } catch(e) { failed++; }
+      try { await deleteDoc(doc(db2, 'ads', ad.id)); deleted++; }
+      catch(e) { failed++; }
     }
-
-    let result = `✅ ${deleted} iklan hantu berhasil dihapus!
-`;
-    result += `📋 Total iklan: ${ads.length}
-`;
-    result += `👥 Akun valid: ${validUids.size}`;
-    if (failed > 0) result += `
-⚠️ Gagal hapus: ${failed}`;
-    statusEl.textContent = result;
+    const lines = [`✅ Selesai! ${deleted} iklan hantu berhasil dihapus.`];
+    if (failed > 0) lines.push(`⚠️ Gagal hapus: ${failed} iklan.`);
+    lines.push(`📋 Total iklan awal: ${ads.length}`);
+    lines.push(`👥 Akun terdaftar: ${validUids.size}`);
+    statusEl.textContent = lines.join('\n');
     statusEl.style.color = '#dc2626';
     showToast(`🗑️ ${deleted} iklan hantu dihapus!`, 'red');
     if (typeof loadAds === 'function') loadAds();
-
   } catch(e) {
     statusEl.textContent = '❌ Error: ' + (e.message || e);
     showToast('Gagal: ' + (e.message || e), 'red');
