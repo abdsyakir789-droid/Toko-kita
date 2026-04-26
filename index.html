@@ -2128,6 +2128,9 @@ html{scroll-behavior:smooth}
       <button onclick="uploadBillboard()" class="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-3 rounded-2xl text-sm">
         <i class="fa-solid fa-rocket mr-1"></i> Update Billboard
       </button>
+      <button onclick="resetAllBillboards()" class="w-full border border-red-200 text-red-400 font-semibold py-2 rounded-2xl text-xs hover:bg-red-50 transition-all">
+        <i class="fa-solid fa-trash-can mr-1"></i> Reset Semua Billboard (Hapus Data Lama)
+      </button>
       <p class="text-[10px] text-gray-400 text-center">Gambar dikompres otomatis · Disimpan di Cloudinary</p>
     </div>
   </div>
@@ -5558,6 +5561,28 @@ window.uploadBillboard=async()=>{
   if(!file){showToast('Pilih gambar terlebih dahulu','red');return;}
   try{await window._FB.uploadBillboard(window._S.billSlide,file,text);}
   catch(e){showToast('Gagal: '+(e.message||e),'red');}
+};
+
+// Reset semua data billboard lama dari Firestore
+window.resetAllBillboards = async () => {
+  if(!confirm('Hapus semua data billboard lama? Foto default akan tampil sampai kamu upload ulang.')) return;
+  try {
+    const { collection, getDocs, deleteDoc, doc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const snap = await getDocs(collection(window.db, 'billboards'));
+    const dels = snap.docs.map(d => deleteDoc(doc(window.db, 'billboards', d.id)));
+    await Promise.all(dels);
+    // Kembalikan ke default
+    for(let i=0;i<4;i++){
+      const img = document.getElementById('cimg'+i);
+      if(img) img.src = DEFAULT_BILLBOARDS[i] || DEFAULT_BILLBOARDS[0];
+    }
+    showToast('Semua data billboard lama dihapus!','green');
+    closeBillModal();
+  } catch(e) {
+    showToast('Gagal reset: '+(e.message||e),'red');
+    console.error('[resetBillboard]', e);
+  }
 };
 window.applyBillboardImage=(idx,url,text)=>{
   // New pure-image approach — update the <img> tag directly
